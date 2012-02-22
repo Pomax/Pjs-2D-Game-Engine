@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Sprite pathing using Processing.js</title>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="processing.js"></script>
+    <link href='http://fonts.googleapis.com/css?family=Norican' rel='stylesheet' type='text/css'>
+    <style type="text/css">
+      h1 { text-align: center; font-family: Norican; font-size: 200%; }
+      a { color: rgba(0, 0, 200, 0.5); text-decoration: none; }
+      h3 { margin: 0px; }
+      .minor { font-size: 80%; }
+      p { margin: 0px; }
+      canvas:focus {
+        outline: 0px;
+        -webkit-box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+        -moz-box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+        box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+      }
+      body { text-align: center; }
+    </style>
+    <script type="text/javascript">
+      document.addEventListener("DOMContentLoaded",function(){
+        document.getElementById("mario").focus();
+      },false);
+    </script>
+  </head>
+  <body>
+    <h1>unidirectionally passable boundary test</h1>
+
+    <canvas id="mario" data-processing-sources="preloads.pde spriteengine.pde drawbackground.pde JavaScript.pde ShapePrimitives.pde SpriteMapHandler.pde Sprite.pde SpritePath.pde SpritePathChunker.pde SpriteProxy.pde Actor.pde State.pde Positionable.pde Level.pde Boundary.pde" style="border: 1px solid black;" tabindex="1"></canvas>
+
+     <p>Cursor keys</p>
+
+     <p><a href="Boundary.pde">Boundary.pde</a> has the boundary collision code</p>
+  </body>
+</html>
