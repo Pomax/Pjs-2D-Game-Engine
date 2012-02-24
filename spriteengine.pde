@@ -87,7 +87,8 @@ class TestLevel extends Level {
     // draw the level content
     super.draw();
     // wrap-around for mario
-    mario.x = (mario.x + width) % width;
+    if(mario.x<0) mario.setPosition(width,mario.y);
+    if(mario.x>width) mario.setPosition(0,mario.y);
   }
 
   /**
