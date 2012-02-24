@@ -11,6 +11,7 @@
       h3 { margin: 0px; }
       .minor { font-size: 80%; }
       p { margin: 0px; }
+      p+p { margin-top: 1em; }
       canvas:focus {
         outline: 0px;
         -webkit-box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
@@ -31,7 +32,15 @@
 
     <canvas id="mario" data-processing-sources="preloads.pde spriteengine.pde drawbackground.pde JavaScript.pde ShapePrimitives.pde SpriteMapHandler.pde Sprite.pde SpritePath.pde SpritePathChunker.pde SpriteProxy.pde Actor.pde State.pde Positionable.pde Level.pde Boundary.pde TilingSprite.pde" style="border: 1px solid black;" tabindex="1"></canvas>
 
-     <p>Cursor keys, Z and X for the jump/shoot buttons.</p>
+     <p><strong>controls:</strong> cursor keys, and [z] and [x] for the jump/spin jump (left click to spawn random koopa troopers!)</p>
+
+     <p>TODO: add gravitational (or rather, arbitrary impulse) accelleration, and add in sprite collisions. Although for that last one I'm not sure whether to use boundary collision or sprite masks. So it'll probably be both, followed by subsequently removing whichever is slowest.<p>
+     
+     <p>You are strongly encouraged to take a look at the <a href="spriteengine.pde">non-library source code</a> to see how much work this would be for you to implement yourself using this engine.</p>
+
+     <hr>
+
+     <p>I'm <a href="http://pomax.nihongoresources.com">Pomax</a>. You might know me from <a href="http://processingjs.org">Processing.js</a>, <a href="http://github.com/Pomax/Font.js">Font.js</a>, or perhaps even something else (Like my <a href="http://processingjs.nihongoresources.com/bezierinfo">primer on Bezier curves</a>, writeup on <a href="http://processingjs.nihongoresources.com/the_smallest_font/">the smallest web-legal TTF</a>, or <a href="http://redesign.nihongoresources.com">nihongoresources</a>). If you don't know me: I do things these kind of things. Then I explain them to people. If you wish to reach me, I'm on IRC (irc.mozilla.org and irc.freenode.net amongst others) as Pomax, as well as on twitter, as <a href="https://twitter.com/TheRealPomax">TheRealPomax</a></p>
 
   </body>
 </html>

@@ -71,7 +71,7 @@ class TestLevel extends Level {
     boundaries.add(new Boundary(54 + 186, 96 + 160, 105 + 160, 96 + 160));
     boundaries.add(new Boundary(54 + 330, 96 + 256, 105 + 322, 96 + 256));
 
-    // let's a-make a di Mario
+    // let's a-make a di Mario:
     mario = new Mario();
     mario.setPosition(width/2,height/2);
     mario.setForces(0,1);
@@ -86,7 +86,7 @@ class TestLevel extends Level {
     background(0,100,190);
     // draw the level content
     super.draw();
-    // wrap-around for mario
+    // wrap-around for the mario sprite
     if(mario.x<0) mario.setPosition(width,mario.y);
     if(mario.x>width) mario.setPosition(0,mario.y);
   }
@@ -210,7 +210,7 @@ class Mario extends Actor {
     if(active.mayChange())
     {
       // The jump button is pressed! Should we jump? How do we jump?
-      if (keyDown[BUTTON_A]) {
+      if (keyDown[BUTTON_A] && boundary!=null) {
         if (active.name != "jumping" && active.name != "crouchjumping" && active.name != "spinning") {
           // first off, jumps may not auto-repeat, so we lock the jump button
           lock(BUTTON_A);
@@ -227,7 +227,7 @@ class Mario extends Actor {
       
       // The shoot button is pressed! When we don't have a shooty power-up,
       // this makes Mario spin-jump. But should we? And How?
-      else if (keyDown[BUTTON_B]) {
+      else if (keyDown[BUTTON_B] && boundary!=null) {
         if (active.name != "jumping" && active.name != "crouchjumping" && active.name != "spinning") {
           // first off, shooting and spin jumping may not auto-repeat, so we lock the shoot button
           lock(BUTTON_B);
@@ -286,11 +286,11 @@ class Mario extends Actor {
 class Koopa extends Actor {
 
   /**
-   * We can drop koopa's wherever we want!
+   * The constructor for the koopa trooper
+   * is essentially the same as for Mario.
    */
   Koopa(int mx, int my) {
-    // koopas are slowed down at the
-    // same pace that Mario is.
+    // koopas are slowed down at the same pace that Mario is.
     super(0.8, 0.8);
     // Just like Mario, a koopa trooper can't "do" anything.
     // We need to define some states for this actor.
