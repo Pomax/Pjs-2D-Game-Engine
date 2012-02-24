@@ -24,7 +24,6 @@ class Level {
    * draw
    */
   void draw() {
-    resetMatrix();
     fill(0);
     for(Sprite s: npss) { s.draw(); }
     for(Boundary b: boundaries) { b.draw(); }

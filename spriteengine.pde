@@ -43,9 +43,9 @@ class TestLevel extends Level {
   {
     // screen boundaries
     float pad = 10;
-//    boundaries.add(new Boundary(width-pad,pad,pad,pad));
-//    boundaries.add(new Boundary(width-pad,height-pad,width-pad,pad));
-//    boundaries.add(new Boundary(pad,pad,pad,height-pad));
+    //boundaries.add(new Boundary(width-pad,pad,pad,pad));
+    //boundaries.add(new Boundary(width-pad,height-pad,width-pad,pad));
+    //boundaries.add(new Boundary(pad,pad,pad,height-pad));
 
     Sprite groundsprite = new Sprite("graphics/backgrounds/ground-top.png", 1, 1);
     groundline = new TilingSprite(groundsprite, 0,height-40, 2*width, height - 40 + groundsprite.height);
@@ -93,13 +93,14 @@ class TestLevel extends Level {
 
     // draw level the standard way
     super.draw();
+    
+    // wrap-around for mario
     actor.x = (actor.x + width) % width;
   }
 
   void mousePressed(int mx, int my) {
-    Actor koopa = new Koopa();
-    resetMatrix();
-    koopa.setPosition(width/2, height/2);
+    Actor koopa = new Koopa(mx, my);
+    koopa.setPosition(mx, my);
     koopa.setForces(-0.2,1);
     npas.add(koopa);
   }
@@ -211,7 +212,7 @@ class Koopa extends Actor {
   float speedStep = 1.3;
   float speedHeight = 19;
 
-  Koopa() {
+  Koopa(int mx, int my) {
     super(0.8, 0.8);
 
     // koopa has one state at the moment.

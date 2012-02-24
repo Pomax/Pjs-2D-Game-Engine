@@ -276,13 +276,15 @@ class Sprite {
     if (visible) {
       PImage img = getFrame();
       pushMatrix();
-      translate(x, y);
-      if (r != 0) { rotate(r); }
-      if(hflip) { scale(-1,1); }
-      if(vflip) { scale(1,-1); }
-      scale(sx,sy);
-      translate(-width/2 - ox, -height/2 - oy);
-      image(img, 0, 0);
+      {
+        translate(x, y);
+        if (r != 0) { rotate(r); }
+        if(hflip) { scale(-1,1); }
+        if(vflip) { scale(1,-1); }
+        scale(sx,sy);
+        translate(-width/2 - ox, -height/2 - oy);
+        image(img, 0, 0);
+      }
       popMatrix();
     }
   }

@@ -1,10 +1,9 @@
 <!doctype html>
 <html>
   <head>
-    <title>Sprite pathing using Processing.js</title>
+    <title>2D gaming using Processing.js</title>
     <meta charset="utf-8">
     <script type="text/javascript" src="processing.js"></script>
-    <script type="text/javascript" src="webgl2d.js"></script>
     <link href='http://fonts.googleapis.com/css?family=Norican' rel='stylesheet' type='text/css'>
     <style type="text/css">
       h1 { text-align: center; font-family: Norican; font-size: 200%; }
@@ -24,18 +23,15 @@
       document.addEventListener("DOMContentLoaded",function(){
         var mario = document.getElementById("mario");
         mario.focus();
-        WebGL2D.enable(mario); // adds "webgl-2d" context to cvs
       },false);
-
     </script>
   </head>
   <body>
-    <h1>unidirectionally passable boundary test</h1>
+    <h1>～ OMG, Mario! ～</h1>
 
     <canvas id="mario" data-processing-sources="preloads.pde spriteengine.pde drawbackground.pde JavaScript.pde ShapePrimitives.pde SpriteMapHandler.pde Sprite.pde SpritePath.pde SpritePathChunker.pde SpriteProxy.pde Actor.pde State.pde Positionable.pde Level.pde Boundary.pde TilingSprite.pde" style="border: 1px solid black;" tabindex="1"></canvas>
 
-     <p>Cursor keys</p>
+     <p>Cursor keys, Z and X for the jump/shoot buttons.</p>
 
-     <p><a href="Boundary.pde">Boundary.pde</a> has the boundary collision code</p>
   </body>
 </html>

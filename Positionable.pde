@@ -59,6 +59,8 @@ abstract class Positionable {
   void setPosition(float _x, float _y) {
     x = _x;
     y = _y;
+    prevx = x;
+    prevy = y;
   }
 
   /**
@@ -191,27 +193,17 @@ abstract class Positionable {
     // Draw, if visible
     if (visible) {
       pushMatrix();
-      translate(x, y);
-      if (r != 0) { rotate(r); }
-      if(hflip) { scale(-1,1); }
-      if(vflip) { scale(1,-1); }
-      scale(sx,sy);
-      translate(-width/2 - ox, -height/2 - oy);
-      drawObject();
-      
-      pushMatrix();
-      resetMatrix();
-      translate(x,y);
-      line(0,0,ix*3,iy*3);
-      popMatrix();
-      
+      {
+        translate(x, y);
+        if (r != 0) { rotate(r); }
+        if(hflip) { scale(-1,1); }
+        if(vflip) { scale(1,-1); }
+        scale(sx,sy);
+        translate(-width/2 - ox, -height/2 - oy);
+        drawObject();
+      }
       popMatrix();
     }
-
-// REMOVE
-    if(boundary!=null) { stroke(0,255,0); line(boundary.x, boundary.y, boundary.xw, boundary.yh); }
-// REMOVE
-
 
     // Update position for next the frame,
     // based on impulse and force.
