@@ -8,7 +8,7 @@ abstract class Positionable {
   // are we attached to a boundary?
   Boundary boundary = null;
   void attachTo(Boundary b) { boundary = b; b.attach(this); }
-  void detach() { boundary.detach(this); boundary = null; }
+  void detach() { if(boundary!=null) boundary.detach(this); boundary = null; }
 
 // === TEMPORARY TESTING FUNCTIONS ===
 
@@ -81,19 +81,8 @@ abstract class Positionable {
    * add to the impulse for this object
    */
   void addImpulse(float _ix, float _iy) {
-    // free impulse
-    if(boundary==null) {
-      ix += _ix;
-      iy += _iy; }
-    // redirected impulse
-    else {
-      float[] redirected = boundary.redirectForce(x, y, _ix, _iy);
-      if(redirected!=null) {
-        ix += redirected[0];
-        iy += redirected[1];
-        detach();
-      }
-    }
+    ix += _ix;
+    iy += _iy;
   }
 
   /**
@@ -209,24 +198,63 @@ abstract class Positionable {
       scale(sx,sy);
       translate(-width/2 - ox, -height/2 - oy);
       drawObject();
+      
+      pushMatrix();
+      resetMatrix();
+      translate(x,y);
+      line(0,0,ix*3,iy*3);
+      popMatrix();
+      
       popMatrix();
     }
+
+// REMOVE
+    if(boundary!=null) { stroke(0,255,0); line(boundary.x, boundary.y, boundary.xw, boundary.yh); }
+// REMOVE
+
 
     // Update position for next the frame,
     // based on impulse and force.
     if(animated) {
       prevx = x;
       prevy = y;
-      x += ix;
-      y += iy;
+      addImpulse(fx,fy);
+
+      // not on a boundary: unrestricted motion.
+      if(boundary==null) {
+        x += ix;
+        y += iy;
+      }
+
+      // previously on a boundary, but we moved off of it: unrestricted motion,
+      // and make sure to notify the boundary that we are no longer attached.
+      else if(boundary.outOfBounds(x,y)) {
+        x += ix;
+        y += iy;
+        detach();
+        // TODO: when we detach, we need to see if we pass
+        //       through some other boundary (such as in
+        //       corners).
+      }
+
+      // we're attached to a boundary, so we're subject to impulse redirection.
+      else {
+        float[] redirected = boundary.redirectForce(x, y, ix, iy);
+        x += redirected[0];
+        y += redirected[1];
+        // if this makes us fly off the boundary, detach
+        if(redirected[2]==0) { detach(); }
+      }
+      // dampen (or boost) our impulse, based on the impulse coefficients
       ix *= ixF;
       iy *= iyF;
-      // treat forces as additional impulse,
-      // so that they don't violate boundaries.
-      addImpulse(fx,fy);
     }
   }
 
   // implemented by subclasses
   abstract void drawObject();
+  
+  String toString() {
+    return x+"/"+y+" im{"+ix+"/"+iy+"} (prev: "+prevx+"/"+prevy+")" ;
+  }
 }

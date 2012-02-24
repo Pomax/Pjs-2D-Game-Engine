@@ -1,1 +1,12 @@
-
+/* @pjs preload="graphics/backgrounds/ground-filler.png,
+                 graphics/backgrounds/ground-slant.png,
+                 graphics/backgrounds/ground-top.png,
+                 graphics/backgrounds/sky.png,
+                 graphics/enemies/Red-koopa-walking.png,
+                 graphics/mario/small/Crouching-mario.png,
+                 graphics/mario/small/Dead-mario.png,
+                 graphics/mario/small/Jumping-mario.png,
+                 graphics/mario/small/Looking-mario.png,
+                 graphics/mario/small/Running-mario.png,
+                 graphics/mario/small/Spinning-mario.png,
+                 graphics/mario/small/Standing-mario.png"; */

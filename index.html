@@ -4,6 +4,7 @@
     <title>Sprite pathing using Processing.js</title>
     <meta charset="utf-8">
     <script type="text/javascript" src="processing.js"></script>
+    <script type="text/javascript" src="webgl2d.js"></script>
     <link href='http://fonts.googleapis.com/css?family=Norican' rel='stylesheet' type='text/css'>
     <style type="text/css">
       h1 { text-align: center; font-family: Norican; font-size: 200%; }
@@ -21,14 +22,17 @@
     </style>
     <script type="text/javascript">
       document.addEventListener("DOMContentLoaded",function(){
-        document.getElementById("mario").focus();
+        var mario = document.getElementById("mario");
+        mario.focus();
+        WebGL2D.enable(mario); // adds "webgl-2d" context to cvs
       },false);
+
     </script>
   </head>
   <body>
     <h1>unidirectionally passable boundary test</h1>
 
-    <canvas id="mario" data-processing-sources="preloads.pde spriteengine.pde drawbackground.pde JavaScript.pde ShapePrimitives.pde SpriteMapHandler.pde Sprite.pde SpritePath.pde SpritePathChunker.pde SpriteProxy.pde Actor.pde State.pde Positionable.pde Level.pde Boundary.pde" style="border: 1px solid black;" tabindex="1"></canvas>
+    <canvas id="mario" data-processing-sources="preloads.pde spriteengine.pde drawbackground.pde JavaScript.pde ShapePrimitives.pde SpriteMapHandler.pde Sprite.pde SpritePath.pde SpritePathChunker.pde SpriteProxy.pde Actor.pde State.pde Positionable.pde Level.pde Boundary.pde TilingSprite.pde" style="border: 1px solid black;" tabindex="1"></canvas>
 
      <p>Cursor keys</p>
 

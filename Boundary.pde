@@ -11,6 +11,8 @@ class Boundary extends Positionable {
   float minx, maxx, miny, maxy;
   float angle, cosa, sina, cosma, sinma;
 
+  float boundingThreshold = 1.5;
+
   // attached actors
   ArrayList<Positionable> attached;
 
@@ -62,6 +64,13 @@ class Boundary extends Positionable {
   }
 
   /**
+   * Point outisde the bounding box for this boundary?
+   */
+  boolean outOfBounds(float x, float y) {
+    return (x<minx-boundingThreshold || x>maxx+boundingThreshold || y<miny-boundingThreshold || y>maxy+boundingThreshold);
+  }
+
+  /**
    * Is this boundary blocking the specified actor?
    */
   float[] blocks(Actor a) {
@@ -88,12 +97,17 @@ class Boundary extends Positionable {
     // Shortcuts for when we know the answer is "no".
     // First up, is the path section somewhere inside
     // the bounding box for this boundary?
-    if ((x1<minx && x2<minx) || (x1>maxx && x2>maxx) ||
-        (y1<miny && y2<miny) || (y1>maxy && y2>maxy)) return null;
+//    if (outOfBounds(x1,y1,x2,y2)) return null;
 
     // perform a translation-rotation about (x3,y3)
     float[] tr = translateRotateXY3(x1, y1, x2, y2, x, y, xw, yh);
-
+    
+    // is our line segment in range? Because our
+    // reference line is now flat we can simply
+    // check the x coordinates.
+    if(tr[0]<0 && tr[2]<0) { return null; }
+    if(tr[0]>tr[6] && tr[2]>tr[6]) { return null; }
+    
     // Our boundary is now a flat line along the x-axis at y=0,
     // and our path has been transformed accordingly. Let's
     // find out where these two lines meet.
@@ -104,12 +118,12 @@ class Boundary extends Positionable {
 
     // is this a real intersection (i.e. lying on both line
     // segments) or virtual intersection?
-    if(factor<0 || factor>1) { return null; }
+    if(factor<=0 || factor>=1) { return null; }
 
     // At this point we know the boundary and path intersect,
     // but we only want this to happen if the actor's on the
     // 'wrong' side of the unidirectionally passable boundary.
-    if (safeTrajectory(x1, y1, x2, y2)) return null;
+    if (onPassThroughSide(x1, y1, x2, y2)) return null;
 
     // Okay, this actor cannot pass. compute the halting point.
     return new float[]{x + ix*cos(angle), y + ix*sin(angle)};
@@ -147,19 +161,13 @@ class Boundary extends Positionable {
   }
 
   /**
-   * Is a tracjectory safe to pass through this boundary?
-   */
-  boolean safeTrajectory(float x1, float y1, float x2, float y2) {
-    return onFreeSide(x1, y1, x2, y2);
-  }
-
-  /**
-   * Determine which side an incoming path is actually incoming from.
+   * Determine which side and incoming path
+   * is actually incoming from.
    */
   // FIXME: this can be done more efficiently, rather than readably.
   // FIXME: this can still cause pass-through problems when x1/y1
-  //        is located on the boundary line?
-  boolean onFreeSide(float x1, float y1, float x2, float y2) {
+  //        is located on the boundary line.
+  boolean onPassThroughSide(float x1, float y1, float x2, float y2) {
     float local = atan2(dy, dx);
     local = (local<0? PI2 + local : local);
     float path = atan2(y2-y1, x2-x1);
@@ -169,25 +177,22 @@ class Boundary extends Positionable {
   }
 
   /**
-   * Redirect force along this boundary's surface
+   * ` force along this boundary's surface
    */
   // FIXME: actually make this work
   float[] redirectForce(float x, float y, float fx, float fy) {
     float x1 = x, y1 = y, x2 = x+fx, y2 = y+fy;
     // Will this force illegally push the actor through the boundary?
-    if (!onFreeSide(x1,y1,x2,y2)) {
-      return null;
-      /*
+    if (!onPassThroughSide(x1,y1,x2,y2)) {
       float[] tr = translateRotateXY3(x1,y1,x2,y2, x,y,xw,yh);
       float nx2 = tr[2];
       float ix = nx2 * cosa;
       float iy = nx2 * sina;
-      return new float[]{ix, iy};
-      */
+      return new float[]{ix, iy, 1};
     }
 
     // No it won't, pass-through the impulse unmodified.
-    return new float[]{fx, fy};
+    return new float[]{fx, fy, 0};
   }
 
   /**
@@ -195,15 +200,10 @@ class Boundary extends Positionable {
    */
   void drawObject() {
     strokeWeight(1);
-    stroke(0, 0, 255);
+    stroke(255, 0, 255);
     line(0, 0, dx, dy);
-    drawDecal(dx,dy);
-  }
-  
-  /**
-   * draw an arrow to indicate the pass-through direction
-   */
-  void drawDecal(float dx, float dy) {
+
+    // draw an arrow to indicate the pass-through direction
     stroke(127);
     float cs = cos(angle-PI/2), ss = sin(angle-PI/2);
 
