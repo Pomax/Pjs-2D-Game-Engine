@@ -12,7 +12,7 @@ class Level {
   // TODO: add and retrieve boundaries based on grid coordinates
 
   // non-player static sprites
-  ArrayList<Sprite> npss = new ArrayList<Sprite>();
+  ArrayList<Positionable> npss = new ArrayList<Positionable>();
 
   // non-player active sprites
   ArrayList<Actor> npas = new ArrayList<Actor>();
@@ -25,7 +25,7 @@ class Level {
    */
   void draw() {
     fill(0);
-    for(Sprite s: npss) { s.draw(); }
+    for(Positionable s: npss) { s.draw(); }
     for(Boundary b: boundaries) { b.draw(); }
     for(Actor a: npas) {
       for(Boundary b: boundaries) { 

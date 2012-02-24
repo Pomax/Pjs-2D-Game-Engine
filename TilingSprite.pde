@@ -1,7 +1,7 @@
 /**
  * Tiling sprite
  */
-class TilingSprite {
+class TilingSprite extends Positionable {
   Sprite sprite;
 
   //
@@ -32,4 +32,6 @@ class TilingSprite {
     }
     sprite.setPosition(ox,oy);
   }
+  
+  void drawObject() {}
 }

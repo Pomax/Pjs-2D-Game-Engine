@@ -31,7 +31,7 @@ abstract class Actor extends Positionable {
    */
   void addState(State state) { 
     state.setActor(this);
-    states.put(state.name, state); 
+    states.put(state.name, state);
     active = state;
   }
 
@@ -84,12 +84,10 @@ abstract class Actor extends Positionable {
 
   protected final boolean[] locked = new boolean[256];
   protected final boolean[] keyDown = new boolean[256];
-  protected final int UP=38, LEFT=37, DOWN=40, RIGHT=39;           // cursor keys
-  protected final char cUP='w', cLEFT='a', cDOWN='s', cRIGHT='d',  // wasd controls
-                       BUTTON_A='z', BUTTON_B='x';                 // controll buttons
+  protected final int UP=38, LEFT=37, DOWN=40, RIGHT=39, // cursor keys
+                      BUTTON_A=90, BUTTON_B=88;      // jump + shoot
 
-  protected final int[] keyCodes = {UP, LEFT, DOWN, RIGHT};
-  protected final int[] keys = {cUP, cLEFT, cDOWN, cRIGHT, BUTTON_A, BUTTON_B};
+  protected final int[] keyCodes = {UP, LEFT, DOWN, RIGHT, BUTTON_A, BUTTON_B};
 
   // if pressed, and part of our known keyset, mark key as "down"
   private void setIfTrue(int mark, int target) {
@@ -100,7 +98,7 @@ abstract class Actor extends Positionable {
   // if released, and part of our known keyset, mark key as "released"
   private void unsetIfTrue(int mark, int target) {
     if(mark==target) {
-      locked[target]=false;
+      locked[target] = false;
       keyDown[target] = false; }}
 
   // lock a key so that it cannot be triggered repeatedly
@@ -109,13 +107,13 @@ abstract class Actor extends Positionable {
 
   // handle key presses
   void keyPressed(char key, int keyCode) {
-    for(int i: keys) { setIfTrue(key, i); }
-    for(int i: keyCodes) { setIfTrue(keyCode, i); }}
+    for(int i: keyCodes) {
+      setIfTrue(keyCode, i); }}
 
   // handle key releases
   void keyReleased(char key, int keyCode) {
-    for(int i: keys) { unsetIfTrue(key, i); }
-    for(int i: keyCodes) { unsetIfTrue(keyCode, i); }}
+    for(int i: keyCodes) {
+      unsetIfTrue(keyCode, i); }}
 
 // ====== ABSTRACT METHODS ======
 

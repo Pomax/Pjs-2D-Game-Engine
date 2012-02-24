@@ -6,7 +6,7 @@
  * scaled, rotated and flipped), and moved along a
  * path either manually or automatically.
  */
-class Sprite {
+class Sprite extends Positionable {
 
   State state;
   SpritePath path = new SpritePath();
@@ -16,16 +16,9 @@ class Sprite {
   int numFrames=0;         // frames.length cache
   float frameFactor=1;     // determines that frame serving compression/dilation
 
-  // dimensions and positioning
-  float x=0, y=0;           // sprite draw position in the world
-  float width=0, height=0;  // sprite dimensions
   boolean hflip = false;   // draw horizontall flipped?
   boolean vflip = false;   // draw vertically flipped?
 
-  // transforms
-  float ox=0, oy=0;        // sprite offset in world coordinates
-  float sx=1, sy=1;        // sprite scale factor
-  float r=0;               // sprite rotation (in radians)
 
   // animation properties
   boolean visible = true;  // should the sprite be rendered when draw() is called?
@@ -85,15 +78,7 @@ class Sprite {
   boolean isAnimated() {
     return animated;
   }
-
-  /**
-   * Fix the sprite's position in the world
-   */
-  void setPosition(float _x, float _y) {
-    x = _x;
-    y = _y;
-  }
-  
+ 
   /**
    * Align this sprite, by treating its
    * indicated x/y align values as 
@@ -109,81 +94,6 @@ class Sprite {
     else if(yalign==BOTTOM)  { oy=height/2; }
   }
 
-  /**
-   * get position-in-the-world x-coordinate
-   */
-  float getX() {
-    float rx = x;
-    if(path.size()>0) { rx = path.getPathInformation(frameCount)[0]; }
-    return rx + ox; }
-
-  /**
-   * get position-in-the-world y-coordinate
-   */
-  float getY() {
-    float ry = y;
-    if(path.size()>0) { ry = path.getPathInformation(frameCount)[1]; }
-    return ry + oy; } 
-
-  /**
-   * get next frame's x
-   */
-  float getNextX() {
-    float rx = x;
-    if(path.size()>0) { rx = path.getPathInformation(frameCount+1)[0]; }
-    return rx; }
-
-  /**
-   * get next frame's x
-   */
-  float getNextY() {
-    float ry = y;
-    if(path.size()>0) { ry = path.getPathInformation(frameCount+1)[1]; }
-    return ry; } 
-
-// -- transform methods
-
-  /**
-   * Fix the translation to be the specified x/y values.
-   */
-  void setTranslation(float x, float y) {
-    ox = x;
-    oy = y;
-  }
-
-  /**
-   * Fix the scale uniformly to be the specified value.
-   */
-  void setScale(float s) {
-    sx = s;
-    sy = s;
-  }
-
-  /**
-   * Fix the scale to be the specified x/y values.
-   */
-  void setScale(float x, float y) {
-    sx = x;
-    sy = y;
-  }
-
-  /**
-   * get x scale
-   */
-  float getScaleX() { return sx; }
-
-  /**
-   * get y scale
-   */
-  float getScaleY() { return sy; }
-
-  /**
-   * Fix the rotation to be the specified value.
-   */
-  void setRotation(float _r) {
-    r = _r % (2*PI);
-  }
-  
   /**
    * if set, sprites are not rotation-interpolated
    * on paths, even if they're curved.
@@ -288,6 +198,8 @@ class Sprite {
       popMatrix();
     }
   }
+  
+  void drawObject() {};
 
 // -- pathing informmation
 
