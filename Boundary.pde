@@ -64,6 +64,20 @@ class Boundary extends Positionable {
   }
 
   /**
+   * When we reposition a boundary,
+   * anything that is attached to it
+   * must be repositioned, too.
+   */
+  void setPosition(float _x, float _y) {
+    // move all actors attached to this boundary
+    for(Positionable a: attached) {
+      a.moveBy(x-_x,y-_y);
+    }
+    // and of course move boundary.
+    super.setPosition(_x,_y);
+  }
+
+  /**
    * Point outisde the bounding box for this boundary?
    */
   boolean outOfBounds(float x, float y) {

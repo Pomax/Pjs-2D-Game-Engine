@@ -27,6 +27,13 @@ class Sprite extends Positionable {
   int framesServed = 0;
 
   /**
+   * Shortcut constructor, if the sprite has one frame
+   */
+  Sprite(String spritefile) {
+    this(spritefile, 1, 1, 0, 0);
+  }
+
+  /**
    * Shortcut constructor, to build a Sprite directly off of a sprite map image.
    */
   Sprite(String spritefile, int rows, int columns) {
@@ -43,7 +50,7 @@ class Sprite extends Positionable {
   /**
    * Full constructor.
    */
-  Sprite(PImage[] _frames, float _xpos, float _ypos, boolean _visible) {
+  private Sprite(PImage[] _frames, float _xpos, float _ypos, boolean _visible) {
     setFrames(_frames);
     x = _xpos;
     y = _ypos;
@@ -151,14 +158,15 @@ class Sprite extends Positionable {
    */
   PImage getFrame() {
     // update sprite based on path frames
+    int currentFrame = getCurrentFrameNumber();
     if (path.size()>0) {
-      float[] pathdata = path.getPathInformation(frameCount);
+      float[] pathdata = path.getNextFrameInformation();
       x = pathdata[0];
       y = pathdata[1];
       setScale(pathdata[2], pathdata[3]);
       setRotation(pathdata[4]);
     }
-    return frames[getCurrentFrameNumber()];
+    return frames[currentFrame];
   }
   
   /**
@@ -168,7 +176,8 @@ class Sprite extends Positionable {
    * number for the last frame in the set.
    */
   int getCurrentFrameNumber() {
-    if(!path.looping && framesServed >= path.size()) {
+    if(!path.looping && framesServed == path.size()) {
+      state.finished();
       animated = false;
       return numFrames-1;
     }

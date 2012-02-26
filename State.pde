@@ -3,11 +3,19 @@
  */
 class State {
   String name;
+  String spritesheet;
   Sprite sprite;
   Actor actor;
 
-  State(String _name, String spritesheet, int rows, int cols) {
+  // shortcut constructor
+  State(String name, String spritesheet) {
+    this(name, spritesheet, 1, 1);
+  }
+
+  // full constructor
+  State(String _name, String _spritesheet, int rows, int cols) {
     name = _name;
+    spritesheet = _spritesheet;
     sprite = new Sprite(spritesheet, rows, cols);
     sprite.setState(this);
   }
@@ -16,8 +24,7 @@ class State {
 
   void reset() { sprite.reset();}
 
-  void stop() {
-    sprite.stop();
+  void finished() {
     if(actor!=null) {
       actor.handleStateFinished(this); }}
 

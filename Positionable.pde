@@ -3,15 +3,11 @@
  */
 abstract class Positionable {
 
-// === TEMPORARY TESTING FUNCTIONS ===
-
-  // are we attached to a boundary?
+  // Positionable objects can be bound to
+  // a boundary, which will then be responsible
+  // for guiding the impulse vector along its
+  // surface, rather than allowing free movement.
   Boundary boundary = null;
-  void attachTo(Boundary b) { boundary = b; b.attach(this); }
-  void detach() { if(boundary!=null) boundary.detach(this); boundary = null; }
-
-// === TEMPORARY TESTING FUNCTIONS ===
-
 
   // dimensions and positioning
   float x=0, y=0, width=0, height=0;
@@ -34,6 +30,10 @@ abstract class Positionable {
   // external force "vector"
   float fx=0, fy=0;
 
+  // external acceleration "vector"
+  float ixA=0, iyA=0;
+  int aFrameCount=0;
+
   // previous x/y coordinate, for trajectory checks
   float prevx=0, prevy=0;
 
@@ -54,14 +54,27 @@ abstract class Positionable {
   }
 
   /**
-   * change the position
+   * change the position, absolute
    */
   void setPosition(float _x, float _y) {
     x = _x;
     y = _y;
     prevx = x;
     prevy = y;
+    aFrameCount = 0;
   }
+
+  /**
+   * change the position, relative
+   */
+  void moveBy(float _x, float _y) {
+    x += _x;
+    y += _y;
+    prevx = x;
+    prevy = y;
+    aFrameCount = 0;
+  }
+  
 
   /**
    * set the impulse for this object
@@ -101,6 +114,43 @@ abstract class Positionable {
   void addForces(float _fx, float _fy) {
     fx += _fx;
     fy += _fy;
+  }
+
+  /**
+   * set the uniform acceleration for this object
+   */
+  void setAcceleration(float ax, float ay) {
+    ixA = ax;
+    iyA = ay;
+    aFrameCount = 0;
+  }
+
+  /**
+   * Augment the accelleration for this object
+   */
+  void addAccelleration(float ax, float ay) {
+    ixA += ax;
+    iyA += ay;
+  }
+
+  /**
+   * Attach this positionable to a boundary.
+   */
+  void attachTo(Boundary b) {
+    boundary = b;
+    b.attach(this);
+    aFrameCount = 0;
+  }
+  
+  /**
+   * Detach from whichever boundary we're attached to.
+   */
+  void detach() {
+    if(boundary!=null) {
+      boundary.detach(this);
+    }
+    boundary = null;
+    aFrameCount = 0;
   }
 
   /**
@@ -185,6 +235,26 @@ abstract class Positionable {
   float getY() { return y + oy; }
 
   /**
+   * Primitive sprite overlap test: bounding box
+   * overlap using midpoint distance.
+   */
+  // FIXME: take actual sprite shape into account
+  float[] overlap(Positionable other) {
+    float xmid1 = x+ox+width/2;
+    float ymid1 = y+oy+height/2;
+    float xmid2 = other.x+other.ox+other.width/2;
+    float ymid2 = other.y+other.oy+other.height/2;
+    float dx = xmid2 - xmid1;
+    float dy = ymid2 - ymid1;
+    // no overlap?
+    if(abs(dx)>=width || abs(dy)>=height) { return null; }
+    // overlap, but is it real?
+    float angle = atan2(dy,dx);
+    if(angle<0) { angle += 2*PI; }
+    return new float[]{dx, dy, angle};
+  }
+
+  /**
    * Set up the coordinate transformations
    * and then call whatever implementation
    * of "drawObject" exists.
@@ -199,7 +269,8 @@ abstract class Positionable {
         if(hflip) { scale(-1,1); }
         if(vflip) { scale(1,-1); }
         scale(sx,sy);
-        translate(-width/2 - ox, -height/2 - oy);
+        //translate(-width/2 - ox, -height/2 - oy);
+        translate(ox, oy);
         drawObject();
       }
       popMatrix();
@@ -214,15 +285,16 @@ abstract class Positionable {
 
       // not on a boundary: unrestricted motion.
       if(boundary==null) {
-        x += ix;
-        y += iy;
+        x += ix + (aFrameCount * ixA);
+        y += iy + (aFrameCount * iyA);
+        aFrameCount++;
       }
 
       // previously on a boundary, but we moved off of it: unrestricted motion,
       // and make sure to notify the boundary that we are no longer attached.
       else if(boundary.outOfBounds(x,y)) {
-        x += ix;
-        y += iy;
+        x += ix + (aFrameCount * ixA);
+        y += iy + (aFrameCount * iyA);
         detach();
         // TODO: when we detach, we need to see if we pass
         //       through some other boundary (such as in
@@ -231,7 +303,7 @@ abstract class Positionable {
 
       // we're attached to a boundary, so we're subject to impulse redirection.
       else {
-        float[] redirected = boundary.redirectForce(x, y, ix, iy);
+        float[] redirected = boundary.redirectForce(x, y, ix + (aFrameCount * ixA), iy + (aFrameCount * iyA));
         x += redirected[0];
         y += redirected[1];
         // if this makes us fly off the boundary, detach

@@ -6,39 +6,203 @@
  * isometric levels (head over heels?)
  */
 class Level {
+  // debug flags, very good for finding out what's going on.
+  boolean debug = true,
+          showBackground = true,
+          showBoundaries = true,
+          showPickups = true,
+          showInteractors = true,
+          showActors = true,
+          showForeground = true;
+  
+  
+  class ViewBox { float x=0, y=0, w=0, h=0; }
+
   // the list of "standable" regions
   ArrayList<Boundary> boundaries = new ArrayList<Boundary>();
+  void addBoundary(Boundary boundary) { boundaries.add(boundary); }
 
-  // TODO: add and retrieve boundaries based on grid coordinates
+  // The list of static, non-interacting sprites, building up the background
+  ArrayList<Positionable> fixed_background = new ArrayList<Positionable>();
+  void addStaticSpriteBG(Positionable fixed) { this.fixed_background.add(fixed); }
 
-  // non-player static sprites
-  ArrayList<Positionable> npss = new ArrayList<Positionable>();
+  // The list of static, non-interacting sprites, building up the foreground
+  ArrayList<Positionable> fixed_foreground = new ArrayList<Positionable>();
+  void addStaticSpriteFG(Positionable fixed) { this.fixed_foreground.add(fixed); }
 
-  // non-player active sprites
-  ArrayList<Actor> npas = new ArrayList<Actor>();
+  // The list of sprites that may only interact with the player(s) (and boundaries)
+  ArrayList<Pickup> pickups = new ArrayList<Pickup>();
+  void addForPlayerOnly(Pickup pickup) { pickups.add(pickup); }
 
-  // player sprite(s)
+  // The list of fully interacting non-player sprites
+  ArrayList<Interactor> interactors = new ArrayList<Interactor>();
+  void addInteractor(Interactor interactor) { interactors.add(interactor); }
+
+  // The list of player sprites
   ArrayList<Actor> actors = new ArrayList<Actor>();
+  void addActor(Actor actor) { actors.add(actor); }
+  
+  
+  // level dimensions
+  float width, height;
+
+  // current viewbox
+  ViewBox viewbox = new ViewBox();
   
   /**
-   * draw
+   * Levels have dimensions!
+   */
+  Level(float _width, float _height) { width = _width; height = _height; }
+  
+  /**
+   * The viewbox only shows part of the level,
+   * so that we don't waste time computing things
+   * for parts of the level that we can't even see.
+   */
+  void setViewBox(float _x, float _y, float _w, float _h) {
+    viewbox.x = _x;
+    viewbox.y = _y;
+    viewbox.w = _w;
+    viewbox.h = _h;
+  }
+  
+  /**
+   * Select all boundaries that are visible.
+   */
+  ArrayList<Boundary> getBoundaries() {
+    // TODO: coordinate-based selection goes here
+    return boundaries;
+  }
+
+  /**
+   * Select all non-player static sprites that are visible.
+   */
+  ArrayList<Positionable> getStaticSpritesBG() {
+    // TODO: coordinate-based selection goes here
+    return fixed_background;
+  }
+
+  /**
+   * Select all non-player static sprites that are visible.
+   */
+  ArrayList<Positionable> getStaticSpritesFG() {
+    // TODO: coordinate-based selection goes here
+    return fixed_foreground;
+  }
+
+  /**
+   * Select all non-player static sprites that are visible.
+   */
+  ArrayList<Pickup> getForPlayerOnlies() {
+    // TODO: coordinate-based selection goes here
+    return pickups;
+  }
+
+  /**
+   * Select all non-player static sprites that are visible.
+   */
+  ArrayList<Interactor> getInteractors() { 
+    // TODO: coordinate-based selection goes here
+    return interactors;
+  }
+
+  /**
+   * Select all non-player static sprites that are visible.
+   */
+  ArrayList<Actor> getActors() { 
+    // TODO: coordinate-based selection goes here
+    return actors;
+  }
+
+  /**
+   * draw the leve, as seen from the viewbox
    */
   void draw() {
-    fill(0);
-    for(Positionable s: npss) { s.draw(); }
-    for(Boundary b: boundaries) { b.draw(); }
-    for(Actor a: npas) {
-      for(Boundary b: boundaries) { 
-        if(a.boundary==null) {
-          interact(b,a); }}
-      a.draw();
+    // local overrides
+    ArrayList<Boundary> boundaries = getBoundaries();
+    ArrayList<Positionable> fixed_background = getStaticSpritesBG();
+    ArrayList<Pickup> pickups = getForPlayerOnlies();
+    ArrayList<Interactor> interactors = getInteractors();
+    ArrayList<Actor> actors = getActors();
+    ArrayList<Positionable> fixed_foreground = getStaticSpritesFG();
+    
+    // fixed background sprites
+    if(showBackground) {
+      for(Positionable s: fixed_background) {
+        s.draw();
+      }
     }
-    for(Actor a: actors) {
+    
+    // boundaries
+    if(showBoundaries) {
       for(Boundary b: boundaries) {
-        if(a.boundary==null) {
-          interact(b,a); }}
-      a.draw();
-    }   
+        b.draw();
+      }
+    }
+    
+    // pickups
+    if(showPickups) {
+      for(Pickup p: pickups) {
+        // boundary interference?
+        if(p.interacting) {
+          for(Boundary b: getBoundaries()) { 
+            if(p.boundary==null) {
+              interact(b,p); }}}
+        // player interaction?
+        for(Actor a: actors) {
+          if(!a.interacting) continue;
+          float[] overlap = a.overlap(p);
+          if(overlap!=null) {
+            p.overlapOccuredWith(a); }}
+        // draw pickup
+        p.draw();
+      }
+    }
+
+    // non-player actors
+    if(showInteractors) {
+      for(int i = interactors.size()-1; i>=0; i--) {
+        Interactor a = interactors.get(i);
+        if(a.remove) { interactors.remove(i); continue; }
+        // boundary interference?
+        if(a.interacting) {
+          for(Boundary b: getBoundaries()) { 
+            if(a.boundary==null) {
+              interact(b,a); }}}
+        // draw interactor
+        a.draw();
+      }
+    }
+
+    // player actors
+    if(showActors) {
+      for(int i=actors.size()-1; i>=0; i--) {
+        Actor a = actors.get(i);
+        if(a.remove) { actors.remove(i); continue; }
+        if(a.interacting) {
+          // boundary interference?
+          for(Boundary b: boundaries) {
+            if(a.boundary==null) {
+              interact(b,a); }}
+  
+          // collisions with other sprites?
+          for(Actor o: interactors) {
+            if(!o.interacting) continue;
+            float[] overlap = a.overlap(o);
+            if(overlap!=null) {
+              a.overlapOccuredWith(o, overlap);
+              o.overlapOccuredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }}}
+        // draw actor
+        a.draw();
+      }
+    }
+
+    // fixed background sprites
+    if(showForeground) {
+      for(Positionable s: fixed_foreground) {
+        s.draw();
+      }
+    }
   }
   
   /**
@@ -52,12 +216,24 @@ class Level {
     }
   }
   
-  // passthrough event
+  /**
+   * passthrough event
+   */
   void keyPressed(char key, int keyCode) {
+    if(debug) {
+      if(key=='1') { showBackground = !showBackground; }
+      if(key=='2') { showBoundaries = !showBoundaries; }
+      if(key=='3') { showPickups = !showPickups; }
+      if(key=='4') { showInteractors = !showInteractors; }
+      if(key=='5') { showActors = !showActors; }
+      if(key=='6') { showForeground = !showForeground; }
+    }
     for(Actor a: actors) {
       a.keyPressed(key,keyCode); }}
 
-  // passthrough event
+  /**
+   * passthrough event
+   */
   void keyReleased(char key, int keyCode) {
     for(Actor a: actors) {
       a.keyReleased(key,keyCode); }}

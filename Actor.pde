@@ -11,18 +11,31 @@
  */
 abstract class Actor extends Positionable {
 
+  // are we colliding with another actor?  
+  boolean colliding = false;
+  
+  // regular interaction with other actors
+  boolean interacting = true;
+  
+  // should we be removed?
+  boolean remove = false;
+
   // The active state for this actor (with associated sprite)
   State active;
 
   // all states for this actor
   HashMap<String, State> states = new HashMap<String, State>();
   
+  // actor name
+  String name = "";
+  
   // simple constructor
-  Actor() { setPosition(0,0); }
+  Actor(String _name) { name = _name; setPosition(0,0); }
 
   // full constructor
-  Actor(float dampening_x, float dampening_y) {
+  Actor(String _name, float dampening_x, float dampening_y) {
     super();
+    name = _name;
     setImpulseCoefficients(dampening_x, dampening_y);
   }
 
@@ -50,7 +63,16 @@ abstract class Actor extends Positionable {
     if (tmp!=active) {
       tmp.reset();
       active = tmp;
+      width = active.sprite.width;
+      height = active.sprite.height;
     }
+  }
+
+  /**
+   * What happens when we touch another actor?
+   */
+  void overlapOccuredWith(Actor other, float[] direction) {
+    colliding = true;
   }
 
   /**
@@ -62,6 +84,28 @@ abstract class Actor extends Positionable {
     y = _y;
     ix = 0;
     iy = 0;
+  }
+
+  /**
+   * Sometimes actors need to be "invulnerable"
+   * while going through an animation. This
+   * is achieved by setting "interacting" to false
+   */
+  void setInteracting(boolean _interacting) {
+    interacting = _interacting;
+  }
+  
+  /**
+   * it's possible that an actor
+   * has to be removed from the
+   * level. If so, we call this method:
+   */
+  void removeActor() {
+    animated = false;
+    visible = false;
+    states = null;
+    active = null;
+    remove = true;
   }
   
   /**
@@ -76,8 +120,25 @@ abstract class Actor extends Positionable {
    * Draw this actor.
    */
   void drawObject() {
-    if(active!=null) { active.draw(); }
-    else { pushStyle(); strokeWeight(7); stroke(200,0,100); point(0,0); popStyle(); }
+    if(active!=null) {
+      active.draw(); 
+    }
+    else {
+      pushStyle();
+      strokeWeight(7);
+      stroke(200,0,100);
+      point(0,0); popStyle();
+    }
+    /*
+      if(active!=null && colliding) {
+        pushStyle();
+        noStroke();
+        fill(255,0,0,150);
+        rect(-width/2+active.sprite.ox,-height/2-active.sprite.oy,width,height);
+        popStyle();
+      }
+      colliding = false;
+    */
   }
 
 // ====== KEY HANDLING ======
@@ -102,8 +163,10 @@ abstract class Actor extends Positionable {
       keyDown[target] = false; }}
 
   // lock a key so that it cannot be triggered repeatedly
-  protected void lock(int keyCode) {
-    locked[keyCode] = true; }
+  protected void ignore(int keyCode) {
+    locked[keyCode] = true; 
+    keyDown[keyCode] = false;
+  }
 
   // handle key presses
   void keyPressed(char key, int keyCode) {
@@ -122,4 +185,7 @@ abstract class Actor extends Positionable {
 
   // token implementation  
   abstract void handleStateFinished(State which);
+  
+  // token implementation
+  abstract void pickedUp(Pickup pickup);
 }

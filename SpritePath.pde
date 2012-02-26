@@ -9,7 +9,10 @@ class SpritePath {
   
   // animation path offset
   int pathOffset = 0;
-  
+
+  // how many path frames have been served yet?
+  int servedFrame = 0;  
+
   // is this path cyclical?
   boolean looping = true;
   boolean noRotation = false;
@@ -171,15 +174,16 @@ class SpritePath {
    * effect a path reset
    */
   void reset() {
-    pathOffset = -frameCount;
+    pathOffset = 0;
   }
 
   /**
-   * Returns the x/y coordinate, as well as scale and rotation
-   * for a specific frame number in this path.
+   * get the next frame's pathing information
    */
-  float[] getPathInformation(int frameNumber) {
-    int frame = (frameNumber+pathOffset) % data.size();
+  float[] getNextFrameInformation() {
+    int frame = pathOffset + servedFrame++;
+    if(frame<0) { frame = 0; }
+    else if(frame>=data.size()) { frame = data.size()-1; }
     FrameInformation pp = data.get(frame);
     return new float[]{pp.x, pp.y, pp.sx, pp.sy, pp.r};
   }

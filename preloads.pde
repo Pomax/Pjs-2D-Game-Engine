@@ -1,12 +1,35 @@
-/* @pjs preload="graphics/backgrounds/ground-filler.png,
+/* @pjs pauseOnBlur="true";
+        preload="graphics/backgrounds/ground-filler.png,
                  graphics/backgrounds/ground-slant.png,
                  graphics/backgrounds/ground-top.png,
                  graphics/backgrounds/sky.png,
+                 graphics/backgrounds/bush-01.png,
+                 graphics/backgrounds/bush-02.png,
+                 graphics/backgrounds/bush-03.png,
+                 graphics/backgrounds/bush-04.png,
+                 graphics/backgrounds/bush-05.png,
+
+                 graphics/assorted/Dragon-coin.png,
+                 graphics/assorted/Regular-coin.png,
+                 graphics/assorted/Mushroom.png,
+
+                 graphics/enemies/Dead-koopa.png,
+                 graphics/enemies/Naked-koopa-walking.png,
                  graphics/enemies/Red-koopa-walking.png,
+                 graphics/enemies/Red-koopa-standing.png,
+
                  graphics/mario/small/Crouching-mario.png,
                  graphics/mario/small/Dead-mario.png,
                  graphics/mario/small/Jumping-mario.png,
                  graphics/mario/small/Looking-mario.png,
                  graphics/mario/small/Running-mario.png,
                  graphics/mario/small/Spinning-mario.png,
-                 graphics/mario/small/Standing-mario.png"; */
+                 graphics/mario/small/Standing-mario.png,
+                 
+                 graphics/mario/big/Crouching-mario.png,
+                 graphics/mario/big/Dead-mario.png,
+                 graphics/mario/big/Jumping-mario.png,
+                 graphics/mario/big/Looking-mario.png,
+                 graphics/mario/big/Running-mario.png,
+                 graphics/mario/big/Spinning-mario.png,
+                 graphics/mario/big/Standing-mario.png"; */

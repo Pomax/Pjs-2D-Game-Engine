@@ -1,5 +1,16 @@
 // ====== LET'S GET OUR NINTENDO ON! ======
 
+// This value determines how much we "slide" when we walk
+float DAMPENING = 0.75;
+
+// This value determines how much 'gravity' we experience
+float DOWN_FORCE = 0.7;
+
+// This value determines how strong gravity's hold on us is.
+// The higher the value, the more speed we pick up as we fall.
+float ACCELERATION = 1.3;
+
+// and this is the level we'll be playing.
 Level level;
 
 // boilerplate
@@ -9,7 +20,7 @@ void setup() {
   // It is essential that this is called
   // before any sprites are made:
   SpriteMapHandler.setSketch(this);
-  level = new TestLevel(); }
+  level = new TestLevel(width, height); }
 
 // Render mario in glorious canvas definition
 void draw() { level.draw(); }
@@ -36,56 +47,116 @@ class TestLevel extends Level {
   /**
    * Test level implementation
    */
-  TestLevel()
+  TestLevel(float w, float h)
   {
-    // background sprite
-    Sprite bgsprite = new Sprite("graphics/backgrounds/sky.png", 1, 1);
+    super(w, h);
+    setBackground();
+    addGround();    
+    addBushes();
+    addCloudPlatforms();
+    addCoins();
+    addDragonCoins();
+  }
+  
+  // the background is a sprite
+  void setBackground() {
+    Sprite bgsprite = new Sprite("graphics/backgrounds/sky.png");
     bgsprite.align(RIGHT, TOP);
     TilingSprite backdrop = new TilingSprite(bgsprite, 0, 0, width, height);
-    npss.add(backdrop);
-
-    // screen boundaries
-    float pad = 10;
-
-    // "ground" parts of the level
-    Sprite groundsprite = new Sprite("graphics/backgrounds/ground-top.png", 1, 1);
+    addStaticSpriteBG(backdrop);
+  }
+  
+  // "ground" parts of the level
+  void addGround() {
+    // top of the ground
+    Sprite groundsprite = new Sprite("graphics/backgrounds/ground-top.png");
     TilingSprite groundline = new TilingSprite(groundsprite, 0, height-40, 2*width, height - 40 + groundsprite.height);
-    npss.add(groundline);
-    Sprite groundfillsprite = new Sprite("graphics/backgrounds/ground-filler.png", 1, 1);
-    TilingSprite groundfiller = new TilingSprite(groundfillsprite, 0, height-40 + groundsprite.height, 2*width, height);
-    npss.add(groundfiller);
-    boundaries.add(new Boundary(-pad,height-48,width+pad,height-48));
-    Sprite groundslant = new Sprite("graphics/backgrounds/ground-slant.png",1,1);
+    addStaticSpriteBG(groundline);
+    // ground filler
+    TilingSprite groundfiller = new TilingSprite(new Sprite("graphics/backgrounds/ground-filler.png"), 0, height-40 + groundsprite.height, 2*width, height);
+    addStaticSpriteBG(groundfiller);
+    boundaries.add(new Boundary(-20,height-48,width+20,height-48));
+    // the angled bit of sticking-out-ground
+    Sprite groundslant = new Sprite("graphics/backgrounds/ground-slant.png");
     groundslant.align(RIGHT,TOP);
     groundslant.setPosition(width/2, height - groundslant.height - 48);
     boundaries.add(new Boundary(width/2, height - groundslant.height, width/2 + 48, height - groundslant.height - 48));
-    npss.add(groundslant);
+    addStaticSpriteBG(groundslant);
+  }
+  
+  // add some mario-style bushes
+  void addBushes() {
+    // one bush, composed of four segmetns (sprites 1, 3, 4 and 5)
+    int[] bush = {1, 3, 4, 5};
+    for(int i=0, xpos=0, end=bush.length; i<end; i++) {
+      Sprite sprite = new Sprite("graphics/backgrounds/bush-0"+bush[i]+".png");
+      xpos += sprite.width;
+      sprite.align(CENTER,BOTTOM);
+      sprite.setPosition(width/4.4 + xpos, height-48);
+      addStaticSpriteFG(sprite); }
+    // two bush, composed of eight segments
+    bush = new int[]{1, 2, 4, 2, 3, 4, 2, 5};
+    for(int i=0, xpos=0, end=bush.length; i<end; i++) {
+      Sprite sprite = new Sprite("graphics/backgrounds/bush-0"+bush[i]+".png");
+      xpos += sprite.width;
+      sprite.align(CENTER,BOTTOM);
+      sprite.setPosition(3*width/4 + xpos, height-48);
+      addStaticSpriteFG(sprite); }
+  }
+  
+  // clouds platforms!
+  void addCloudPlatforms() {
+    addBoundary(new Boundary(54 +   0, 96 +   0, 105 +   0, 96 +   0));
+    addBoundary(new Boundary(54 + 224, 96 +  48, 105 + 224, 96 +  48));
+    addBoundary(new Boundary(54 + 336, 96 +  32, 105 + 336, 96 +  32));
+    addBoundary(new Boundary(54 + 256, 96 + 192, 105 + 256, 96 + 192));
+    addBoundary(new Boundary(54 + 336, 96 + 208, 105 + 336, 96 + 208));
+    addBoundary(new Boundary(54 + 138, 96 + 144, 105 + 112, 96 + 144));
+    addBoundary(new Boundary(54 + 186, 96 + 160, 105 + 160, 96 + 160));
+    addBoundary(new Boundary(54 + 330, 96 + 256, 105 + 322, 96 + 256));
+  }
 
-    // clouds platforms!
-    boundaries.add(new Boundary(54 +   0, 96 +   0, 105 +   0, 96 +   0));
-    boundaries.add(new Boundary(54 + 224, 96 +  48, 105 + 224, 96 +  48));
-    boundaries.add(new Boundary(54 + 336, 96 +  32, 105 + 336, 96 +  32));
-    boundaries.add(new Boundary(54 + 256, 96 + 192, 105 + 256, 96 + 192));
-    boundaries.add(new Boundary(54 + 336, 96 + 208, 105 + 336, 96 + 208));
-    boundaries.add(new Boundary(54 + 138, 96 + 144, 105 + 112, 96 + 144));
-    boundaries.add(new Boundary(54 + 186, 96 + 160, 105 + 160, 96 + 160));
-    boundaries.add(new Boundary(54 + 330, 96 + 256, 105 + 322, 96 + 256));
-
-    // let's a-make a di Mario:
-    mario = new Mario();
-    mario.setPosition(width/2,height/2);
-    mario.setForces(0,1);
-    actors.add(mario);
+  // add some coins
+  void addCoins() {
+    addCoin(80,96);
+    addCoin(80 + 224, 96 +  48);
+    addCoin(80 + 336, 96 +  32);
+    addCoin(80 + 256, 96 + 192);
+    addCoin(80 + 336, 96 + 208);
+    addCoin(80 + 126, 96 + 144);
+  }
+  
+  // add some mysterious coins
+  void addDragonCoins() {
+    addForPlayerOnly(new DragonCoin(116, 280));
+    addForPlayerOnly(new DragonCoin(140, 298));
+    addForPlayerOnly(new DragonCoin(180, 330));
+    addForPlayerOnly(new DragonCoin(204, 298));
+  }
+  
+  // convenient shortcut method for placing three coins at once
+  void addCoin(float x, float y) {
+    addForPlayerOnly(new Coin(x-16, y - 40));
+    addForPlayerOnly(new Coin(   x, y - 40));
+    addForPlayerOnly(new Coin(x+16, y - 40));
   }
 
   /**
    * Render mario in glorious canvas definition
    */
   void draw() {
+    // make sure we always have a Mario!
+    if(actors.size()==0) {
+      mario = new Mario();
+      mario.setPosition(width/2,height/2);
+      actors.add(mario); }
+  
     // blue background color
     background(0,100,190);
+
     // draw the level content
     super.draw();
+    
     // wrap-around for the mario sprite
     if(mario.x<0) mario.setPosition(width,mario.y);
     if(mario.x>width) mario.setPosition(0,mario.y);
@@ -96,10 +167,14 @@ class TestLevel extends Level {
    * every time we click on the screen!
    */
   void mousePressed(int mx, int my) {
-    Actor koopa = new Koopa(mx, my);
-    koopa.setPosition(mx, my);
-    koopa.setForces(-0.2,1);
-    npas.add(koopa);
+    if(mouseButton == LEFT) {
+      Koopa koopa = new Koopa(mx, my);
+      koopa.setPosition(mx, my);
+      koopa.addForces(-0.2,0);
+      addInteractor(koopa); }
+    else if(mouseButton == RIGHT) {
+      addForPlayerOnly(new Mushroom(mx, my));
+    }
   }
 }
 
@@ -116,17 +191,15 @@ class Mario extends Actor {
   float speedStep = 1.3;
 
   // jumping uses an impulse 19 times that of a step
-  float speedHeight = 19;
+  float speedHeight = 21;
 
   /**
    * The Mario constructor
    */
   Mario() {
-    // Set up impulse dampening at 80% per frame,
-    // for that old school "slidy" feel.
-    super(0.8, 0.8);
-    // Just an actor can't "do" anything; we need
-    // to define some states for this actor.
+    super("Mario", DAMPENING, DAMPENING);
+    setForces(0, DOWN_FORCE);
+    setAcceleration(0, ACCELERATION);
     setupStates();
   }
 
@@ -138,7 +211,7 @@ class Mario extends Actor {
     String sizeSet = "small";
     
     // when not moving
-    State standing = new State("standing","graphics/mario/"+sizeSet+"/Standing-mario.png",1,1);
+    State standing = new State("standing","graphics/mario/"+sizeSet+"/Standing-mario.png");
     standing.sprite.align(CENTER, BOTTOM);
     addState(standing);
 
@@ -149,23 +222,23 @@ class Mario extends Actor {
     addState(running);
 
     // when [down] is pressed
-    State crouching = new State("crouching","graphics/mario/"+sizeSet+"/Crouching-mario.png",1,1);
+    State crouching = new State("crouching","graphics/mario/"+sizeSet+"/Crouching-mario.png");
     crouching.sprite.align(CENTER, BOTTOM);
     addState(crouching);
   
     // when [up] is pressed
-    State looking = new State("looking","graphics/mario/"+sizeSet+"/Looking-mario.png",1,1);
+    State looking = new State("looking","graphics/mario/"+sizeSet+"/Looking-mario.png");
     looking.sprite.align(CENTER, BOTTOM);
     addState(looking);
 
     // when pressing the A (jump) button
-    State jumping = new State("jumping","graphics/mario/"+sizeSet+"/Jumping-mario.png",1,1);
+    State jumping = new State("jumping","graphics/mario/"+sizeSet+"/Jumping-mario.png");
     jumping.sprite.align(CENTER, BOTTOM);
     jumping.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  24);
     addState(jumping);
 
     // when pressing the A button while crouching
-    State crouchjumping = new State("crouchjumping","graphics/mario/"+sizeSet+"/Crouching-mario.png",1,1);
+    State crouchjumping = new State("crouchjumping","graphics/mario/"+sizeSet+"/Crouching-mario.png");
     crouchjumping.sprite.align(CENTER, BOTTOM);
     crouchjumping.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  24);
     addState(crouchjumping);
@@ -175,6 +248,17 @@ class Mario extends Actor {
     spinning.sprite.align(CENTER, BOTTOM);
     spinning.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  24);
     addState(spinning);
+
+    // if we mess up, we die =(
+    State dead = new State("dead","graphics/mario/"+sizeSet+"/Dead-mario.png",1,2);
+    dead.sprite.align(CENTER, BOTTOM);
+    dead.sprite.setNoRotation(true);
+    dead.sprite.setLooping(false);
+    dead.sprite.addPathCurve(0,0,1,1,0,
+                             0,-20,
+                             0,0,
+                             0,300,1,1,0,  24,1);
+    addState(dead);
     
     // Finally, we make sure to start off in the "standing" state
     setCurrentState("standing");
@@ -213,7 +297,7 @@ class Mario extends Actor {
       if (keyDown[BUTTON_A] && boundary!=null) {
         if (active.name != "jumping" && active.name != "crouchjumping" && active.name != "spinning") {
           // first off, jumps may not auto-repeat, so we lock the jump button
-          lock(BUTTON_A);
+          ignore(BUTTON_A);
           // make sure we unglue ourselves from the platform we're standing on:
           detach();
           // then generate a massive impulse upward:
@@ -230,7 +314,7 @@ class Mario extends Actor {
       else if (keyDown[BUTTON_B] && boundary!=null) {
         if (active.name != "jumping" && active.name != "crouchjumping" && active.name != "spinning") {
           // first off, shooting and spin jumping may not auto-repeat, so we lock the shoot button
-          lock(BUTTON_B);
+          ignore(BUTTON_B);
           // make sure we unglue ourselves from the platform we're standing on:
           detach();
           // then generate a massive impulse upward:
@@ -256,9 +340,15 @@ class Mario extends Actor {
     }
   }
 
-  // required method
-  void handleStateFinished(State which) {}
-  
+  /**
+   * If Mario loses, remove him from the level.
+   */
+  void handleStateFinished(State which) {
+    if(which.name == "dead") {
+      removeActor();
+    }
+  }
+
   /**
    * When Mario touches down on a platform,
    * which state should he switch to?
@@ -274,6 +364,57 @@ class Mario extends Actor {
       setCurrentState("standing");
     }
   }
+  
+  /**
+   * What happens when we touch another actor?
+   */
+  void overlapOccuredWith(Actor other, float[] direction) {
+    if(other instanceof Koopa) {
+      Koopa koopa = (Koopa) other;
+      float angle = direction[2];
+
+      // We bopped a koopa on the head!
+      float tolerance = radians(75);
+      if(PI/2 - tolerance <= angle && angle <= PI/2 + tolerance) {
+        boolean shouldJump = koopa.squish();
+        if(shouldJump) {
+          setImpulse(0,ACCELERATION*speedHeight*-speedStep);
+          if(active.name!="spinning") {
+            setCurrentState("jumping");
+          }
+        }
+      }
+
+      // Oh no! We missed and touched a koopa!
+      else {
+        setInteracting(false);
+        setCurrentState("dead");
+      }
+    }
+  }
+  
+  /**
+   * What happens when we get pickups?
+   */
+  void pickedUp(Pickup pickup) {
+    if(pickup.name=="Regular coin") {
+      // increase our score
+    }
+    else if(pickup.name=="Dragon coin") {
+      // increase our secret dragon score
+    }
+    else if(pickup.name=="Mushroom") {
+      // become big!
+      powerUp();
+    }
+  }
+  
+  /**
+   * This is where we must schedule an actor replacement
+   */
+  void powerUp() {
+    // ... code goes here...
+  }
 }
 
 
@@ -283,17 +424,16 @@ class Mario extends Actor {
 /**
  * A red koopa trooper actor
  */
-class Koopa extends Actor {
+class Koopa extends Interactor {
 
   /**
    * The constructor for the koopa trooper
    * is essentially the same as for Mario.
    */
   Koopa(int mx, int my) {
-    // koopas are slowed down at the same pace that Mario is.
-    super(0.8, 0.8);
-    // Just like Mario, a koopa trooper can't "do" anything.
-    // We need to define some states for this actor.
+    super("Red koopa", DAMPENING, DAMPENING);
+    setForces(0, DOWN_FORCE);
+    setAcceleration(0, ACCELERATION);
     setupStates();
   }
 
@@ -301,20 +441,110 @@ class Koopa extends Actor {
    * So, what can koopa troopers do?
    */
   void setupStates() {
-    // koopa has one state at the moment.
+    // when walking around
     State walking = new State("walking","graphics/enemies/Red-koopa-walking.png",1,2);
     walking.sprite.align(CENTER, BOTTOM);
     walking.sprite.setAnimationSpeed(0.25); 
     addState(walking);
+
+    // when just standing, doing nothing
+    State standing = new State("standing","graphics/enemies/Red-koopa-standing.png",1,2);
+    standing.sprite.align(CENTER, BOTTOM);
+    addState(standing);
+
+    // if we get squished, we first get naked...
+    State naked = new State("naked","graphics/enemies/Naked-koopa-walking.png",1,2);
+    naked.sprite.setAnimationSpeed(0.25); 
+    naked.sprite.align(CENTER, BOTTOM);
+    addState(naked);
+
+    // if we get squished again, we die!
+    State dead = new State("dead","graphics/enemies/Dead-koopa.png");
+    dead.sprite.align(CENTER, BOTTOM);
+    dead.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  12);
+    dead.sprite.setLooping(false);
+    addState(dead);
+
+    // by default, the koopa will be walking
+    setCurrentState("walking");
+  }
+  
+  /**
+   * Mario squished us! O_O
+   *
+   * Should we just lose our shell, or have we
+   * been properly squished dead?
+   */
+  boolean squish() {
+    // if we're scheduled for removal,
+    // don't do anything.
+    if(remove) return false;
+
+    // We're okay, we just lost our shell.
+    if(active.name != "naked" && active.name != "dead") {
+      setCurrentState("naked");
+      // mario should jump after trying to squish us
+      return true;
+    }
+
+    // Ohnoes! we've been squished properly!
+    // make sure we stop moving forward
+    setForces(0,0);
+    setInteracting(false);
+    setCurrentState("dead");
+    // mario should not jump after deadifying us
+    return true;
   }
 
-  void handleInput() {
-    // While we don't let players control
-    // koopa troopers... we could!
-  }
+  /**
+   * While we don't let players control koopa troopers... we could!
+   */
+  void handleInput() {}
 
+  /**
+   * "when state finishes" behaviour: when the
+   * "blargh, I am dead!" state is done, we need
+   * to remove this koopa from the game.
+   */
   void handleStateFinished(State which) {
-    // Because koopa troopers only have one
-    // state, there's nothing else to switch to.
+    if(which.name=="dead") {
+      removeActor(); 
+    }
+  }
+}
+
+
+// ==========================
+
+
+/**
+ * regular coin
+ */
+class Coin extends Pickup {
+  Coin(float x, float y) {
+    super("Regular coin", "graphics/assorted/Regular-coin.png", 1, 4, x, y);
+  }
+}
+
+/**
+ * dragon coin!
+ */
+class DragonCoin extends Pickup {
+  DragonCoin(float x, float y) {
+    super("Dragon coin", "graphics/assorted/Dragon-coin.png", 1, 10, x, y);
+  }
+}
+
+/**
+ * delicious mushroom
+ */
+class Mushroom extends Pickup {
+  Mushroom(float x, float y) {
+    super("Mushroom", "graphics/assorted/Mushroom.png", 1, 1, x, y);
+    getState("Mushroom").sprite.align(CENTER,BOTTOM);
+    // make mushroom gently slide to the right
+    setImpulseCoefficients(0,0);
+    setForces(2, DOWN_FORCE);
+    setAcceleration(0,ACCELERATION);
   }
 }
