@@ -45,7 +45,7 @@ class SpriteProxy {
   void drawObject() {
     int ofo=sprite.frameOffset;
     int pfo=sprite.path.pathOffset;
-    
+
     // 2) apply proxy values and draw
     sprite.frameOffset=frameOffset;
     sprite.path.pathOffset=pathOffset;

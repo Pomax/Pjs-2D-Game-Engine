@@ -1,3 +1,9 @@
+/**
+ * Interactors are non-player actors
+ * that can interact with other interactors
+ * as well as player actors. However,
+ * they do not interact with pickups.
+ */
 abstract class Interactor extends Actor {
 
   // simple constructor
@@ -9,5 +15,4 @@ abstract class Interactor extends Actor {
 
   // Interactors don't get pickups
   final void pickedUp(Pickup pickup){}
-
 }

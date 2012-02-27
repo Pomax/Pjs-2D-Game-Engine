@@ -4,11 +4,11 @@
 class TilingSprite extends Positionable {
   Sprite sprite;
 
-  //
+  // from where to where?
   float x1, y1, x2, y2;
 
   /**
-   *
+   * Set up a sprite to be tiled from x1/y1 to x2/y2
    */
   TilingSprite(Sprite _sprite, float minx, float miny, float maxx, float maxy) {
     sprite = _sprite;
@@ -32,6 +32,7 @@ class TilingSprite extends Positionable {
     }
     sprite.setPosition(ox,oy);
   }
-  
+
+  // unused for tiling sprites
   void drawObject() {}
 }

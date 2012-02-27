@@ -4,7 +4,7 @@
  * animation frames spaced equally along the x and y axes.
  */
 static class SpriteMapHandler {
-  
+
   // We need a reference to the sketch, because
   // we'll be relying on it for image loading.
   static PApplet globalSketch;
@@ -52,7 +52,7 @@ static class SpriteMapHandler {
     // we have all the information we need. Start cutting
     PImage[] sprites = new PImage[spriteCount];
     int i, j;
-    
+
     // left to right, moving through the rows top to bottom
     if (leftToRightFirst){
       for (i = 0; i < heightCount; i++){

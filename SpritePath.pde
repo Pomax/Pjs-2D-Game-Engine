@@ -6,17 +6,17 @@ class SpritePath {
 
   // container for all path points
   ArrayList<FrameInformation> data = new ArrayList<FrameInformation>();
-  
+
   // animation path offset
   int pathOffset = 0;
 
   // how many path frames have been served yet?
-  int servedFrame = 0;  
+  int servedFrame = 0;
 
   // is this path cyclical?
   boolean looping = true;
   boolean noRotation = false;
-  
+
   // private class for frame information
   private class FrameInformation {
     float x, y, sx, sy, r;
@@ -31,7 +31,7 @@ class SpritePath {
   int size() {
     return data.size();
   }
-  
+
   /**
    * Check whether this path loops
    */
@@ -64,10 +64,10 @@ class SpritePath {
 
   /**
    * Add a linear path section, using {FrameInformation} at frame X
-   * to using {FrameInformation} at frame Y. Tweening is based on 
+   * to using {FrameInformation} at frame Y. Tweening is based on
    * linear interpolation.
    */
-  void addLine(float x1, float y1, float sx1, float sy1, float r1,  
+  void addLine(float x1, float y1, float sx1, float sy1, float r1,
                float x2, float y2, float sx2, float sy2, float r2,
                float duration)
   // pointless comment to make the 11 arg functor look slightly less horrible
@@ -105,17 +105,17 @@ class SpritePath {
     // and the linear interpolation coefficients, which requires a
     // time reparameterisation of the curve. We get those as follows:
     float[] trp = SpritePathChunker.getTimeValues(x1, y1, cx1, cy1, cx2, cy2, x2, y2, duration);
-    
+
     // loop through the frames and determine the frame
     // information at each associated time value.
     int i, e=trp.length;
     for (i=0; i<e; i++) {
-    
+
       // plain [t]
       pt = (float)i/(float)e;
 
       // time repameterised [t]
-      t = trp[i];              
+      t = trp[i];
 
       // The actual [t] used depends on the mix ratio. A mix ratio of 1 means sprites slow down
       // along curves based on how strong the curve is, a ration of 0 means the sprite travels
@@ -123,7 +123,7 @@ class SpritePath {
       if (slowdown_ratio==0) {}
       else if (slowdown_ratio==1) { t = pt; }
       else { t = slowdown_ratio*pt + (1-slowdown_ratio)*t; }
-      
+
       // for convenience, we alias (1-t)
       mt = 1-t;
 
@@ -135,7 +135,7 @@ class SpritePath {
       dx = getCubicBezierDerivativeValue(x1,cx1,cx2,x2,t);
       dy = getCubicBezierDerivativeValue(y1,cy1,cy2,y2,t);
       rotation = atan2(dy,dx);
-      
+
       // NOTE:  if this was a curve based on linear->curve points, the first point will
       // have an incorrect dx/dy of (0,0), because the first control point is equal to the
       // starting coordinate. Instead, we must find dx/dy based on the next [t] value!
@@ -161,7 +161,7 @@ class SpritePath {
   private float getCubicBezierDerivativeValue(float v1, float c1, float c2, float v2, float t) {
     float tt = t*t, t6 = 6*t, tt9 = 9*tt;
     return c2*(t6 - tt9) + c1*(3 - 12*t + tt9) + (-3 + t6)*v1 + tt*(-3*v1 + 3*v2);
-  }  
+  }
 
   /**
    * Set the animation path offset
@@ -169,7 +169,7 @@ class SpritePath {
   void setOffset(int offset) {
     pathOffset = offset;
   }
-  
+
   /**
    * effect a path reset
    */
@@ -183,7 +183,8 @@ class SpritePath {
   float[] getNextFrameInformation() {
     int frame = pathOffset + servedFrame++;
     if(frame<0) { frame = 0; }
-    else if(frame>=data.size()) { frame = data.size()-1; }
+    else if(!looping && frame>=data.size()) { frame = data.size()-1; }
+    else { frame = frame % data.size(); }
     FrameInformation pp = data.get(frame);
     return new float[]{pp.x, pp.y, pp.sx, pp.sy, pp.r};
   }

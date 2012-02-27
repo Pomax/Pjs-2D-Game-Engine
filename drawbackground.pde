@@ -1,4 +1,3 @@
-
 /**
  * Draw a nice looking grid
  */

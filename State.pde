@@ -19,15 +19,25 @@ class State {
     sprite = new Sprite(spritesheet, rows, cols);
     sprite.setState(this);
   }
-  
-  void setActor(Actor _actor) { actor = _actor; }
 
+  // bind this state to an actor
+  void setActor(Actor _actor) {
+    actor = _actor; 
+    actor.width = sprite.width;
+    actor.height = sprite.height;
+  }
+
+  // reset a sprite (used when swapping states)
   void reset() { sprite.reset();}
 
+  // signal to the actor that the sprite is done running its path
   void finished() {
     if(actor!=null) {
       actor.handleStateFinished(this); }}
 
+  // if the sprite has a non-looping path: is it done running that path?
   boolean mayChange() { return sprite.mayChange(); }
+
+  // drawing the state means draw the sprite
   void draw() { sprite.draw(); }
 }

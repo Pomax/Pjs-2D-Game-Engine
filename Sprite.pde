@@ -56,7 +56,7 @@ class Sprite extends Positionable {
     y = _ypos;
     visible = _visible;
   }
-  
+
   void setState(State _state) {
     state = _state;
   }
@@ -72,6 +72,16 @@ class Sprite extends Positionable {
   }
 
   /**
+   * Get the alpha channel for a pixel
+   */
+  float getAlpha(float _x, float _y) {
+    int x = (int) _x;
+    int y = (int) _y;
+    PImage frame = frames[currentFrame];
+    return alpha(frame.get(x,y));
+  }
+
+  /**
    * Get the number of frames for this sprite
    */
   int getFrameCount() {
@@ -79,26 +89,26 @@ class Sprite extends Positionable {
   }
 
   /**
-   * Check whether this sprite is animated 
+   * Check whether this sprite is animated
    * (i.e. still has frames left to draw).
    */
   boolean isAnimated() {
     return animated;
   }
- 
+
   /**
    * Align this sprite, by treating its
-   * indicated x/y align values as 
+   * indicated x/y align values as
    * center point.
    */
-  void align(int xalign, int yalign) {
-    if(xalign==LEFT) { ox=width/2; }
-    else if(xalign==CENTER) { ox=0; }
-    else if(xalign==RIGHT)  { ox=-width/2; }
+  void align(int halign, int valign) {
+    if(halign==LEFT) { ox=width/2; }
+    else if(halign==CENTER) { ox=0; }
+    else if(halign==RIGHT)  { ox=-width/2; }
 
-    if(yalign==TOP) { oy=-height/2; }
-    else if(yalign==CENTER) { oy=0; }
-    else if(yalign==BOTTOM)  { oy=height/2; }
+    if(valign==TOP) { oy=-height/2; }
+    else if(valign==CENTER) { oy=0; }
+    else if(valign==BOTTOM)  { oy=height/2; }
   }
 
   /**
@@ -153,12 +163,15 @@ class Sprite extends Positionable {
     path.setOffset(offset);
   }
 
+  // private current frame counter
+  private int currentFrame;
+
   /**
    * Get the 'current' sprite frame.
    */
   PImage getFrame() {
     // update sprite based on path frames
-    int currentFrame = getCurrentFrameNumber();
+    currentFrame = getCurrentFrameNumber();
     if (path.size()>0) {
       float[] pathdata = path.getNextFrameInformation();
       x = pathdata[0];
@@ -168,7 +181,7 @@ class Sprite extends Positionable {
     }
     return frames[currentFrame];
   }
-  
+
   /**
    * Get the 'current' frame number. If this
    * sprite is no longer alive (i.e. it reached
@@ -207,19 +220,19 @@ class Sprite extends Positionable {
       popMatrix();
     }
   }
-  
+
   void drawObject() {};
 
 // -- pathing informmation
 
   void reset() {
     if(path.size()>0) {
-      path.reset(); 
+      path.reset();
       animated = true; }
     framesServed = 0;
     frameOffset = -frameCount;
   }
-  
+
   void stop() {
     animated=false;
   }

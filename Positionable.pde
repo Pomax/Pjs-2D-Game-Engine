@@ -74,7 +74,7 @@ abstract class Positionable {
     prevy = y;
     aFrameCount = 0;
   }
-  
+
 
   /**
    * set the impulse for this object
@@ -141,7 +141,7 @@ abstract class Positionable {
     b.attach(this);
     aFrameCount = 0;
   }
-  
+
   /**
    * Detach from whichever boundary we're attached to.
    */
@@ -235,20 +235,35 @@ abstract class Positionable {
   float getY() { return y + oy; }
 
   /**
+   * get the midpoint
+   */
+  float getMidX() { return x + ox; }
+
+  /**
+   * get the midpoint
+   */
+  float getMidY() { return y + oy; }
+
+  /**
    * Primitive sprite overlap test: bounding box
    * overlap using midpoint distance.
    */
-  // FIXME: take actual sprite shape into account
   float[] overlap(Positionable other) {
-    float xmid1 = x+ox+width/2;
-    float ymid1 = y+oy+height/2;
-    float xmid2 = other.x+other.ox+other.width/2;
-    float ymid2 = other.y+other.oy+other.height/2;
+    float w=width,h=height,ow=other.width,oh=other.height;
+    float xmid1 = getMidX();
+    float ymid1 = getMidY();
+    float xmid2 = other.getMidX();
+    float ymid2 = other.getMidY();
     float dx = xmid2 - xmid1;
     float dy = ymid2 - ymid1;
-    // no overlap?
-    if(abs(dx)>=width || abs(dy)>=height) { return null; }
-    // overlap, but is it real?
+    float dw = (w + ow)/2;
+    float dh = (h + oh)/2;
+    // no overlap if the midpoint distance is greater
+    // than the dimension half-distances put together.
+    if(abs(dx) > dw || abs(dy) > dh) {
+      return null;
+    }
+    // overlap
     float angle = atan2(dy,dx);
     if(angle<0) { angle += 2*PI; }
     return new float[]{dx, dy, angle};
@@ -264,7 +279,7 @@ abstract class Positionable {
     if (visible) {
       pushMatrix();
       {
-        translate(x, y);
+        translate(x,y);
         if (r != 0) { rotate(r); }
         if(hflip) { scale(-1,1); }
         if(vflip) { scale(1,-1); }
@@ -317,7 +332,7 @@ abstract class Positionable {
 
   // implemented by subclasses
   abstract void drawObject();
-  
+
   String toString() {
     return x+"/"+y+" im{"+ix+"/"+iy+"} (prev: "+prevx+"/"+prevy+")" ;
   }

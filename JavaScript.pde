@@ -10,7 +10,7 @@ interface JSConsole { void log(String msg); }
  */
 abstract class JavaScript {
   JSConsole console;
-  abstract void setPaths(ArrayList<ShapePrimitive> segments); 
+  abstract void setPaths(ArrayList<ShapePrimitive> segments);
 }
 
 /**

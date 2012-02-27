@@ -9,9 +9,10 @@ class Pickup extends Actor {
   String pickup_sprite = "";
   int rows = 0;
   int columns = 0;
-  
+
   /**
-   * Pickups are 
+   * Pickups are essentially Actors that mostly do nothing,
+   * until a player character runs into them. Then *poof*.
    */
   Pickup(String pun, String pus, int r, int c, float x, float y) {
     super(pun);
@@ -27,10 +28,10 @@ class Pickup extends Actor {
    */
   void setupStates() {
     State pickup = new State(name, pickup_sprite, rows, columns);
-    pickup.sprite.setAnimationSpeed(0.25); 
+    pickup.sprite.setAnimationSpeed(0.25);
     addState(pickup);
   }
-  
+
   /**
    * A pickup disappears when touched by a player actor.
    */

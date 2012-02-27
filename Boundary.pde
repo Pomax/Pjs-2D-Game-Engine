@@ -110,13 +110,13 @@ class Boundary extends Positionable {
   float[] blocks(float x1, float y1, float x2, float y2) {
     // perform a translation-rotation about (x3,y3)
     float[] tr = translateRotateXY3(x1, y1, x2, y2, x, y, xw, yh);
-    
+
     // Is our line segment in range? Because our
     // reference line is now flat, we can simply
     // check the x-coordinates.
     if(tr[0] < 0     && tr[2] < 0)     { return null; }
     if(tr[0] > tr[6] && tr[2] > tr[6]) { return null; }
-    
+
     // Let's find out where these two lines meet.
     float dx = tr[2] - tr[0];       // x2n - x1n;
     float dy = tr[3] - tr[1];       // y2n - y1n;
@@ -186,7 +186,6 @@ class Boundary extends Positionable {
   /**
    * ` force along this boundary's surface
    */
-  // FIXME: actually make this work
   float[] redirectForce(float x, float y, float fx, float fy) {
     float x1 = x, y1 = y, x2 = x+fx, y2 = y+fy;
     // Will this force illegally push the actor through the boundary?
@@ -197,7 +196,6 @@ class Boundary extends Positionable {
       float iy = nx2 * sina;
       return new float[]{ix, iy, 1};
     }
-
     // No it won't, pass-through the impulse unmodified.
     return new float[]{fx, fy, 0};
   }

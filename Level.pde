@@ -1,9 +1,14 @@
 /**
- * This is a test class for implementing levels.
- * note that while this tests a sidescroller
- * (effectively), it should be equally suited to
- * doing top-down view things (say, zelda?) or
- * isometric levels (head over heels?)
+ * This class defines a generic sprite engine level.
+ * It has the following components:
+ *
+ *  - background sprite layer
+ *  - (actor blocking) boundaries
+ *  - pickup 'actors'
+ *  - non-player actors
+ *  - player actors
+ *  - foreground sprite layer
+ *
  */
 class Level {
   // debug flags, very good for finding out what's going on.
@@ -14,8 +19,7 @@ class Level {
           showInteractors = true,
           showActors = true,
           showForeground = true;
-  
-  
+
   class ViewBox { float x=0, y=0, w=0, h=0; }
 
   // the list of "standable" regions
@@ -39,21 +43,21 @@ class Level {
   void addInteractor(Interactor interactor) { interactors.add(interactor); }
 
   // The list of player sprites
-  ArrayList<Actor> actors = new ArrayList<Actor>();
-  void addActor(Actor actor) { actors.add(actor); }
-  
-  
+  ArrayList<Player> players  = new ArrayList<Player>();
+  void addPlayer(Player player) { players.add(player); }
+
+
   // level dimensions
   float width, height;
 
   // current viewbox
   ViewBox viewbox = new ViewBox();
-  
+
   /**
    * Levels have dimensions!
    */
   Level(float _width, float _height) { width = _width; height = _height; }
-  
+
   /**
    * The viewbox only shows part of the level,
    * so that we don't waste time computing things
@@ -65,7 +69,7 @@ class Level {
     viewbox.w = _w;
     viewbox.h = _h;
   }
-  
+
   /**
    * Select all boundaries that are visible.
    */
@@ -101,7 +105,7 @@ class Level {
   /**
    * Select all non-player static sprites that are visible.
    */
-  ArrayList<Interactor> getInteractors() { 
+  ArrayList<Interactor> getInteractors() {
     // TODO: coordinate-based selection goes here
     return interactors;
   }
@@ -109,9 +113,9 @@ class Level {
   /**
    * Select all non-player static sprites that are visible.
    */
-  ArrayList<Actor> getActors() { 
+  ArrayList<Player> getPlayers() {
     // TODO: coordinate-based selection goes here
-    return actors;
+    return players;
   }
 
   /**
@@ -123,33 +127,35 @@ class Level {
     ArrayList<Positionable> fixed_background = getStaticSpritesBG();
     ArrayList<Pickup> pickups = getForPlayerOnlies();
     ArrayList<Interactor> interactors = getInteractors();
-    ArrayList<Actor> actors = getActors();
+    ArrayList<Player> players = getPlayers();
     ArrayList<Positionable> fixed_foreground = getStaticSpritesFG();
-    
+
     // fixed background sprites
     if(showBackground) {
       for(Positionable s: fixed_background) {
         s.draw();
       }
+    } else {
+      drawBackground();
     }
-    
+
     // boundaries
     if(showBoundaries) {
       for(Boundary b: boundaries) {
         b.draw();
       }
     }
-    
+
     // pickups
     if(showPickups) {
       for(Pickup p: pickups) {
         // boundary interference?
         if(p.interacting) {
-          for(Boundary b: getBoundaries()) { 
+          for(Boundary b: getBoundaries()) {
             if(p.boundary==null) {
               interact(b,p); }}}
         // player interaction?
-        for(Actor a: actors) {
+        for(Player a: players) {
           if(!a.interacting) continue;
           float[] overlap = a.overlap(p);
           if(overlap!=null) {
@@ -166,7 +172,7 @@ class Level {
         if(a.remove) { interactors.remove(i); continue; }
         // boundary interference?
         if(a.interacting) {
-          for(Boundary b: getBoundaries()) { 
+          for(Boundary b: getBoundaries()) {
             if(a.boundary==null) {
               interact(b,a); }}}
         // draw interactor
@@ -176,15 +182,15 @@ class Level {
 
     // player actors
     if(showActors) {
-      for(int i=actors.size()-1; i>=0; i--) {
-        Actor a = actors.get(i);
-        if(a.remove) { actors.remove(i); continue; }
+      for(int i=players.size()-1; i>=0; i--) {
+        Player a = players.get(i);
+        if(a.remove) { players.remove(i); continue; }
         if(a.interacting) {
           // boundary interference?
           for(Boundary b: boundaries) {
             if(a.boundary==null) {
               interact(b,a); }}
-  
+
           // collisions with other sprites?
           for(Actor o: interactors) {
             if(!o.interacting) continue;
@@ -204,7 +210,7 @@ class Level {
       }
     }
   }
-  
+
   /**
    * Perform actor/boundary collision detection
    */
@@ -215,7 +221,7 @@ class Level {
       a.attachTo(b);
     }
   }
-  
+
   /**
    * passthrough event
    */
@@ -227,15 +233,20 @@ class Level {
       if(key=='4') { showInteractors = !showInteractors; }
       if(key=='5') { showActors = !showActors; }
       if(key=='6') { showForeground = !showForeground; }
+      if(key=='7') {       
+        for(Pickup p: pickups) { p.debug = !p.debug; }
+        for(Interactor i: interactors) { i.debug = !i.debug; }
+        for(Player p: players) { p.debug = !p.debug; }
+      }
     }
-    for(Actor a: actors) {
+    for(Player a: players) {
       a.keyPressed(key,keyCode); }}
 
   /**
    * passthrough event
    */
   void keyReleased(char key, int keyCode) {
-    for(Actor a: actors) {
+    for(Player a: players) {
       a.keyReleased(key,keyCode); }}
 
   void mouseMoved(int mx, int my) {}

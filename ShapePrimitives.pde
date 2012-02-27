@@ -112,7 +112,7 @@ class Line extends ShapePrimitive {
   }
   // Vanilla draw method
   void draw() {
-    line(x1,y1,x2,y2); 
+    line(x1,y1,x2,y2);
   }
 }
 

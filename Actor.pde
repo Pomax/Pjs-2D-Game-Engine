@@ -10,13 +10,14 @@
  * can make use of it.
  */
 abstract class Actor extends Positionable {
+  boolean debug = false;
 
-  // are we colliding with another actor?  
+  // are we colliding with another actor?
   boolean colliding = false;
-  
+
   // regular interaction with other actors
   boolean interacting = true;
-  
+
   // should we be removed?
   boolean remove = false;
 
@@ -25,10 +26,10 @@ abstract class Actor extends Positionable {
 
   // all states for this actor
   HashMap<String, State> states = new HashMap<String, State>();
-  
+
   // actor name
   String name = "";
-  
+
   // simple constructor
   Actor(String _name) { name = _name; setPosition(0,0); }
 
@@ -42,7 +43,7 @@ abstract class Actor extends Positionable {
   /**
    * Add a state to this actor's repetoire.
    */
-  void addState(State state) { 
+  void addState(State state) {
     state.setActor(this);
     states.put(state.name, state);
     active = state;
@@ -51,7 +52,7 @@ abstract class Actor extends Positionable {
   /**
    * Get a state by name.
    */
-  State getState(String name) { 
+  State getState(String name) {
     return states.get(name);
   }
 
@@ -66,6 +67,34 @@ abstract class Actor extends Positionable {
       width = active.sprite.width;
       height = active.sprite.height;
     }
+  }
+
+  /**
+   * get the midpoint
+   */
+  float getMidX() { return super.getMidX() - (active==null ? 0 : active.sprite.ox); }
+
+  /**
+   * get the midpoint
+   */
+  float getMidY() { return super.getMidY() - (active==null ? 0 : active.sprite.oy); }
+
+  /**
+   * check overlap between sprites,
+   * rather than between actors.
+   */
+  float[] overlap(Actor other) {
+    float[] overlap = super.overlap(other);
+    if(overlap==null || active==null || other.active==null) {
+      return overlap;
+    }
+    //
+    // TODO: add in code here that determines
+    //       the intersection point for the two
+    //       sprites, and checks the mask to see
+    //       whether both have non-zero alph there.
+    //
+    return overlap;
   }
 
   /**
@@ -94,7 +123,7 @@ abstract class Actor extends Positionable {
   void setInteracting(boolean _interacting) {
     interacting = _interacting;
   }
-  
+
   /**
    * it's possible that an actor
    * has to be removed from the
@@ -107,7 +136,7 @@ abstract class Actor extends Positionable {
     active = null;
     remove = true;
   }
-  
+
   /**
    * Draw preprocessing happens here.
    */
@@ -121,7 +150,14 @@ abstract class Actor extends Positionable {
    */
   void drawObject() {
     if(active!=null) {
-      active.draw(); 
+      active.draw();
+      if(debug) {
+        fill(255,0,0);
+        ellipse(0,0,5,5);
+        noFill();
+        stroke(255,0,0);
+        rect(-width/2,-height/2,width,height);
+      }
     }
     else {
       pushStyle();
@@ -129,16 +165,16 @@ abstract class Actor extends Positionable {
       stroke(200,0,100);
       point(0,0); popStyle();
     }
-    /*
-      if(active!=null && colliding) {
-        pushStyle();
-        noStroke();
-        fill(255,0,0,150);
-        rect(-width/2+active.sprite.ox,-height/2-active.sprite.oy,width,height);
-        popStyle();
-      }
-      colliding = false;
-    */
+/*
+    if(active!=null && colliding) {
+      pushStyle();
+      noStroke();
+      fill(255,0,0,150);
+      rect(-width/2+active.sprite.ox,-height/2-active.sprite.oy,width,height);
+      popStyle();
+    }
+    colliding = false;
+*/
   }
 
 // ====== KEY HANDLING ======
@@ -164,7 +200,7 @@ abstract class Actor extends Positionable {
 
   // lock a key so that it cannot be triggered repeatedly
   protected void ignore(int keyCode) {
-    locked[keyCode] = true; 
+    locked[keyCode] = true;
     keyDown[keyCode] = false;
   }
 
@@ -183,9 +219,9 @@ abstract class Actor extends Positionable {
   // token implementation
   abstract void handleInput();
 
-  // token implementation  
+  // token implementation
   abstract void handleStateFinished(State which);
-  
+
   // token implementation
   abstract void pickedUp(Pickup pickup);
 }
