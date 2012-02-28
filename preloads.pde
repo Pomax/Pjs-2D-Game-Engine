@@ -17,6 +17,7 @@
                  graphics/enemies/Naked-koopa-walking.gif,
                  graphics/enemies/Red-koopa-walking.gif,
                  graphics/enemies/Red-koopa-standing.gif,
+                 graphics/enemies/Red-koopa-flying.gif,
 
                  graphics/mario/small/Crouching-mario.gif,
                  graphics/mario/small/Dead-mario.gif,

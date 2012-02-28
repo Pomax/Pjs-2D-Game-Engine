@@ -26,6 +26,19 @@ class State {
     actor.width = sprite.width;
     actor.height = sprite.height;
   }
+  
+  // when the sprite is moved by its path,
+  // let the actor know of its updated position.
+  void setActorOffsets(float x, float y) {
+    actor.setTranslation(x, y);
+  }
+  void setActorDimensions(float w, float h, float xa, float ya) {
+    actor.width = w;
+    actor.height = h;
+    actor.halign = xa;
+    actor.valign = ya;
+  }
+
 
   // reset a sprite (used when swapping states)
   void reset() { sprite.reset();}

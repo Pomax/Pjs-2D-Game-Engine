@@ -85,8 +85,8 @@ class TestLevel extends Level {
     addStaticSpriteBG(groundslant);
 
     // ground boundaries
-    boundaries.add(new Boundary(-20,height-48,width+20,height-48));
-    boundaries.add(new Boundary(width/2, height - groundslant.height, width/2 + 48, height - groundslant.height - 48));
+    addBoundary(new Boundary(-20,height-48,width+20,height-48));
+    addBoundary(new Boundary(width/2, height - groundslant.height, width/2 + 48, height - groundslant.height - 48));
   }
 
   // add some mario-style bushes
@@ -150,7 +150,7 @@ class TestLevel extends Level {
   void addFlyingKoopas() {
     for(int i=0; i<3; i++) {    
       FlyingKoopa fk = new FlyingKoopa(150,175 + i*30);
-      fk.active.sprite.setPathOffset(i*30);
+      fk.active.sprite.setPathOffset(i*40);
       addInteractor(fk);
     }
   }
@@ -265,6 +265,7 @@ class Mario extends Player {
     // if we mess up, we die =(
     State dead = new State("dead","graphics/mario/"+sizeSet+"/Dead-mario.gif",1,2);
     dead.sprite.align(CENTER, BOTTOM);
+    dead.sprite.setAnimationSpeed(0.5);
     dead.sprite.setNoRotation(true);
     dead.sprite.setLooping(false);
     dead.sprite.addPathCurve(0,0,1,1,0,
@@ -554,7 +555,6 @@ class FlyingKoopa extends Koopa {
     State flying = new State("flying","graphics/enemies/Red-koopa-flying.gif",1,2);
     flying.sprite.align(CENTER, BOTTOM);
     flying.sprite.setAnimationSpeed(0.2);
-    flying.sprite.setNoRotation(true);
     flying.sprite.addPathLine(   0,0,1,1,0,
                               -100,0,1,1,0,
                                100);
@@ -621,5 +621,6 @@ class Mushroom extends Pickup {
     setImpulseCoefficients(0,0);
     setForces(2, DOWN_FORCE);
     setAcceleration(0,ACCELERATION);
+    updatePositioningInformation();
   }
 }

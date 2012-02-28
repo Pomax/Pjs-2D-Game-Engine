@@ -38,15 +38,19 @@ class Pickup extends Actor {
   void overlapOccuredWith(Actor other) {
     removeActor();
     other.pickedUp(this);
+    pickedUp();
   }
 
   // unused
-  void handleInput() {}
+  final void handleInput() {}
 
   // unused
-  void handleStateFinished(State which) {}
+  final void handleStateFinished(State which) {}
 
   // unused
-  void pickedUp(Pickup pickup) {}
+  final void pickedUp(Pickup pickup) {}
+  
+  // unused, but we can overwrite it
+  void pickedUp() {}
 }
 

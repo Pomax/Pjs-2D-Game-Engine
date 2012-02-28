@@ -10,6 +10,7 @@ class Sprite extends Positionable {
 
   State state;
   SpritePath path = new SpritePath();
+  float halign=0, valign=0;
 
   // frame data
   PImage[] frames;         // sprite frames
@@ -52,8 +53,6 @@ class Sprite extends Positionable {
    */
   private Sprite(PImage[] _frames, float _xpos, float _ypos, boolean _visible) {
     setFrames(_frames);
-    x = _xpos;
-    y = _ypos;
     visible = _visible;
   }
 
@@ -101,14 +100,16 @@ class Sprite extends Positionable {
    * indicated x/y align values as
    * center point.
    */
-  void align(int halign, int valign) {
-    if(halign==LEFT) { ox=width/2; }
-    else if(halign==CENTER) { ox=0; }
-    else if(halign==RIGHT)  { ox=-width/2; }
+  void align(int _halign, int _valign) {
+    if(_halign==LEFT) { halign=width/2; }
+    else if(_halign==CENTER) { halign=0; }
+    else if(_halign==RIGHT)  { halign=-width/2; }
+    ox = halign;
 
-    if(valign==TOP) { oy=-height/2; }
-    else if(valign==CENTER) { oy=0; }
-    else if(valign==BOTTOM)  { oy=height/2; }
+    if(_valign==TOP) { valign=-height/2; }
+    else if(_valign==CENTER) { valign=0; }
+    else if(_valign==BOTTOM)  { valign=height/2; }
+    oy = valign;
   }
 
   /**
@@ -174,10 +175,10 @@ class Sprite extends Positionable {
     currentFrame = getCurrentFrameNumber();
     if (path.size()>0) {
       float[] pathdata = path.getNextFrameInformation();
-      x = pathdata[0];
-      y = pathdata[1];
       setScale(pathdata[2], pathdata[3]);
       setRotation(pathdata[4]);
+      state.setActorOffsets(pathdata[0], pathdata[1]);
+      state.setActorDimensions(width*sx, height*sy, halign*sx, valign*sy);
     }
     return frames[currentFrame];
   }

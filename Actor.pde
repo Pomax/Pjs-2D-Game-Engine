@@ -11,6 +11,9 @@
  */
 abstract class Actor extends Positionable {
   boolean debug = false;
+  
+  // debug bounding box alignment
+  float halign=0, valign=0;
 
   // are we colliding with another actor?
   boolean colliding = false;
@@ -41,14 +44,26 @@ abstract class Actor extends Positionable {
   }
 
   /**
+   * update the actor dimensions based
+   * on the currently active state.
+   */
+  void updatePositioningInformation() {
+    width = active.sprite.width;
+    height = active.sprite.height;
+    halign = active.sprite.halign;
+    valign = active.sprite.valign;
+  }
+
+  /**
    * Add a state to this actor's repetoire.
    */
   void addState(State state) {
     state.setActor(this);
     states.put(state.name, state);
     active = state;
+    updatePositioningInformation();
   }
-
+  
   /**
    * Get a state by name.
    */
@@ -64,8 +79,7 @@ abstract class Actor extends Positionable {
     if (tmp!=active) {
       tmp.reset();
       active = tmp;
-      width = active.sprite.width;
-      height = active.sprite.height;
+      updatePositioningInformation();
     }
   }
 
@@ -156,7 +170,7 @@ abstract class Actor extends Positionable {
         ellipse(0,0,5,5);
         noFill();
         stroke(255,0,0);
-        rect(-width/2,-height/2,width,height);
+        rect(-width/2-halign,-height/2-valign,width,height);
       }
     }
     else {

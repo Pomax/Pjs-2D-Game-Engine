@@ -20,32 +20,39 @@ class Level {
           showActors = true,
           showForeground = true;
 
+  /**
+   * The viewbox will define the region of the level you can see.
+   */
   class ViewBox { float x=0, y=0, w=0, h=0; }
 
+  /**
+   * This class will end up being our level grid indexer.
+   */
+  class IndexedList<T> extends ArrayList<T> {}
+
   // the list of "standable" regions
-  ArrayList<Boundary> boundaries = new ArrayList<Boundary>();
+  IndexedList<Boundary> boundaries = new IndexedList<Boundary>();
   void addBoundary(Boundary boundary) { boundaries.add(boundary); }
 
   // The list of static, non-interacting sprites, building up the background
-  ArrayList<Positionable> fixed_background = new ArrayList<Positionable>();
+  IndexedList<Positionable> fixed_background = new IndexedList<Positionable>();
   void addStaticSpriteBG(Positionable fixed) { this.fixed_background.add(fixed); }
 
   // The list of static, non-interacting sprites, building up the foreground
-  ArrayList<Positionable> fixed_foreground = new ArrayList<Positionable>();
+  IndexedList<Positionable> fixed_foreground = new IndexedList<Positionable>();
   void addStaticSpriteFG(Positionable fixed) { this.fixed_foreground.add(fixed); }
 
   // The list of sprites that may only interact with the player(s) (and boundaries)
-  ArrayList<Pickup> pickups = new ArrayList<Pickup>();
+  IndexedList<Pickup> pickups = new IndexedList<Pickup>();
   void addForPlayerOnly(Pickup pickup) { pickups.add(pickup); }
 
   // The list of fully interacting non-player sprites
-  ArrayList<Interactor> interactors = new ArrayList<Interactor>();
+  IndexedList<Interactor> interactors = new IndexedList<Interactor>();
   void addInteractor(Interactor interactor) { interactors.add(interactor); }
 
   // The list of player sprites
-  ArrayList<Player> players  = new ArrayList<Player>();
+  IndexedList<Player> players  = new IndexedList<Player>();
   void addPlayer(Player player) { players.add(player); }
-
 
   // level dimensions
   float width, height;
