@@ -155,7 +155,9 @@ class Level {
 
     // pickups
     if(showPickups) {
-      for(Pickup p: pickups) {
+      for(int i = pickups.size()-1; i>=0; i--) {
+        Pickup p = pickups.get(i);
+        if(p.remove) { pickups.remove(i); continue; }
         // boundary interference?
         if(p.interacting) {
           for(Boundary b: getBoundaries()) {

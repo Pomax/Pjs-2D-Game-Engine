@@ -17,6 +17,8 @@ Level level;
 void setup() {
   size(512,432);
   frameRate(24);
+  // set up the sound manager
+  SoundManager.init(this);
   // It is essential that this is called
   // before any sprites are made:
   SpriteMapHandler.setSketch(this);
@@ -65,6 +67,8 @@ class TestLevel extends Level {
     bgsprite.align(RIGHT, TOP);
     TilingSprite backdrop = new TilingSprite(bgsprite, 0, 0, width, height);
     addStaticSpriteBG(backdrop);
+    SoundManager.add(this, "audio/bg/Yoshi's Island 1.mp3");
+    SoundManager.play(this);
   }
 
   // "ground" parts of the level
@@ -248,18 +252,21 @@ class Mario extends Player {
     State jumping = new State("jumping","graphics/mario/"+sizeSet+"/Jumping-mario.gif");
     jumping.sprite.align(CENTER, BOTTOM);
     jumping.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  24);
+    SoundManager.add(jumping, "audio/Jump.mp3");
     addState(jumping);
 
     // when pressing the A button while crouching
     State crouchjumping = new State("crouchjumping","graphics/mario/"+sizeSet+"/Crouching-mario.gif");
     crouchjumping.sprite.align(CENTER, BOTTOM);
     crouchjumping.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  24);
+    SoundManager.add(crouchjumping, "audio/Jump.mp3");
     addState(crouchjumping);
 
     // when pressing the B (shoot) button
     State spinning = new State("spinning","graphics/mario/"+sizeSet+"/Spinning-mario.gif",1,4);
     spinning.sprite.align(CENTER, BOTTOM);
     spinning.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  24);
+    SoundManager.add(spinning, "audio/Spin jump.mp3");
     addState(spinning);
 
     // if we mess up, we die =(
@@ -272,6 +279,7 @@ class Mario extends Player {
                              0,-20,
                              0,0,
                              0,300,1,1,0,  24,1);
+    SoundManager.add(dead, "audio/Dead mario.mp3");
     addState(dead);
 
     // Finally, we make sure to start off in the "standing" state
@@ -320,6 +328,7 @@ class Mario extends Player {
           // Otherwise, we can jump normally.
           if (active.name == "crouching") { setCurrentState("crouchjumping"); }
           else { setCurrentState("jumping"); }
+          SoundManager.play(active);
         }
       }
 
@@ -335,6 +344,7 @@ class Mario extends Player {
           addImpulse(0,speedHeight*-speedStep);
           // and then make sure we spinjump, rather than jump normally
           setCurrentState("spinning");
+          SoundManager.play(active);
         }
       }
       // The down button is pressed: crouch
@@ -403,6 +413,7 @@ class Mario extends Player {
       else {
         setInteracting(false);
         setCurrentState("dead");
+        SoundManager.play(active);
       }
     }
   }
@@ -471,6 +482,7 @@ class Koopa extends Interactor {
     State naked = new State("naked","graphics/enemies/Naked-koopa-walking.gif",1,2);
     naked.sprite.setAnimationSpeed(0.25);
     naked.sprite.align(CENTER, BOTTOM);
+    SoundManager.add(naked, "audio/Bonk.mp3");
     addState(naked);
 
     // if we get squished again, we die!
@@ -478,9 +490,10 @@ class Koopa extends Interactor {
     dead.sprite.align(CENTER, BOTTOM);
     dead.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  12);
     dead.sprite.setLooping(false);
+    SoundManager.add(dead, "audio/Bonk.mp3");
     addState(dead);
 
-    // by default, the koopa will be walking
+//    // by default, the koopa will be walking
     setCurrentState("walking");
   }
 
@@ -498,6 +511,7 @@ class Koopa extends Interactor {
     // We're okay, we just lost our shell.
     if(active.name != "naked" && active.name != "dead") {
       setCurrentState("naked");
+      SoundManager.play(active);
       // mario should jump after trying to squish us
       return true;
     }
@@ -507,6 +521,7 @@ class Koopa extends Interactor {
     setForces(0,0);
     setInteracting(false);
     setCurrentState("dead");
+    SoundManager.play(active);
     // mario should not jump after deadifying us
     return true;
   }
@@ -567,6 +582,7 @@ class FlyingKoopa extends Koopa {
     flying.sprite.addPathLine(0,0,-1,1,0,
                               0,0,1,1,0,
                               5);
+    SoundManager.add(flying, "audio/Bonk.mp3");
     addState(flying);
 
     // by default, flying koopas fly
@@ -581,6 +597,7 @@ class FlyingKoopa extends Koopa {
       flying = false;
       setForces(-0.2,DOWN_FORCE);
       setAcceleration(0,ACCELERATION);
+      SoundManager.play(active);
       setCurrentState("walking");
       return true;
     }
@@ -598,7 +615,9 @@ class FlyingKoopa extends Koopa {
 class Coin extends Pickup {
   Coin(float x, float y) {
     super("Regular coin", "graphics/assorted/Regular-coin.gif", 1, 4, x, y);
+    SoundManager.add(this, "audio/Coin.mp3");
   }
+  void pickedUp() { SoundManager.play(this); }
 }
 
 /**
@@ -607,7 +626,9 @@ class Coin extends Pickup {
 class DragonCoin extends Pickup {
   DragonCoin(float x, float y) {
     super("Dragon coin", "graphics/assorted/Dragon-coin.gif", 1, 10, x, y);
+    SoundManager.add(this, "audio/Dragon coin.mp3");
   }
+  void pickedUp() { SoundManager.play(this); }
 }
 
 /**
@@ -622,5 +643,7 @@ class Mushroom extends Pickup {
     setForces(2, DOWN_FORCE);
     setAcceleration(0,ACCELERATION);
     updatePositioningInformation();
+    SoundManager.add(this, "audio/Powerup.mp3");
   }
+  void pickedUp() { SoundManager.play(this); }
 }
