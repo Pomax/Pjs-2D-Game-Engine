@@ -24,11 +24,11 @@ function AudioPlayer(str) {
     }, false);
     audio.preload = 'auto';
     audio.autobuffer = true;
-//    if (canPlayOgg()) {
-//      audio.src = str.split(".")[0] + ".ogg";
-//    } else if (canPlayMp3()) {
+    if (canPlayOgg()) {
+      audio.src = str.split(".")[0] + ".ogg";
+    } else if (canPlayMp3()) {
       audio.src = str;
-//    }
+    }
     loaded = true;
   }
   this.play = function () {

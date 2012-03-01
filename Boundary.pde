@@ -201,6 +201,14 @@ class Boundary extends Positionable {
   }
 
   /**
+   * Can this object be drawn in this viewbox?
+   */
+  boolean drawableFor(float vx, float vy, float vw, float vh) {
+    // boundaries are invisible to begin with.
+    return true;
+  }
+
+  /**
    * draw this platform
    */
   void drawObject() {

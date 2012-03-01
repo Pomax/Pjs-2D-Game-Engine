@@ -11,12 +11,23 @@ static class SoundManager {
   
   private static HashMap<Object,AudioPlayer> players = new HashMap<Object,AudioPlayer>();
 
-  static void add(Object identifier, String filename) {
+  static void load(Object identifier, String filename) {
     players.put(identifier, minim.loadFile(filename));
   }
 
   static void play(Object identifier) {
     AudioPlayer ap = players.get(identifier);
     ap.play();
+  }
+
+  static void pause(Object identifier) {
+    AudioPlayer ap = players.get(identifier);
+    ap.pause();
+  }
+  
+  static void stop(Object identifier) {
+    AudioPlayer ap = players.get(identifier);
+    ap.pause();
+    ap.rewind();
   }
 }

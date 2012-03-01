@@ -10,6 +10,7 @@ interface JSConsole { void log(String msg); }
  */
 abstract class JavaScript {
   JSConsole console;
+  abstract void setCoordinate(float x, float y);
   abstract void setPaths(ArrayList<ShapePrimitive> segments);
 }
 
@@ -23,7 +24,7 @@ JavaScript javascript;
  * the JS environment to the sketch.
  */
 void bindJavaScript(JavaScript js) {
-  this.javascript = js;
+  javascript = js;
   // how do we prevent IE9 from not-running-without-debugger-open?
   if(js.console != null) {
     js.console.log("JavaScript bound to sketch");

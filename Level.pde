@@ -10,7 +10,7 @@
  *  - foreground sprite layer
  *
  */
-class Level {
+abstract class Level {
   // debug flags, very good for finding out what's going on.
   boolean debug = true,
           showBackground = true,
@@ -19,40 +19,36 @@ class Level {
           showInteractors = true,
           showActors = true,
           showForeground = true;
+  
+  boolean finished  = false;
+  boolean swappable = false;
 
-  /**
-   * The viewbox will define the region of the level you can see.
-   */
   class ViewBox { float x=0, y=0, w=0, h=0; }
 
-  /**
-   * This class will end up being our level grid indexer.
-   */
-  class IndexedList<T> extends ArrayList<T> {}
-
   // the list of "standable" regions
-  IndexedList<Boundary> boundaries = new IndexedList<Boundary>();
+  ArrayList<Boundary> boundaries = new ArrayList<Boundary>();
   void addBoundary(Boundary boundary) { boundaries.add(boundary); }
 
   // The list of static, non-interacting sprites, building up the background
-  IndexedList<Positionable> fixed_background = new IndexedList<Positionable>();
-  void addStaticSpriteBG(Positionable fixed) { this.fixed_background.add(fixed); }
+  ArrayList<Drawable> fixed_background = new ArrayList<Drawable>();
+  void addStaticSpriteBG(Drawable fixed) { this.fixed_background.add(fixed); }
 
   // The list of static, non-interacting sprites, building up the foreground
-  IndexedList<Positionable> fixed_foreground = new IndexedList<Positionable>();
-  void addStaticSpriteFG(Positionable fixed) { this.fixed_foreground.add(fixed); }
+  ArrayList<Drawable> fixed_foreground = new ArrayList<Drawable>();
+  void addStaticSpriteFG(Drawable fixed) { this.fixed_foreground.add(fixed); }
 
   // The list of sprites that may only interact with the player(s) (and boundaries)
-  IndexedList<Pickup> pickups = new IndexedList<Pickup>();
+  ArrayList<Pickup> pickups = new ArrayList<Pickup>();
   void addForPlayerOnly(Pickup pickup) { pickups.add(pickup); }
 
   // The list of fully interacting non-player sprites
-  IndexedList<Interactor> interactors = new IndexedList<Interactor>();
+  ArrayList<Interactor> interactors = new ArrayList<Interactor>();
   void addInteractor(Interactor interactor) { interactors.add(interactor); }
 
   // The list of player sprites
-  IndexedList<Player> players  = new IndexedList<Player>();
+  ArrayList<Player> players  = new ArrayList<Player>();
   void addPlayer(Player player) { players.add(player); }
+
 
   // level dimensions
   float width, height;
@@ -78,78 +74,35 @@ class Level {
   }
 
   /**
-   * Select all boundaries that are visible.
+   * Change the behaviour when the level finishes
    */
-  ArrayList<Boundary> getBoundaries() {
-    // TODO: coordinate-based selection goes here
-    return boundaries;
-  }
-
+  void finish() { finished = true; }
+  
   /**
-   * Select all non-player static sprites that are visible.
+   * Allow this level to be swapped out
    */
-  ArrayList<Positionable> getStaticSpritesBG() {
-    // TODO: coordinate-based selection goes here
-    return fixed_background;
-  }
-
-  /**
-   * Select all non-player static sprites that are visible.
-   */
-  ArrayList<Positionable> getStaticSpritesFG() {
-    // TODO: coordinate-based selection goes here
-    return fixed_foreground;
-  }
-
-  /**
-   * Select all non-player static sprites that are visible.
-   */
-  ArrayList<Pickup> getForPlayerOnlies() {
-    // TODO: coordinate-based selection goes here
-    return pickups;
-  }
-
-  /**
-   * Select all non-player static sprites that are visible.
-   */
-  ArrayList<Interactor> getInteractors() {
-    // TODO: coordinate-based selection goes here
-    return interactors;
-  }
-
-  /**
-   * Select all non-player static sprites that are visible.
-   */
-  ArrayList<Player> getPlayers() {
-    // TODO: coordinate-based selection goes here
-    return players;
-  }
+  void setSwappable() { swappable = true; } 
 
   /**
    * draw the leve, as seen from the viewbox
    */
   void draw() {
-    // local overrides
-    ArrayList<Boundary> boundaries = getBoundaries();
-    ArrayList<Positionable> fixed_background = getStaticSpritesBG();
-    ArrayList<Pickup> pickups = getForPlayerOnlies();
-    ArrayList<Interactor> interactors = getInteractors();
-    ArrayList<Player> players = getPlayers();
-    ArrayList<Positionable> fixed_foreground = getStaticSpritesFG();
+    // viewbox
+    translate(-viewbox.x, -viewbox.y);
 
     // fixed background sprites
     if(showBackground) {
-      for(Positionable s: fixed_background) {
-        s.draw();
+      for(Drawable s: fixed_background) {
+        s.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
     } else {
-      drawBackground();
+      drawBackground((int)width, (int)height);
     }
 
     // boundaries
     if(showBoundaries) {
       for(Boundary b: boundaries) {
-        b.draw();
+        b.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
     }
 
@@ -160,7 +113,7 @@ class Level {
         if(p.remove) { pickups.remove(i); continue; }
         // boundary interference?
         if(p.interacting) {
-          for(Boundary b: getBoundaries()) {
+          for(Boundary b: boundaries) {
             if(p.boundary==null) {
               interact(b,p); }}}
         // player interaction?
@@ -170,7 +123,7 @@ class Level {
           if(overlap!=null) {
             p.overlapOccuredWith(a); }}
         // draw pickup
-        p.draw();
+        p.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
     }
 
@@ -181,11 +134,11 @@ class Level {
         if(a.remove) { interactors.remove(i); continue; }
         // boundary interference?
         if(a.interacting) {
-          for(Boundary b: getBoundaries()) {
+          for(Boundary b: boundaries) {
             if(a.boundary==null) {
               interact(b,a); }}}
         // draw interactor
-        a.draw();
+        a.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
     }
 
@@ -208,14 +161,14 @@ class Level {
               a.overlapOccuredWith(o, overlap);
               o.overlapOccuredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }}}
         // draw actor
-        a.draw();
+        a.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
     }
 
     // fixed background sprites
     if(showForeground) {
-      for(Positionable s: fixed_foreground) {
-        s.draw();
+      for(Drawable s: fixed_foreground) {
+        s.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
     }
   }
@@ -226,8 +179,11 @@ class Level {
   void interact(Boundary b, Actor a) {
     float[] intersection = b.blocks(a);
     if(intersection!=null) {
+      float ix=a.ix, iy=a.iy;
       a.stop(intersection[0], intersection[1]);
       a.attachTo(b);
+      a.addImpulse(ix,iy);
+      a.update();
     }
   }
 
@@ -242,7 +198,7 @@ class Level {
       if(key=='4') { showInteractors = !showInteractors; }
       if(key=='5') { showActors = !showActors; }
       if(key=='6') { showForeground = !showForeground; }
-      if(key=='7') {       
+      if(key=='7') {
         for(Pickup p: pickups) { p.debug = !p.debug; }
         for(Interactor i: interactors) { i.debug = !i.debug; }
         for(Player p: players) { p.debug = !p.debug; }

@@ -3,7 +3,6 @@
  */
 class State {
   String name;
-  String spritesheet;
   Sprite sprite;
   Actor actor;
 
@@ -13,20 +12,19 @@ class State {
   }
 
   // full constructor
-  State(String _name, String _spritesheet, int rows, int cols) {
+  State(String _name, String spritesheet, int rows, int cols) {
     name = _name;
-    spritesheet = _spritesheet;
     sprite = new Sprite(spritesheet, rows, cols);
     sprite.setState(this);
   }
 
   // bind this state to an actor
   void setActor(Actor _actor) {
-    actor = _actor; 
+    actor = _actor;
     actor.width = sprite.width;
     actor.height = sprite.height;
   }
-  
+
   // when the sprite is moved by its path,
   // let the actor know of its updated position.
   void setActorOffsets(float x, float y) {

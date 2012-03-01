@@ -23,6 +23,9 @@ abstract class Actor extends Positionable {
 
   // should we be removed?
   boolean remove = false;
+  
+  // is this actor persistent with respect to viewbox draws?
+  boolean persistent = true;
 
   // The active state for this actor (with associated sprite)
   State active;
@@ -34,24 +37,14 @@ abstract class Actor extends Positionable {
   String name = "";
 
   // simple constructor
-  Actor(String _name) { name = _name; setPosition(0,0); }
+  Actor(String _name) {
+    name = _name;
+  }
 
   // full constructor
   Actor(String _name, float dampening_x, float dampening_y) {
-    super();
-    name = _name;
+    this(_name);
     setImpulseCoefficients(dampening_x, dampening_y);
-  }
-
-  /**
-   * update the actor dimensions based
-   * on the currently active state.
-   */
-  void updatePositioningInformation() {
-    width = active.sprite.width;
-    height = active.sprite.height;
-    halign = active.sprite.halign;
-    valign = active.sprite.valign;
   }
 
   /**
@@ -62,8 +55,8 @@ abstract class Actor extends Positionable {
     states.put(state.name, state);
     active = state;
     updatePositioningInformation();
-  }
-  
+  } 
+
   /**
    * Get a state by name.
    */
@@ -79,8 +72,22 @@ abstract class Actor extends Positionable {
     if (tmp!=active) {
       tmp.reset();
       active = tmp;
-      updatePositioningInformation();
+      width = active.sprite.width;
+      height = active.sprite.height;
+      halign = active.sprite.halign;
+      valign = active.sprite.valign;
     }
+  }
+
+  /**
+   * update the actor dimensions based
+   * on the currently active state.
+   */
+  void updatePositioningInformation() {
+    width = active.sprite.width;
+    height = active.sprite.height;
+    halign = active.sprite.halign;
+    valign = active.sprite.valign;
   }
 
   /**
@@ -154,9 +161,16 @@ abstract class Actor extends Positionable {
   /**
    * Draw preprocessing happens here.
    */
-  void draw() {
+  void draw(float vx, float vy, float vw, float vh) {
     handleInput();
-    super.draw();
+    super.draw(vx,vy,vw,vh);
+  }
+
+  /**
+   * Can this object be drawn in this viewbox?
+   */
+  boolean drawableFor(float vx, float vy, float vw, float vh) {
+    return true;
   }
 
   /**

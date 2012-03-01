@@ -222,8 +222,11 @@ class Sprite extends Positionable {
     }
   }
 
-  void drawObject() {};
-
+  // pass-through/unused
+  void draw(float _a, float _b, float _c, float _d) { draw(); }
+  void drawObject() {}
+  boolean drawableFor(float _a, float _b, float _c, float _d) { return true; }
+  
 // -- pathing informmation
 
   void reset() {

@@ -1,7 +1,7 @@
 /**
  * Draw a nice looking grid
  */
-void drawBackground() {
+void drawBackground(int width, int height) {
   background(255,255,252);
   strokeWeight(1);
   fill(0);

@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <head>
+    <title>2D gaming using Processing.js</title>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="processing.js"></script>
+    <script type="text/javascript" src="minim.js"></script>
+    <link href='http://fonts.googleapis.com/css?family=Norican' rel='stylesheet' type='text/css'>
+    <style type="text/css">
+      h1 { text-align: center; font-family: Norican; font-size: 200%; }
+      a { color: rgba(0, 0, 200, 0.5); text-decoration: none; }
+      h3 { margin: 0px; }
+      .minor { font-size: 80%; }
+      p { margin: 0px; }
+      p+p { margin-top: 1em; }
+      canvas:focus {
+        outline: 0px;
+        -webkit-box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+        -moz-box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+        box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+      }
+      body { text-align: center; }
+    </style>
+    <script type="text/javascript">
+      function setCoordinate(x,y) {
+        document.getElementById('x').innerHTML = x|0;
+        document.getElementById('y').innerHTML = y|0;
+      }
+
+      var pjs;
+      function bindSketch() {
+        var tmp = Processing.getInstanceById("mario");
+        if(tmp && tmp.bindJavaScript) {
+          pjs = tmp;
+          pjs.bindJavaScript(this);
+        } else { setTimeout(bindSketch, 250); }
+      }
+
+      document.addEventListener("DOMContentLoaded",function(){
+        var mario = document.getElementById("mario");
+        mario.focus();
+        bindSketch();
+      },false);
+    </script>
+  </head>
+  <body>
+    <h1>～ OMG, Mario! ～</h1>
+
+    <canvas id="mario" data-processing-sources="Actor.pde
+                                                Boundary.pde
+                                                Drawable.pde
+                                                drawbackground.pde
+                                                Interactor.pde
+                                                JavaScript.pde
+                                                Level.pde
+                                                Pickup.pde
+                                                Player.pde
+                                                Positionable.pde
+                                                preloads.pde
+                                                ShapePrimitives.pde
+                                                SoundManager.pde
+                                                Sprite.pde
+                                                spriteengine.pde
+                                                SpriteMapHandler.pde
+                                                SpritePath.pde
+                                                SpritePathChunker.pde
+                                                State.pde
+                                                TilingSprite.pde" style="border: 1px solid black;" tabindex="1"></canvas>
+
+     <p>current coordinates: <span id="x"></span>/<span id="y"></span></p>
+     <p><strong>controls:</strong> cursor keys, and [z] and [x] for the jump/spin jump (left click to spawn random koopa troopers, right click to drop a mushroom!)</p>
+
+     <p><em>debug controls: [1] toggles background, [2] toggles boundaries, [3] toggles pickups, [4] toggles NPCs, [5] toggles Mario, [6] toggles the foreground, [7] toggles actor bounding boxes</em>.</p>
+
+     <p><strong>TODO</strong>: loading all of this from plain text (JSON) scripts, so that you can build games without having to actually program!<p>
+
+     <hr>
+
+     <p>A work in progress by me, <a href="http://pomax.nihongoresources.com">Pomax</a>.
+        You might know me from <a href="http://processingjs.org">Processing.js</a>,
+        <a href="http://github.com/Pomax/Font.js">Font.js</a>, or perhaps even something
+        else (Like my <a href="http://processingjs.nihongoresources.com/bezierinfo">primer
+        on Bezier curves</a>, writeup on <a href="http://processingjs.nihongoresources.com/the_smallest_font/">the
+        smallest web-legal TTF</a>, or <a href="http://redesign.nihongoresources.com">nihongoresources</a>).
+        If you don't know me: I do things these kind of things. Then I explain them to
+        people. If you wish to reach me, I'm on IRC (irc.mozilla.org and irc.freenode.net
+        amongst others) as Pomax, as well as on twitter, as <a href="https://twitter.com/TheRealPomax">TheRealPomax</a>
+     </p>
+
+  </body>
+</html>
