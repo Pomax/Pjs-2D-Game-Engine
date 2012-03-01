@@ -62,6 +62,7 @@ class TestLevel extends Level {
   TestLevel(float w, float h, int x_repeat, int y_repeat)
   {
     super(w*x_repeat, h*y_repeat);
+    textFont(createFont("fonts/acmesa.ttf",62));
     setBackground();
     addGround();
     addBushes();
@@ -276,12 +277,19 @@ class TestLevel extends Level {
   }
 
   /**
-   * What do we do when the level's finished?
+   * End the level.
+   */
+  void end() {
+    super.finish();
+    SoundManager.pause(this);
+  }
+
+  /**
+   * What do we do when the level
+   * finishes properly?
    */
   void finish() {
-    super.finish();
-    textFont(createFont("fonts/acmesa.ttf",62));
-    SoundManager.pause(this);
+    end();
     SoundManager.play(finishline);
   }
 
@@ -523,7 +531,7 @@ class Mario extends Player {
   void handleStateFinished(State which) {
     if(which.name == "dead") {
       // well, we died.. restart!
-      level.finish();
+      level.end();
       level.setSwappable();
     }
   }
