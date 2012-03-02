@@ -21,8 +21,14 @@ abstract class Actor extends Positionable {
   // regular interaction with other actors
   boolean interacting = true;
 
+  // bypass regular interaction for ... frames
+  int disabledCounter = 0;
+
   // should we be removed?
   boolean remove = false;
+  
+  // is this actor persistent with respect to viewbox draws?
+  boolean persistent = true;
 
   // The active state for this actor (with associated sprite)
   State active;
@@ -34,24 +40,14 @@ abstract class Actor extends Positionable {
   String name = "";
 
   // simple constructor
-  Actor(String _name) { name = _name; setPosition(0,0); }
+  Actor(String _name) {
+    name = _name;
+  }
 
   // full constructor
   Actor(String _name, float dampening_x, float dampening_y) {
-    super();
-    name = _name;
+    this(_name);
     setImpulseCoefficients(dampening_x, dampening_y);
-  }
-
-  /**
-   * update the actor dimensions based
-   * on the currently active state.
-   */
-  void updatePositioningInformation() {
-    width = active.sprite.width;
-    height = active.sprite.height;
-    halign = active.sprite.halign;
-    valign = active.sprite.valign;
   }
 
   /**
@@ -62,8 +58,8 @@ abstract class Actor extends Positionable {
     states.put(state.name, state);
     active = state;
     updatePositioningInformation();
-  }
-  
+  } 
+
   /**
    * Get a state by name.
    */
@@ -78,9 +74,27 @@ abstract class Actor extends Positionable {
     State tmp = states.get(name);
     if (tmp!=active) {
       tmp.reset();
+      boolean hflip = active.sprite.hflip,
+               vflip = active.sprite.vflip;
       active = tmp;
-      updatePositioningInformation();
+      if(hflip) active.sprite.flipHorizontal();
+      if(vflip) active.sprite.flipVertical();
+      width = active.sprite.width;
+      height = active.sprite.height;
+      halign = active.sprite.halign;
+      valign = active.sprite.valign;
     }
+  }
+
+  /**
+   * update the actor dimensions based
+   * on the currently active state.
+   */
+  void updatePositioningInformation() {
+    width = active.sprite.width;
+    height = active.sprite.height;
+    halign = active.sprite.halign;
+    valign = active.sprite.valign;
   }
 
   /**
@@ -137,6 +151,26 @@ abstract class Actor extends Positionable {
   void setInteracting(boolean _interacting) {
     interacting = _interacting;
   }
+  
+  /**
+   * Does this actor temporary not interact
+   * with any Interactors?
+   */
+  boolean isDisabled() {
+    if(disabledCounter > 0) {
+      disabledCounter--;
+      return true;
+    }
+    return false;
+  }
+  
+  /**
+   * Sometimes we need to bypass interaction for
+   * a certain number of frames.
+   */
+  void disableInteractionFor(int frameCount) {
+    disabledCounter = frameCount;
+  }
 
   /**
    * it's possible that an actor
@@ -154,9 +188,16 @@ abstract class Actor extends Positionable {
   /**
    * Draw preprocessing happens here.
    */
-  void draw() {
+  void draw(float vx, float vy, float vw, float vh) {
     handleInput();
-    super.draw();
+    super.draw(vx,vy,vw,vh);
+  }
+
+  /**
+   * Can this object be drawn in this viewbox?
+   */
+  boolean drawableFor(float vx, float vy, float vw, float vh) {
+    return true;
   }
 
   /**

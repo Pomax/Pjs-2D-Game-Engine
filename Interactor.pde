@@ -13,6 +13,16 @@ abstract class Interactor extends Actor {
   Interactor(String name, float dampening_x, float dampening_y) {
     super(name, dampening_x, dampening_y); }
 
+  /**
+   * Can this object be drawn in this viewbox?
+   */
+  boolean drawableFor(float vx, float vy, float vw, float vh) {
+    return persistent || (vx-vw <= x && x <= vx+2*vw && vy-vh <= y && y <=vy+2*vh);
+  }
+
   // Interactors don't get pickups
-  final void pickedUp(Pickup pickup){}
+  final void pickedUp(Pickup pickup) {}
+  
+  // Interactors are not playable
+  final void handleInput() {}
 }

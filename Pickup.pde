@@ -14,13 +14,14 @@ class Pickup extends Actor {
    * Pickups are essentially Actors that mostly do nothing,
    * until a player character runs into them. Then *poof*.
    */
-  Pickup(String pun, String pus, int r, int c, float x, float y) {
+  Pickup(String pun, String pus, int r, int c, float x, float y, boolean _persistent) {
     super(pun);
     pickup_sprite = pus;
     rows = r;
     columns = c;
     setupStates();
     setPosition(x,y);
+    persistent = _persistent;
   }
 
   /**
@@ -31,6 +32,11 @@ class Pickup extends Actor {
     pickup.sprite.setAnimationSpeed(0.25);
     addState(pickup);
   }
+  
+  // wrapper
+  void align(int halign, int valign) {
+    active.sprite.align(halign, valign);
+  }
 
   /**
    * A pickup disappears when touched by a player actor.
@@ -39,6 +45,15 @@ class Pickup extends Actor {
     removeActor();
     other.pickedUp(this);
     pickedUp();
+  }
+
+  /**
+   * Can this object be drawn in this viewbox?
+   */
+  boolean drawableFor(float vx, float vy, float vw, float vh) {
+    boolean drawable = (vx-vw <= x && x <= vx+2*vw && vy-vh <= y && y <=vy+2*vh);
+    if(!persistent && !drawable) { removeActor(); }
+    return drawable;
   }
 
   // unused

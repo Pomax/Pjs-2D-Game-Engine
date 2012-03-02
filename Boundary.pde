@@ -6,32 +6,21 @@
 class Boundary extends Positionable {
   private float PI2 = 2*PI;
 
+  // extended adminstrative values
   float dx, dy;
   float xw, yh;
   float minx, maxx, miny, maxy;
   float angle, cosa, sina, cosma, sinma;
 
+  // boundaries can be linked
+  Boundary prev, next;
+  
   float boundingThreshold = 1.5;
+  
+  boolean disabled = false;
 
   // attached actors
   ArrayList<Positionable> attached;
-
-  /**
-   * attach an actor to this boundary. Attached
-   * actors do not test for additional boundary
-   * collisions, and get their impulse from the
-   * boundary, rather than directly.
-   */
-  void attach(Positionable a) {
-    attached.add(a);
-  }
-
-  /**
-   * detach an actor from this boundary
-   */
-  void detach(Positionable a) {
-    attached.remove(a);
-  }
 
   /**
    * When we build a boundary, we record a
@@ -78,9 +67,58 @@ class Boundary extends Positionable {
   }
 
   /**
-   * Point outisde the bounding box for this boundary?
+   * attach an actor to this boundary. Attached
+   * actors do not test for additional boundary
+   * collisions, and get their impulse from the
+   * boundary, rather than directly.
+   */
+  void attach(Positionable a) {
+    attached.add(a);
+  }
+
+  /**
+   * detach an actor from this boundary
+   */
+  void detach(Positionable a) {
+    attached.remove(a);
+  }
+  
+  /**
+   * detach all actors from this boundary
+   */
+  void detachAll() {
+    for(Positionable a: attached) {
+      a.detach();
+    }
+  }
+
+  /**
+   * This boundary is part of a chain, and
+   * the previous boundary is:
+   */
+  void setPrevious(Boundary b) { prev = b; }
+
+  /**
+   * This boundary is part of a chain, and
+   * the next boundary is:
+   */
+  void setNext(Boundary b) { next = b; }
+
+  /**
+   * Enable this boundary
+   */
+  void enable() { disabled = false; }
+
+  /**
+   * Disable this boundary
+   */
+  void disable() { disabled = true; }
+
+  /**
+   * Point outside the bounding box for this boundary?
    */
   boolean outOfBounds(float x, float y) {
+    if(disabled) return true;
     return (x<minx-boundingThreshold || x>maxx+boundingThreshold || y<miny-boundingThreshold || y>maxy+boundingThreshold);
   }
 
@@ -88,6 +126,8 @@ class Boundary extends Positionable {
    * Is this boundary blocking the specified actor?
    */
   float[] blocks(Actor a) {
+    if(disabled) return null;
+
     float x1 = a.getPrevX(),
            y1 = a.getPrevY(),
            x2 = a.getX(),
@@ -198,6 +238,14 @@ class Boundary extends Positionable {
     }
     // No it won't, pass-through the impulse unmodified.
     return new float[]{fx, fy, 0};
+  }
+
+  /**
+   * Can this object be drawn in this viewbox?
+   */
+  boolean drawableFor(float vx, float vy, float vw, float vh) {
+    // boundaries are invisible to begin with.
+    return true;
   }
 
   /**

@@ -73,7 +73,7 @@ class SpritePath {
   // pointless comment to make the 11 arg functor look slightly less horrible
   {
     float t, mt;
-    for (float i=0; i<duration; i++) {
+    for (float i=0; i<=duration; i++) {
       t = i/duration;
       mt = 1-t;
       addPoint(mt*x1 + t*x2,
@@ -175,6 +175,7 @@ class SpritePath {
    */
   void reset() {
     pathOffset = 0;
+    servedFrame = 0;
   }
 
   /**

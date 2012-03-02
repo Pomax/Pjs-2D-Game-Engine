@@ -1,7 +1,14 @@
 /* @pjs pauseOnBlur="true";
+        font="fonts/acmesa.ttf";
         preload="graphics/backgrounds/ground-filler.gif,
                  graphics/backgrounds/ground-slant.gif,
                  graphics/backgrounds/ground-top.gif,
+
+                 graphics/backgrounds/ground-corner-left.gif,
+                 graphics/backgrounds/ground-corner-right.gif,
+                 graphics/backgrounds/ground-side-left.gif,
+                 graphics/backgrounds/ground-side-right.gif,
+
                  graphics/backgrounds/sky.gif,
                  graphics/backgrounds/bush-01.gif,
                  graphics/backgrounds/bush-02.gif,
@@ -12,12 +19,20 @@
                  graphics/assorted/Dragon-coin.gif,
                  graphics/assorted/Regular-coin.gif,
                  graphics/assorted/Mushroom.gif,
+                 graphics/assorted/Block.gif,
+                 graphics/assorted/Coin-block.gif,
+                 graphics/assorted/Coin-block-exhausted.gif,
+                 graphics/assorted/Passthrough-block.gif,
+                 graphics/assorted/Goal-front.gif,
+                 graphics/assorted/Goal-back.gif,
+                 graphics/assorted/Goal-slider.gif,
 
                  graphics/enemies/Dead-koopa.gif,
                  graphics/enemies/Naked-koopa-walking.gif,
                  graphics/enemies/Red-koopa-walking.gif,
                  graphics/enemies/Red-koopa-standing.gif,
                  graphics/enemies/Red-koopa-flying.gif,
+                 graphics/enemies/Banzai-bill.gif,
 
                  graphics/mario/small/Crouching-mario.gif,
                  graphics/mario/small/Dead-mario.gif,
