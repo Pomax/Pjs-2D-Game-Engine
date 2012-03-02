@@ -21,5 +21,8 @@ abstract class Interactor extends Actor {
   }
 
   // Interactors don't get pickups
-  final void pickedUp(Pickup pickup){}
+  final void pickedUp(Pickup pickup) {}
+  
+  // Interactors are not playable
+  final void handleInput() {}
 }

@@ -268,7 +268,7 @@ class Sprite extends Positionable {
   /**
    * Add a path point
    */
-  void addPathVertex(float x, float y, float sx, float sy, float r, int duration)
+  void addPathPoint(float x, float y, float sx, float sy, float r, int duration)
   {
     path.addPoint(x, y, sx, sy, r, duration);
   }

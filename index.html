@@ -45,36 +45,47 @@
   </head>
   <body>
     <h1>～ OMG, Mario! ～</h1>
-
-    <canvas id="mario" data-processing-sources="Actor.pde
-                                                Boundary.pde
-                                                Drawable.pde
-                                                drawbackground.pde
-                                                Interactor.pde
-                                                JavaScript.pde
-                                                Level.pde
-                                                Pickup.pde
-                                                Player.pde
-                                                Positionable.pde
-                                                preloads.pde
-                                                ShapePrimitives.pde
-                                                SoundManager.pde
-                                                Sprite.pde
+    
+    <!--
+        The various files have been formatted to indicate
+        their hierarchical relationship. As such, a Pickup
+        extends Actor, which extends Positionable, which
+        extends Drawable. Just so you get a better idea
+        of how all the code links up.
+    -->
+    <canvas id="mario" data-processing-sources="preloads.pde
                                                 spriteengine.pde
+                                                drawbackground.pde
+
+                                                Level.pde
+
+                                                Drawable.pde
+                                                  Positionable.pde
+                                                    Actor.pde
+                                                      Player.pde
+                                                      Interactor.pde
+                                                        BoundedInteractor.pde
+                                                      Pickup.pde
+                                                    Boundary.pde
+                                                    Trigger.pde
+                                                    Sprite.pde
+                                                    TilingSprite.pde
+
                                                 SpriteMapHandler.pde
                                                 SpritePath.pde
                                                 SpritePathChunker.pde
                                                 State.pde
-                                                TilingSprite.pde" style="border: 1px solid black;" tabindex="1"></canvas>
+                                                SoundManager.pde
+                                                ShapePrimitives.pde
+
+                                                JavaScript.pde" style="border: 1px solid black;" tabindex="1"></canvas>
 
      <p>current coordinates: <span id="x"></span>/<span id="y"></span></p>
      <p><strong>controls:</strong> cursor keys, and [z] and [x] for the jump/spin jump (left click to spawn random koopa troopers, right click to drop a mushroom!)</p>
 
-     <p><em>debug controls: [1] toggles background, [2] toggles boundaries, [3] toggles pickups, [4] toggles NPCs, [5] toggles Mario, [6] toggles the foreground, [7] toggles actor bounding boxes</em>.</p>
+     <p><em>debug controls: [1] toggles background, [2] toggles boundaries, [3] toggles pickups, [4] toggles NPCs, [5] toggles Mario, [6] toggles the foreground, [7] toggle trigger regions, [8] toggles actor bounding boxes</em>.</p>
 
-     <p><strong>TODO</strong>: create event regions, so that when you pass over them, "something" can happen.
-     Such as spawning enemies or pickups offscreen. Also, loading all of this from plain text (JSON) scripts,
-     so that you can build games without having to actually program!<p>
+     <p><strong>TODO</strong>: loading all of this from a game script, made in a web-based level editor, so that you can build games without having to actually program!<p>
 
      <hr>
 

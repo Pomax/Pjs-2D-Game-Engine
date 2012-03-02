@@ -32,6 +32,7 @@
                  graphics/enemies/Red-koopa-walking.gif,
                  graphics/enemies/Red-koopa-standing.gif,
                  graphics/enemies/Red-koopa-flying.gif,
+                 graphics/enemies/Banzai-bill.gif,
 
                  graphics/mario/small/Crouching-mario.gif,
                  graphics/mario/small/Dead-mario.gif,

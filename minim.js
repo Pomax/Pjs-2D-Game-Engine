@@ -32,13 +32,17 @@ function AudioPlayer(str) {
     loaded = true;
   }
   this.play = function () {
-    if (!loaded) {
+    if (!loaded || audio.readyState==0) {
+      var local = this;
+      setTimeout(function() { local.play(); }, 50);
       return;
     }
     audio.play();
   };
   this.loop = function () {
-    if (!loaded) {
+    if (!loaded || audio.readyState==0) {
+      var local = this;
+      setTimeout(function() { local.loop(); }, 50);
       return;
     }
     //audio.loop = 'loop';
@@ -52,7 +56,7 @@ function AudioPlayer(str) {
     audio.pause();
   };
   this.rewind = function () {
-    if (!loaded) {
+    if (!loaded || audio.readyState==0) {
       return;
     }
     // rewind the sound to start

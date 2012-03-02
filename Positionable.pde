@@ -237,11 +237,13 @@ abstract class Positionable implements Drawable {
   /**
    * get the midpoint
    */
+  // FIXME: this doesn't look like a sprite center?
   float getMidX() { return x + ox; }
 
   /**
    * get the midpoint
    */
+  // FIXME: this doesn't look like a sprite center?
   float getMidY() { return y + oy; }
 
   /**
@@ -313,19 +315,25 @@ abstract class Positionable implements Drawable {
       aFrameCount++;
     }
 
-    // previously on a boundary, but we moved off of it: unrestricted motion,
-    // and make sure to notify the boundary that we are no longer attached.
+    // previously on a boundary, but we moved off of it: still
+    // restricted motion, which should make sure that we move onto
+    // another, joining, platform.
     else if(boundary.outOfBounds(x,y)) {
-      x += ix + (aFrameCount * ixA);
-      y += iy + (aFrameCount * iyA);
+      Boundary boundary = this.boundary;
       detach();
       // TODO: when we detach, we need to see if we pass
       //       through some other boundary (such as in
       //       corners).
+      if(boundary.prev!=null && !boundary.prev.outOfBounds(x,y)) {
+        attachTo(boundary.prev);
+      }
+      else if(boundary.next!=null && !boundary.next.outOfBounds(x,y)) {
+        attachTo(boundary.next);
+      }
     }
 
     // we're attached to a boundary, so we're subject to impulse redirection.
-    else {
+    if(boundary!=null) {
       float[] redirected = boundary.redirectForce(x, y, ix + (aFrameCount * ixA), iy + (aFrameCount * iyA));
       x += redirected[0];
       y += redirected[1];

@@ -18,10 +18,12 @@ abstract class Level {
           showPickups = true,
           showInteractors = true,
           showActors = true,
-          showForeground = true;
+          showForeground = true,
+          showTriggers = false;
   
   boolean finished  = false;
   boolean swappable = false;
+  color backgroundColor = color(127,127,127);
 
   class ViewBox { float x=0, y=0, w=0, h=0; }
 
@@ -45,9 +47,17 @@ abstract class Level {
   ArrayList<Interactor> interactors = new ArrayList<Interactor>();
   void addInteractor(Interactor interactor) { interactors.add(interactor); }
 
+  // The list of fully interacting non-player sprites that have associated boundaries
+  ArrayList<BoundedInteractor> bounded_interactors = new ArrayList<BoundedInteractor>();
+  void addBoundedInteractor(BoundedInteractor bounded_interactor) { bounded_interactors.add(bounded_interactor); }
+
   // The list of player sprites
   ArrayList<Player> players  = new ArrayList<Player>();
   void addPlayer(Player player) { players.add(player); }
+
+  // event triggers
+  ArrayList<Trigger> triggers = new ArrayList<Trigger>();
+  void addTrigger(Trigger trigger) { triggers.add(trigger); }
 
 
   // level dimensions
@@ -77,6 +87,11 @@ abstract class Level {
    * Change the behaviour when the level finishes
    */
   void finish() { finished = true; }
+
+  /**
+   * premature finish
+   */
+  void end() { finished = true; swappable = true; }
   
   /**
    * Allow this level to be swapped out
@@ -87,6 +102,9 @@ abstract class Level {
    * draw the leve, as seen from the viewbox
    */
   void draw() {
+    // draw fallback color
+    background(backgroundColor);
+
     // viewbox
     translate(-viewbox.x, -viewbox.y);
 
@@ -101,8 +119,15 @@ abstract class Level {
 
     // boundaries
     if(showBoundaries) {
+      // regular boundaries
       for(Boundary b: boundaries) {
         b.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
+      }
+      // bounded interactor boundaries
+      for(BoundedInteractor b: bounded_interactors) {
+        if(b.bounding) {
+          b.drawBoundaries(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
+        }
       }
     }
 
@@ -115,7 +140,12 @@ abstract class Level {
         if(p.interacting) {
           for(Boundary b: boundaries) {
             if(p.boundary==null) {
-              interact(b,p); }}}
+              interact(b,p); }}
+          for(BoundedInteractor o: bounded_interactors) {
+            if(o.bounding) {
+              for(Boundary b: o.boundaries) {
+                if(p.boundary==null) {
+                  interact(b,p); }}}}}
         // player interaction?
         for(Player a: players) {
           if(!a.interacting) continue;
@@ -136,30 +166,77 @@ abstract class Level {
         if(a.interacting) {
           for(Boundary b: boundaries) {
             if(a.boundary==null) {
+              interact(b,a); }}
+          // boundary interference from bounded interactors?
+          for(BoundedInteractor o: bounded_interactors) {
+            if(o.bounding) {
+              for(Boundary b: o.boundaries) {
+                if(a.boundary==null) {
+                  interact(b,a); }}}}}
+        // draw interactor
+        a.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
+      }
+
+      // FIXME: code duplication, since it's the same as for regular interactors.
+      for(int i = bounded_interactors.size()-1; i>=0; i--) {
+        Interactor a = bounded_interactors.get(i);
+        if(a.remove) { bounded_interactors.remove(i); continue; }
+        // boundary interference?
+        if(a.interacting) {
+          for(Boundary b: boundaries) {
+            if(a.boundary==null) {
               interact(b,a); }}}
         // draw interactor
         a.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
     }
-
+    
     // player actors
     if(showActors) {
       for(int i=players.size()-1; i>=0; i--) {
         Player a = players.get(i);
         if(a.remove) { players.remove(i); continue; }
         if(a.interacting) {
+
           // boundary interference?
           for(Boundary b: boundaries) {
             if(a.boundary==null) {
               interact(b,a); }}
 
+          // boundary interference from bounded interactors?
+          for(BoundedInteractor o: bounded_interactors) {
+            if(o.bounding) {
+              for(Boundary b: o.boundaries) {
+                if(a.boundary==null) {
+                  interact(b,a); }}}}
+
           // collisions with other sprites?
-          for(Actor o: interactors) {
-            if(!o.interacting) continue;
-            float[] overlap = a.overlap(o);
-            if(overlap!=null) {
-              a.overlapOccuredWith(o, overlap);
-              o.overlapOccuredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }}}
+          if(!a.isDisabled()) {
+            for(Actor o: interactors) {
+              if(!o.interacting) continue;
+              float[] overlap = a.overlap(o);
+              if(overlap!=null) {
+                a.overlapOccuredWith(o, overlap);
+                o.overlapOccuredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }}
+
+            // FIXME: code duplication, since it's the same as for regular interactors.
+            for(Actor o: bounded_interactors) {
+              if(!o.interacting) continue;
+              float[] overlap = a.overlap(o);
+              if(overlap!=null) {
+                a.overlapOccuredWith(o, overlap);
+                o.overlapOccuredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }}
+          }
+
+          // has the player tripped any triggers?
+          for(int j = triggers.size()-1; j>=0; j--) {
+            Trigger t = triggers.get(j);
+            if(t.remove) { triggers.remove(t); continue; }
+            float[] overlap = t.overlap(a);
+            if(overlap==null && t.disabled) { t.enable(); }
+            else if(overlap!=null && !t.disabled) { t.run(this, overlap); }}
+        }
+
         // draw actor
         a.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
@@ -169,6 +246,12 @@ abstract class Level {
     if(showForeground) {
       for(Drawable s: fixed_foreground) {
         s.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
+      }
+    }
+    
+    if(showTriggers) {
+      for(Drawable t: triggers) {
+        t.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
     }
   }
@@ -198,7 +281,8 @@ abstract class Level {
       if(key=='4') { showInteractors = !showInteractors; }
       if(key=='5') { showActors = !showActors; }
       if(key=='6') { showForeground = !showForeground; }
-      if(key=='7') {
+      if(key=='7') { showTriggers = !showTriggers; }
+      if(key=='8') {
         for(Pickup p: pickups) { p.debug = !p.debug; }
         for(Interactor i: interactors) { i.debug = !i.debug; }
         for(Player p: players) { p.debug = !p.debug; }

@@ -21,6 +21,9 @@ abstract class Actor extends Positionable {
   // regular interaction with other actors
   boolean interacting = true;
 
+  // bypass regular interaction for ... frames
+  int disabledCounter = 0;
+
   // should we be removed?
   boolean remove = false;
   
@@ -71,7 +74,11 @@ abstract class Actor extends Positionable {
     State tmp = states.get(name);
     if (tmp!=active) {
       tmp.reset();
+      boolean hflip = active.sprite.hflip,
+               vflip = active.sprite.vflip;
       active = tmp;
+      if(hflip) active.sprite.flipHorizontal();
+      if(vflip) active.sprite.flipVertical();
       width = active.sprite.width;
       height = active.sprite.height;
       halign = active.sprite.halign;
@@ -143,6 +150,26 @@ abstract class Actor extends Positionable {
    */
   void setInteracting(boolean _interacting) {
     interacting = _interacting;
+  }
+  
+  /**
+   * Does this actor temporary not interact
+   * with any Interactors?
+   */
+  boolean isDisabled() {
+    if(disabledCounter > 0) {
+      disabledCounter--;
+      return true;
+    }
+    return false;
+  }
+  
+  /**
+   * Sometimes we need to bypass interaction for
+   * a certain number of frames.
+   */
+  void disableInteractionFor(int frameCount) {
+    disabledCounter = frameCount;
   }
 
   /**
