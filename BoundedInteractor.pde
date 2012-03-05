@@ -19,7 +19,11 @@ abstract class BoundedInteractor extends Interactor {
     super(name, dampening_x, dampening_y); }
 
   // add a boundary
-  void addBoundary(Boundary boundary) { boundaries.add(boundary); }
+  void addBoundary(Boundary boundary) { 
+    // TODO: check where else we need to tie values together
+    boundary.setImpulseCoefficients(ixF,iyF);
+    boundaries.add(boundary); 
+  }
 
   // FIXME: make this make sense, because setting 'next'
   //        should only work on open-bounded interactors.
@@ -48,16 +52,60 @@ abstract class BoundedInteractor extends Interactor {
   // disable all boundaries
   void disableBoundaries() {
     bounding = false;
-    for(Boundary b: boundaries) {
-      b.disable();
-      b.detachAll();
+    for(int b=boundaries.size()-1; b>=0; b--) {
+      Boundary boundary = boundaries.get(b);
+      boundary.disable();
+      boundary.detachAll();
     }
+  }
+  
+  /**
+   * We must make sure to remove all
+   * boundaries when we are removed.
+   */
+  void removeActor() {
+    disableBoundaries();
+    boundaries = new ArrayList<Boundary>();
+    super.removeActor();
   }
   
   // draw boundaries
   void drawBoundaries(float x, float y, float w, float h) {
     for(Boundary b: boundaries) {
       b.draw(x,y,w,h);
+    }
+  }
+  
+  /**
+   * Is something attached to one of our boundaries?
+   */
+  boolean havePassenger() {
+    for(Boundary b: boundaries) {
+      if(b.attached.size()>0) {
+        return true;
+      }
+    }
+    // no passengers
+    return false;
+  }
+
+  // when we update our coordinates, also
+  // update our associated boundaries.
+  void update() {
+    super.update();
+
+    // how much did we actually move?
+    float dx = x-prevx;
+    float dy = y-prevy;
+    // if it's not 0, move the boundaries
+    if(dx!=0 && dy!=0) {
+      for(Boundary b: boundaries) {
+        // FIXME: somehow this goes wrong when the
+        // interactor is contrained by another
+        // boundary, where the actor moves, but the
+        // associated boundary for some reason doesn't.
+        b.moveBy(dx,dy);
+      }
     }
   }
 }

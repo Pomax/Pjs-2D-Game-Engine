@@ -14,8 +14,9 @@ abstract class Level {
   // debug flags, very good for finding out what's going on.
   boolean debug = true,
           showBackground = true,
-          showBoundaries = true,
+          showBoundaries = false,
           showPickups = true,
+          showDecals = true,
           showInteractors = true,
           showActors = true,
           showForeground = true,
@@ -42,6 +43,10 @@ abstract class Level {
   // The list of sprites that may only interact with the player(s) (and boundaries)
   ArrayList<Pickup> pickups = new ArrayList<Pickup>();
   void addForPlayerOnly(Pickup pickup) { pickups.add(pickup); }
+
+  // The list of player sprites
+  ArrayList<Decal> decals  = new ArrayList<Decal>();
+  void addDecal(Decal decal) { decals.add(decal); }
 
   // The list of fully interacting non-player sprites
   ArrayList<Interactor> interactors = new ArrayList<Interactor>();
@@ -102,13 +107,13 @@ abstract class Level {
    * draw the leve, as seen from the viewbox
    */
   void draw() {
-    // draw fallback color
+// ----  draw fallback color
     background(backgroundColor);
 
-    // viewbox
+// ---- viewbox
     translate(-viewbox.x, -viewbox.y);
 
-    // fixed background sprites
+// ---- fixed background sprites
     if(showBackground) {
       for(Drawable s: fixed_background) {
         s.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
@@ -117,7 +122,7 @@ abstract class Level {
       drawBackground((int)width, (int)height);
     }
 
-    // boundaries
+// ---- boundaries
     if(showBoundaries) {
       // regular boundaries
       for(Boundary b: boundaries) {
@@ -131,21 +136,21 @@ abstract class Level {
       }
     }
 
-    // pickups
+// ---- pickups
     if(showPickups) {
       for(int i = pickups.size()-1; i>=0; i--) {
         Pickup p = pickups.get(i);
         if(p.remove) { pickups.remove(i); continue; }
+
         // boundary interference?
-        if(p.interacting) {
+        if(p.interacting && !p.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-            if(p.boundary==null) {
-              interact(b,p); }}
+            interact(b,p); }
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                if(p.boundary==null) {
-                  interact(b,p); }}}}}
+                  interact(b,p); }}}}
+
         // player interaction?
         for(Player a: players) {
           if(!a.interacting) continue;
@@ -157,22 +162,22 @@ abstract class Level {
       }
     }
 
-    // non-player actors
+// ----  non-player actors
     if(showInteractors) {
       for(int i = interactors.size()-1; i>=0; i--) {
         Interactor a = interactors.get(i);
         if(a.remove) { interactors.remove(i); continue; }
+
         // boundary interference?
-        if(a.interacting) {
+        if(a.interacting && !a.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-            if(a.boundary==null) {
-              interact(b,a); }}
+              interact(b,a); }
           // boundary interference from bounded interactors?
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                if(a.boundary==null) {
-                  interact(b,a); }}}}}
+                  interact(b,a); }}}}
+
         // draw interactor
         a.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
@@ -182,16 +187,15 @@ abstract class Level {
         Interactor a = bounded_interactors.get(i);
         if(a.remove) { bounded_interactors.remove(i); continue; }
         // boundary interference?
-        if(a.interacting) {
+        if(a.interacting && !a.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-            if(a.boundary==null) {
-              interact(b,a); }}}
+              interact(b,a); }}
         // draw interactor
         a.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
     }
     
-    // player actors
+// ---- player actors
     if(showActors) {
       for(int i=players.size()-1; i>=0; i--) {
         Player a = players.get(i);
@@ -200,15 +204,13 @@ abstract class Level {
 
           // boundary interference?
           for(Boundary b: boundaries) {
-            if(a.boundary==null) {
-              interact(b,a); }}
+            interact(b,a); }
 
           // boundary interference from bounded interactors?
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                if(a.boundary==null) {
-                  interact(b,a); }}}}
+                interact(b,a); }}}
 
           // collisions with other sprites?
           if(!a.isDisabled()) {
@@ -217,7 +219,11 @@ abstract class Level {
               float[] overlap = a.overlap(o);
               if(overlap!=null) {
                 a.overlapOccuredWith(o, overlap);
-                o.overlapOccuredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }}
+                o.overlapOccuredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
+              else if(o instanceof Tracker) {
+                ((Tracker)o).track(a, viewbox.x, viewbox.y, viewbox.w, viewbox.h);
+              }
+            }
 
             // FIXME: code duplication, since it's the same as for regular interactors.
             for(Actor o: bounded_interactors) {
@@ -225,7 +231,11 @@ abstract class Level {
               float[] overlap = a.overlap(o);
               if(overlap!=null) {
                 a.overlapOccuredWith(o, overlap);
-                o.overlapOccuredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }}
+                o.overlapOccuredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
+              else if(o instanceof Tracker) {
+                ((Tracker)o).track(a, viewbox.x, viewbox.y, viewbox.w, viewbox.h);
+              }
+            }
           }
 
           // has the player tripped any triggers?
@@ -233,8 +243,13 @@ abstract class Level {
             Trigger t = triggers.get(j);
             if(t.remove) { triggers.remove(t); continue; }
             float[] overlap = t.overlap(a);
-            if(overlap==null && t.disabled) { t.enable(); }
-            else if(overlap!=null && !t.disabled) { t.run(this, overlap); }}
+            if(overlap==null && t.disabled) {
+              t.enable(); 
+            }
+            else if(overlap!=null && !t.disabled) {
+              t.run(this, a, overlap); 
+            }
+          }
         }
 
         // draw actor
@@ -242,13 +257,23 @@ abstract class Level {
       }
     }
 
-    // fixed background sprites
+// ---- decals
+    if(showDecals) {
+      for(int i=decals.size()-1; i>=0; i--) {
+        Decal d = decals.get(i);
+        if(d.remove) { decals.remove(i); continue; }
+        d.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
+      }
+    }
+
+// ---- fixed foreground sprites
     if(showForeground) {
       for(Drawable s: fixed_foreground) {
         s.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
       }
     }
-    
+
+// ---- triggerable regions
     if(showTriggers) {
       for(Drawable t: triggers) {
         t.draw(viewbox.x, viewbox.y, viewbox.w, viewbox.h);
@@ -260,13 +285,34 @@ abstract class Level {
    * Perform actor/boundary collision detection
    */
   void interact(Boundary b, Actor a) {
+    // skip if this is ther actor's own boundary.
+    if(a.boundary==b) { return; }
+
+    // Determine whether our path is blocked.
     float[] intersection = b.blocks(a);
     if(intersection!=null) {
-      float ix=a.ix, iy=a.iy;
-      a.stop(intersection[0], intersection[1]);
-      a.attachTo(b);
-      a.addImpulse(ix,iy);
-      a.update();
+      // the actor has an associated boundary,
+      // but its trajectory will take it through
+      // this boundary, and so it must be stopped.
+      if(a.boundary!=null ) {
+        a.stop();
+        a.rewind();
+      }
+      // the actor has no associated boundary.
+      // stop it at the intersection coordinate,
+      // and attach it to the boundery so that
+      // its impulse can be controlled.
+      else {
+        float ix=a.ix, iy=a.iy;
+        a.stop(intersection[0], intersection[1]);
+        if(!(b instanceof CleanBoundary)) {
+          a.attachTo(b);
+          a.addImpulse(ix,iy);
+          a.update();
+        }
+      }
+      // process the block at the actor
+      a.gotBlocked(b, intersection);
     }
   }
 
@@ -285,6 +331,7 @@ abstract class Level {
       if(key=='8') {
         for(Pickup p: pickups) { p.debug = !p.debug; }
         for(Interactor i: interactors) { i.debug = !i.debug; }
+        for(Interactor i: bounded_interactors) { i.debug = !i.debug; }
         for(Player p: players) { p.debug = !p.debug; }
       }
     }

@@ -62,6 +62,12 @@ function AudioPlayer(str) {
     // rewind the sound to start
     audio.currentTime = 0;
   };
+  this.mute = function() {
+    audio.volume = 0.0;
+  };
+  this.unmute = function() {
+    audio.volume = 1.0;
+  };
 }
 
 function canPlayOgg() {

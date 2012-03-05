@@ -20,7 +20,10 @@ abstract class Actor extends Positionable {
 
   // regular interaction with other actors
   boolean interacting = true;
-
+  
+  // only interact with players
+  boolean onlyplayerinteraction = false;
+  
   // bypass regular interaction for ... frames
   int disabledCounter = 0;
 
@@ -131,6 +134,13 @@ abstract class Actor extends Positionable {
   void overlapOccuredWith(Actor other, float[] direction) {
     colliding = true;
   }
+  
+  /**
+   * This boundary blocked our path.
+   */
+  void gotBlocked(Boundary b, float[] intersection) {
+    // subclasses can implement, but don't have to
+  }
 
   /**
    * collisions may force us to stop this
@@ -151,7 +161,15 @@ abstract class Actor extends Positionable {
   void setInteracting(boolean _interacting) {
     interacting = _interacting;
   }
-  
+
+  /**
+   * set whether or not this actor interacts
+   * with the level, or just the player
+   */
+  void setPlayerInteractionOnly(boolean v ) {
+    onlyplayerinteraction = v;
+  }
+
   /**
    * Does this actor temporary not interact
    * with any Interactors?

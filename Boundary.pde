@@ -32,24 +32,37 @@ class Boundary extends Positionable {
     x = x1;
     y = y1;
     xw = x2;
-    yh = y2;
+    yh = y2; 
     // deltas
     dx = x2-x1;
     dy = y2-y1;
-    // bounding box
+    updateBounds();
+    updateAngle();
+    attached = new ArrayList<Positionable>();
+  }
+  
+  /**
+   * Update our bounding box information
+   */
+  void updateBounds() {
+    xw = x + dx;
+    yh = y + dy;
     minx = min(x, xw);
     maxx = max(x, xw);
     miny = min(y, yh);
     maxy = max(y, yh);
-    // what's this boundary's angle?
+  }
+  
+  /**
+   * Update our angle in the world
+   */
+  void updateAngle() {
     angle = atan2(dy, dx);
     if (angle < 0) angle += 2*PI;
     cosma = cos(-angle);
     sinma = sin(-angle);
     cosa = cos(angle);
     sina = sin(angle);
-    // track attached objects
-    attached = new ArrayList<Positionable>();
   }
 
   /**
@@ -62,8 +75,14 @@ class Boundary extends Positionable {
     for(Positionable a: attached) {
       a.moveBy(x-_x,y-_y);
     }
-    // and of course move boundary.
+    // and of course move the boundary itself.
     super.setPosition(_x,_y);
+    updateBounds();
+  }
+  
+  void moveBy(float dx, float dy) {
+    super.moveBy(dx,dy);
+    updateBounds();
   }
 
   /**
@@ -131,16 +150,18 @@ class Boundary extends Positionable {
     float x1 = a.getPrevX(),
            y1 = a.getPrevY(),
            x2 = a.getX(),
-           y2 = a.getY();
+           y2 = a.getY(),
+           dx = x2-x1,
+           dy = y2-y1;
 
     // no trajectory means no new result since last time we checked.
     if(x1==x2 && y1==y2) { return null; }
 
-    // TODO: right now we're simply using the actor's
-    //       anchor point, but we really want to use the
-    //       path and boundary angles to determine which
-    //       point on the sprite is going to be hitting
-    //       the boundary, instead.
+    // FIXME: right now we're simply using the actor's
+    //        anchor point, but we really want to use the
+    //        path and boundary angles to determine which
+    //        point on the sprite is going to be hitting
+    //        the boundary, instead.
     return blocks(x1, y1, x2, y2);
   }
 
@@ -154,8 +175,13 @@ class Boundary extends Positionable {
     // Is our line segment in range? Because our
     // reference line is now flat, we can simply
     // check the x-coordinates.
-    if(tr[0] < 0     && tr[2] < 0)     { return null; }
-    if(tr[0] > tr[6] && tr[2] > tr[6]) { return null; }
+    if(tr[0] < 0     && tr[2] < 0)     { return null; } // x1<0 and x2<0
+    if(tr[0] > tr[6] && tr[2] > tr[6]) { return null; } // x1>x3 and x2>x3
+    
+    // let's rule out colinear paths, too.
+    // Those will never block.
+    if(tr[1]==0 && tr[3]==0) { return null; }
+    
 
     // Let's find out where these two lines meet.
     float dx = tr[2] - tr[0];       // x2n - x1n;
@@ -212,7 +238,7 @@ class Boundary extends Positionable {
    * is actually incoming from.
    */
   // FIXME: this can be done more efficiently, rather than readably.
-  // FIXME: this can still cause pass-through problems when x1/y1
+  // FIXME: this seems to still cause pass-through problems when x1/y1
   //        is located on the boundary line.
   boolean onPassThroughSide(float x1, float y1, float x2, float y2) {
     float local = atan2(dy, dx);

@@ -5,26 +5,23 @@
     <meta charset="utf-8">
     <script type="text/javascript" src="processing.js"></script>
     <script type="text/javascript" src="minim.js"></script>
-    <link href='http://fonts.googleapis.com/css?family=Norican' rel='stylesheet' type='text/css'>
-    <style type="text/css">
-      h1 { text-align: center; font-family: Norican; font-size: 200%; }
-      a { color: rgba(0, 0, 200, 0.5); text-decoration: none; }
-      h3 { margin: 0px; }
-      .minor { font-size: 80%; }
-      p { margin: 0px; }
-      p+p { margin-top: 1em; }
-      canvas:focus {
-        outline: 0px;
-        -webkit-box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
-        -moz-box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
-        box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
-      }
-      body { text-align: center; }
-    </style>
-    <script type="text/javascript">
+    <script type="text/javascript" src="keytrap.js"></script>
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Norican"></link>
+    <link rel="stylesheet" type="text/css" href="spriteengine.css"></link>
+    <script type="text/javascript"> 
       function setCoordinate(x,y) {
-        document.getElementById('x').innerHTML = x|0;
-        document.getElementById('y').innerHTML = y|0;
+        document.getElementById("x").innerHTML = x|0;
+        document.getElementById("y").innerHTML = y|0;
+      }
+      
+      function gameView() {
+        pjs.setGameView();
+        pjs.externals.canvas.focus();
+      }
+      
+      function designView() {
+        pjs.setDesignView();
+        pjs.externals.canvas.focus();
       }
 
       var pjs;
@@ -44,61 +41,112 @@
     </script>
   </head>
   <body>
-    <h1>～ OMG, Mario! ～</h1>
-    
-    <!--
-        The various files have been formatted to indicate
-        their hierarchical relationship. As such, a Pickup
-        extends Actor, which extends Positionable, which
-        extends Drawable. Just so you get a better idea
-        of how all the code links up.
-    -->
-    <canvas id="mario" data-processing-sources="preloads.pde
-                                                spriteengine.pde
-                                                drawbackground.pde
+    <div class="content shaded">
+      <headers>
+        <h1>～ OMG, Mario! ～</h1>
+        <h4>A <a href="http://processingjs.org">Processing(.js)</a> sprite based 2D game engine demonstrator... with Mario.</h4>
+      </headers>
+      
+      <table><tr><td>
+        <!--
+            The various files have been formatted to indicate
+            their hierarchical relationship. As such, a Pickup
+            extends Actor, which extends Positionable, which
+            extends Drawable. Just so you get a better idea
+            of how all the code links up.
+        -->
+        <canvas id="mario" data-processing-sources="preloads.pde
+                                                    spriteengine.pde
+                                                    drawbackground.pde
 
-                                                Level.pde
+                                                    Level.pde
 
-                                                Drawable.pde
-                                                  Positionable.pde
-                                                    Actor.pde
-                                                      Player.pde
-                                                      Interactor.pde
-                                                        BoundedInteractor.pde
-                                                      Pickup.pde
-                                                    Boundary.pde
-                                                    Trigger.pde
-                                                    Sprite.pde
-                                                    TilingSprite.pde
+                                                    Drawable.pde
+                                                      Positionable.pde
+                                                        Actor.pde
+                                                          Player.pde
+                                                          Interactor.pde
+                                                            BoundedInteractor.pde
+                                                          Pickup.pde
+                                                        Boundary.pde
+                                                          CleanBoundary.pde
+                                                        Trigger.pde
+                                                        Sprite.pde
+                                                          Decal.pde
+                                                        TilingSprite.pde
 
-                                                SpriteMapHandler.pde
-                                                SpritePath.pde
-                                                SpritePathChunker.pde
-                                                State.pde
-                                                SoundManager.pde
-                                                ShapePrimitives.pde
+                                                    ShapePrimitives.pde
+                                                    SpriteMapHandler.pde
+                                                    SpritePath.pde
+                                                    SpritePathChunker.pde
+                                                    SoundManager.pde
+                                                    State.pde
+                                                    Tracking.pde
 
-                                                JavaScript.pde" style="border: 1px solid black;" tabindex="1"></canvas>
+                                                    JavaScript.pde" style="border: 1px solid black;" tabindex="1"></canvas>
+        <p class="smaller center">Current Mario coordinates: <span id="x"></span>/<span id="y"></span>
+           - 
+           <span> [<a href="javascript:gameView()">game view</a>] </span>
+           -
+           <span> [<a href="javascript:designView()">design view</a>] </span>
+        </p>
+      </td><td>
+        <div style="border: 1px solid black; background-color: rgba(255,255,100,0.2); margin-top: 1em;">
+          <h1>Game engine features</h1>
+          <ul class="smaller">
+            <li>Designed for 2D sprite based games</li>
+            <li>Physics-based movement</li>
+            <li>Persistence-based key input rather than tracking keydown and keyup events.</li>
+            <li>Regular and tiling sprites (demo: tiled background, ground)</li>
+            <li>Multiple layers (demo: background, actor layer, foreground)</li>
+            <li>Viewbox-based drawing</li>
+            <li>Visual decals (demo: points when hitting enemies)</li>
+            <li>State based actors (demo: mario constantly changes states)</li>
+            <li>State transition events (demo: ghost block)</li>
+            <li>Unidirectionally passable boundaries</li>
+            <li>Actors-with-boundaries (demo: ghost block, passthrough blocks)</li>
+            <li>Different levels of interaction (demo: players interact with everything, NPCs don't with NPCs or pickups, ghost is not hindered by boundaries, etc)</li>
+            <li>Moving "on rails" (demo: flying koopas)</li>
+            <li>Interaction triggers (demo: mushrooms, blocks, finish line)</li>
+            <li>Event trigger regions (demo: type "7" to see them in-game)</li>
+            <li>Actor tracking (demo: ghost coin block)</li>
+            <li>Persistent and expiring objects (demo: mushrooms expire if they go too far off-screen, Koopas do not)</li>
+            <li>Support for mp3 and ogg audio (demo: press <img style="position:relative; top:2px;" src="graphics/unmute.gif" width=12 height=12> in the upper-right corner!)</li>
+            <li>Supported in all HTML5 browsers, including IE9!</li>
+            <!--
+              <li>Small! This demo is 77KB for the library, 46KB for the game, and 23KB in graphics. The only thing making it big is the audio.</li>
+            -->
+          </ul>
+        </div>
+      </td></tr></table>
 
-     <p>current coordinates: <span id="x"></span>/<span id="y"></span></p>
-     <p><strong>controls:</strong> cursor keys, and [z] and [x] for the jump/spin jump (left click to spawn random koopa troopers, right click to drop a mushroom!)</p>
+      <table id="controls"><tr><td>
+        <p><strong>Mario controls:</strong> cursor keys, and [z] and [x] for the jump/spin jump (left click to spawn Koopa troopers, right click to drop mushrooms!)</p>
+      </td><td>
+        <p class="smaller"><strong>debug controls:</strong> [1] toggles background, [2] toggles boundaries, [3] toggles pickups, [4] toggles NPCs, [5] toggles Mario, [6] toggles the foreground, [7] toggle trigger regions, [8] toggles actor bounding boxes.</p>
+      </td></tr></table>
 
-     <p><em>debug controls: [1] toggles background, [2] toggles boundaries, [3] toggles pickups, [4] toggles NPCs, [5] toggles Mario, [6] toggles the foreground, [7] toggle trigger regions, [8] toggles actor bounding boxes</em>.</p>
+      <hr>
 
-     <p><strong>TODO</strong>: loading all of this from a game script, made in a web-based level editor, so that you can build games without having to actually program!<p>
+      <p><strong>TODO</strong>: loading all of this from a game script, made in a web-based level editor, so that you can build games without having to actually program!
+         That said, you are highly encouraged to look at <a href="spriteengine.pde">the non-library source code</a> for this demonstrator!<p>
 
-     <hr>
+      <hr>
 
-     <p>A work in progress by me, <a href="http://pomax.nihongoresources.com">Pomax</a>.
-        You might know me from <a href="http://processingjs.org">Processing.js</a>,
-        <a href="http://github.com/Pomax/Font.js">Font.js</a>, or perhaps even something
-        else (Like my <a href="http://processingjs.nihongoresources.com/bezierinfo">primer
-        on Bezier curves</a>, writeup on <a href="http://processingjs.nihongoresources.com/the_smallest_font/">the
-        smallest web-legal TTF</a>, or <a href="http://redesign.nihongoresources.com">nihongoresources</a>).
-        If you don't know me: I do things these kind of things. Then I explain them to
-        people. If you wish to reach me, I'm on IRC (irc.mozilla.org and irc.freenode.net
-        amongst others) as Pomax, as well as on twitter, as <a href="https://twitter.com/TheRealPomax">TheRealPomax</a>
-     </p>
-
+      <p>A work in progress by me, <a href="http://pomax.nihongoresources.com">Pomax</a>.
+         You might know me from <a href="http://processingjs.org">Processing.js</a>,
+         <a href="http://github.com/Pomax/Font.js">Font.js</a>, or perhaps even something
+         else (Like my <a href="http://processingjs.nihongoresources.com/bezierinfo">primer
+         on Bezier curves</a>, writeup on <a href="http://processingjs.nihongoresources.com/the_smallest_font/">the
+         smallest web-legal TTF</a>, or <a href="http://redesign.nihongoresources.com">nihongoresources</a>).
+         If you don"t know me: I do things these kind of things. Then I explain them to
+         people. If you wish to reach me, I'm on IRC (irc.mozilla.org and irc.freenode.net
+         amongst others) as Pomax, as well as on twitter, as <a href="https://twitter.com/TheRealPomax">TheRealPomax</a>.
+      </p>
+    </div>
   </body>
+  <script type="text/javascript">
+    <!-- We don't want the cursor keys to also be interpreted by the browser -->
+    KeyTrap.trap(document.getElementById('mario'),[37,38,39,40]);
+  </script>
 </html>

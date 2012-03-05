@@ -1,6 +1,16 @@
 /* @pjs pauseOnBlur="true";
         font="fonts/acmesa.ttf";
-        preload="graphics/backgrounds/ground-filler.gif,
+        preload="graphics/mute.gif,
+                 graphics/unmute.gif,
+                 
+                 graphics/decals/100.gif,
+                 graphics/decals/200.gif,
+                 graphics/decals/300.gif,
+                 graphics/decals/400.gif,
+                 graphics/decals/500.gif,
+                 graphics/decals/1000.gif,
+
+                 graphics/backgrounds/ground-filler.gif,
                  graphics/backgrounds/ground-slant.gif,
                  graphics/backgrounds/ground-top.gif,
 
@@ -26,6 +36,8 @@
                  graphics/assorted/Goal-front.gif,
                  graphics/assorted/Goal-back.gif,
                  graphics/assorted/Goal-slider.gif,
+                 graphics/assorted/Pipe-head.gif,
+                 graphics/assorted/Pipe-body.gif,
 
                  graphics/enemies/Dead-koopa.gif,
                  graphics/enemies/Naked-koopa-walking.gif,
@@ -33,6 +45,9 @@
                  graphics/enemies/Red-koopa-standing.gif,
                  graphics/enemies/Red-koopa-flying.gif,
                  graphics/enemies/Banzai-bill.gif,
+                 graphics/enemies/Boo-chasing.gif,
+                 graphics/enemies/Boo-waiting.gif,
+                 graphics/enemies/Coin-boo-transition.gif,
 
                  graphics/mario/small/Crouching-mario.gif,
                  graphics/mario/small/Dead-mario.gif,

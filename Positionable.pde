@@ -36,6 +36,10 @@ abstract class Positionable implements Drawable {
 
   // previous x/y coordinate, for trajectory checks
   float prevx=0, prevy=0;
+  
+  // which direction is this positionable facing,
+  // based on its movement in the last frame?
+  float direction = -1;
 
   // administrative
   boolean animated = true;  // does this object move?
@@ -62,6 +66,7 @@ abstract class Positionable implements Drawable {
     prevx = x;
     prevy = y;
     aFrameCount = 0;
+    direction = -1;
   }
 
   /**
@@ -74,7 +79,6 @@ abstract class Positionable implements Drawable {
     prevy = y;
     aFrameCount = 0;
   }
-
 
   /**
    * set the impulse for this object
@@ -98,6 +102,25 @@ abstract class Positionable implements Drawable {
   void addImpulse(float _ix, float _iy) {
     ix += _ix;
     iy += _iy;
+  }
+  
+  /**
+   * Update which direction this positionable is
+   * "looking at".
+   */
+  void setViewDirection(float dx, float dy) {
+    if(dx!=0 || dy!=0) {
+      direction = atan2(dy,dx);
+      if(direction<0) {
+        direction+=2*PI; }}
+  }
+
+  /**
+   * collisions may force us to stop object's movement.
+   */
+  void stop() {
+    ix = 0;
+    iy = 0;
   }
 
   /**
@@ -140,6 +163,15 @@ abstract class Positionable implements Drawable {
     boundary = b;
     b.attach(this);
     aFrameCount = 0;
+  }
+
+  /**
+   * Detach from whichever boundary we're attached to.
+   */
+  void detach(Boundary b) {
+    if(boundary==b) {
+      detach();
+    }
   }
 
   /**
@@ -298,6 +330,11 @@ abstract class Positionable implements Drawable {
     if(animated) { update(); }
   }
   
+  /**
+   * must be implemented by subclasses,
+   * to indicate whether this object is
+   * visible in this viewbox.
+   */
   abstract boolean drawableFor(float vx, float vy, float vw, float vh);
 
   /**
@@ -342,21 +379,30 @@ abstract class Positionable implements Drawable {
     }
     // dampen (or boost) our impulse, based on the impulse coefficients
     ix *= ixF;
-    iy *= iyF;
-  }
+    iy *= iyF;   
+ }
   
   /**
-   * Back up a position.
+   * Partial rewind
    */
-  void rewind() {
-    // FIXME: this smells very much like a hack
+  // FIXME: this smells very much like a hack
+  void rewindPartial() {
     x = prevx + (x-prevx)*0.5;
     y = prevy + (y-prevy)*0.5;
+  }
+
+  /**
+   * Full rewind.
+   */  
+  void rewind() {
+    x = prevx;
+    y = prevy;
   }
 
   // implemented by subclasses
   abstract void drawObject();
 
+  // mostly for debugging purposes 
   String toString() {
     return x+"/"+y+" im{"+ix+"/"+iy+"} (prev: "+prevx+"/"+prevy+")" ;
   }

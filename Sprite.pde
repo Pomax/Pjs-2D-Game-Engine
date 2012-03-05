@@ -56,6 +56,9 @@ class Sprite extends Positionable {
     visible = _visible;
   }
 
+  /**
+   * bind a state to this sprite
+   */
   void setState(State _state) {
     state = _state;
   }
@@ -177,8 +180,13 @@ class Sprite extends Positionable {
       float[] pathdata = path.getNextFrameInformation();
       setScale(pathdata[2], pathdata[3]);
       setRotation(pathdata[4]);
-      state.setActorOffsets(pathdata[0], pathdata[1]);
-      state.setActorDimensions(width*sx, height*sy, halign*sx, valign*sy);
+      if(state!=null) {
+        state.setActorOffsets(pathdata[0], pathdata[1]);
+        state.setActorDimensions(width*sx, height*sy, halign*sx, valign*sy);
+      } else {
+        ox = pathdata[0];
+        oy = pathdata[1];
+      }
     }
     return frames[currentFrame];
   }
@@ -191,7 +199,7 @@ class Sprite extends Positionable {
    */
   int getCurrentFrameNumber() {
     if(!path.looping && framesServed == path.size()) {
-      state.finished();
+      if(state!=null) { state.finished(); }
       animated = false;
       return numFrames-1;
     }
@@ -223,7 +231,7 @@ class Sprite extends Positionable {
   }
 
   // pass-through/unused
-  void draw(float _a, float _b, float _c, float _d) { draw(); }
+  void draw(float _a, float _b, float _c, float _d) { this.draw(); }
   void drawObject() {}
   boolean drawableFor(float _a, float _b, float _c, float _d) { return true; }
   

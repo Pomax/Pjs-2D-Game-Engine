@@ -27,6 +27,6 @@ void bindJavaScript(JavaScript js) {
   javascript = js;
   // how do we prevent IE9 from not-running-without-debugger-open?
   if(js.console != null) {
-    js.console.log("JavaScript bound to sketch");
+    // js.console.log("JavaScript bound to sketch");
   }
 }

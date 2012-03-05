@@ -12,13 +12,26 @@ import ddf.minim.signals.*;
 import ddf.minim.analysis.*;
 import ddf.minim.effects.*;
 static class SoundManager {
+  private static boolean muted = true;
   private static Minim minim;
-  static void init(PApplet sketch) { 
-    minim = new Minim(sketch); 
-  }
-  
   private static HashMap<Object,AudioPlayer> owners = new HashMap<Object,AudioPlayer>();
   private static HashMap<String,AudioPlayer> audioplayers = new HashMap<String,AudioPlayer>();
+  public static PImage mute_overlay;
+  public static PImage unmute_overlay;
+  public static PImage volume_overlay;
+
+
+  static void init(PApplet sketch) { 
+    mute_overlay = sketch.loadImage("graphics/mute.gif");
+    unmute_overlay = sketch.loadImage("graphics/unmute.gif");
+    volume_overlay = (muted ? unmute_overlay : mute_overlay);
+    minim = new Minim(sketch); 
+    reset();
+  }
+
+  static void reset() {
+    owners = new HashMap<Object,AudioPlayer>();
+  }
 
   static void load(Object identifier, String filename) {
     // We recycle audio players to keep the
@@ -26,6 +39,7 @@ static class SoundManager {
     AudioPlayer player = audioplayers.get(filename);
     if(player==null) {
       player = minim.loadFile(filename);
+      if(muted) player.mute();
       audioplayers.put(filename, player); }
     owners.put(identifier, player);
   }
@@ -38,6 +52,16 @@ static class SoundManager {
       return;
     }
     ap.play();
+  }
+
+  static void loop(Object identifier) {
+    rewind(identifier);
+    AudioPlayer ap = owners.get(identifier);
+    if(ap==null) {
+      println("ERROR: Error in SoundManager, no AudioPlayer exists for "+identifier.toString());
+      return;
+    }
+    ap.loop();
   }
 
   static void pause(Object identifier) {
@@ -66,5 +90,14 @@ static class SoundManager {
     }
     ap.pause();
     ap.rewind();
+  }
+  
+  static void mute() {
+    muted = !muted;
+    for(AudioPlayer ap: audioplayers.values()) {
+      if(muted) { ap.mute(); }
+      else { ap.unmute(); }
+    }
+    volume_overlay = (muted ? unmute_overlay : mute_overlay);
   }
 }

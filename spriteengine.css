@@ -1,0 +1,82 @@
+h1 {
+  text-align: center;
+  font-family: Norican;
+  font-size: 200%;
+}
+
+a {
+  color: rgba(140, 0, 0, 0.9);
+  text-decoration: none;
+}
+
+h3 {
+  margin: 0px;
+}
+
+.minor {
+  font-size: 80%;
+}
+
+p { margin: 0px; }
+p+p { margin-top: 1em; }
+
+canvas:focus {
+  outline: 0px;
+  -webkit-box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+  -moz-box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+  box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+}
+
+body {
+  text-align: center;
+  padding: 10px;
+  margin: 0px; 
+}
+
+.content {
+  width: 900px;
+  border: 1px solid black;
+  margin: auto;
+}
+
+.shaded {        
+  -webkit-box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+  -moz-box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+  box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
+}
+
+hr {
+  border: 1px solid rgba(0,0,150,0.3);
+  border-width: 0px 0px 1px 0px;
+}
+
+#pagecommentform {
+  width: 90%;
+  margin: auto;
+}
+
+table,tr,td {
+  width: 100%;
+  border: 0px;
+  margin: 0px;
+  padding: 0px;
+  margin-bottom: 0.5em; 
+}
+
+td { width: 50%; padding: 0px 0.5em; text-align: justify; }
+td+td { padding-left: 0px; vertical-align: top; }
+
+#controls td { background-color: #F4F4FF; }
+
+ul {
+  text-align: left;
+  margin-left: -1em; 
+}
+
+.smaller {
+  font-size: 80%; 
+}
+
+.center {
+  text-align: center;
+}
