@@ -7,6 +7,7 @@
     <script type="text/javascript" src="minim.js"></script>
     <script type="text/javascript" src="keytrap.js"></script>
     <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Norican"></link>
+    <link rel="stylesheet" type="text/css" href="EasyPageComments.css"></link>
     <link rel="stylesheet" type="text/css" href="spriteengine.css"></link>
     <script type="text/javascript"> 
       function setCoordinate(x,y) {
@@ -25,13 +26,58 @@
       }
 
       var pjs;
+      var monitor;
+      var touchinput;
       function bindSketch() {
-        var tmp = Processing.getInstanceById("mario");
-        if(tmp && tmp.bindJavaScript) {
-          pjs = tmp;
-          pjs.bindJavaScript(this);
-        } else { setTimeout(bindSketch, 250); }
+        var tmp;
+        if(!pjs) {
+          tmp = Processing.getInstanceById("mario");
+          if(tmp && tmp.bindJavaScript) {
+            pjs = tmp;
+            pjs.bindJavaScript(this);
+          } else { setTimeout(bindSketch, 250); }
+        }
+        if(pjs && !monitor) {
+          tmp = Processing.getInstanceById("monitor");
+          if(tmp) {
+            monitor = tmp;         
+            monitor.setActorCount(pjs.getActorCount());
+          } else { setTimeout(bindSketch, 250); }
+        }
+        if(pjs && monitor && !touchinput) {
+          tmp = Processing.getInstanceById("touchinput");
+          if(tmp) {
+            touchinput = tmp;         
+            touchinput.bindJavaScript(this);
+          } else { setTimeout(bindSketch, 250); }
+        }
       }
+      
+      // monitor framerate
+      function recordFramerate(frameRate) {
+        monitor.addPoint(frameRate);
+      }
+      
+      function toggleMonitor() {
+        var mon = monitor.externals.canvas;
+        if(mon.style.display !== "block") {
+          mon.style.display = "block";
+        } else { mon.style.display = "none"; }
+      }
+      
+      function addActor() { monitor.addActor(); }
+      function removeActor() { monitor.removeActor(); }
+      function resetActorCount() { monitor.resetActorCount(); }
+      
+      function toggleInputs() {
+        var tch = touchinput.externals.canvas;
+        if(tch.style.display !== "block") {
+          tch.style.display = "block";
+        } else { tch.style.display = "none"; }
+      }
+
+      function pressKey(keyCode) { pjs.keyPressFromPage(keyCode); }
+      function releaseKey(keyCode) { pjs.keyReleaseFromPage(keyCode); }
 
       document.addEventListener("DOMContentLoaded",function(){
         var mario = document.getElementById("mario");
@@ -69,7 +115,6 @@
                                                             BoundedInteractor.pde
                                                           Pickup.pde
                                                         Boundary.pde
-                                                          CleanBoundary.pde
                                                         Trigger.pde
                                                         Sprite.pde
                                                           Decal.pde
@@ -89,8 +134,16 @@
            <span> [<a href="javascript:gameView()">game view</a>] </span>
            -
            <span> [<a href="javascript:designView()">design view</a>] </span>
+           -
+           <span> [<a href="javascript:toggleMonitor()">toggle Statistics</a>] </span>
+           -
+           <span> [<a href="javascript:toggleInputs()">touch</a>] </span>
         </p>
-      </td><td>
+
+        <canvas id="monitor" data-processing-sources="tools/monitor/monitor.pde"></canvas>
+        <canvas id="touchinput" data-processing-sources="tools/touchinput/touchinput.pde"></canvas>
+
+      </td><td>     
         <div style="border: 1px solid black; background-color: rgba(255,255,100,0.2); margin-top: 1em;">
           <h1>Game engine features</h1>
           <ul class="smaller">
@@ -141,8 +194,30 @@
          smallest web-legal TTF</a>, or <a href="http://redesign.nihongoresources.com">nihongoresources</a>).
          If you don"t know me: I do things these kind of things. Then I explain them to
          people. If you wish to reach me, I'm on IRC (irc.mozilla.org and irc.freenode.net
-         amongst others) as Pomax, as well as on twitter, as <a href="https://twitter.com/TheRealPomax">TheRealPomax</a>.
+         amongst others) as Pomax, as well as on twitter, as <a href="https://twitter.com/TheRealPomax">TheRealPomax</a>,
+         although of course you can also just leave a comment in the comment section!
       </p>
+
+      <hr>
+       
+      <h1>Leave a comment, I love comments!</h1>
+      <div id="pagecomments"></div>
+      <div id="pagecommentform"></div>
+       
+      <script type="text/javascript" src="EasyPageComments.js"></script>
+      <script type="text/javascript">
+        function showEasyPageComments(data) {
+          document.getElementById("pagecomments").innerHTML = data+"<hr>"; }
+
+        function showEasyPageCommentForm(data) {
+          document.getElementById("pagecommentform").innerHTML = data; }
+
+        function addEasyPageComments() {
+          EasyPageComments.createCommentsList("EasyPageComments");
+          EasyPageComments.createCommentForm("EasyPageComments"); }
+
+        document.addEventListener("DOMContentLoaded", addEasyPageComments, false)
+      </script>
     </div>
   </body>
   <script type="text/javascript">

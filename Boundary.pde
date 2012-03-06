@@ -101,14 +101,15 @@ class Boundary extends Positionable {
   void detach(Positionable a) {
     attached.remove(a);
   }
-  
+
   /**
    * detach all actors from this boundary
    */
   void detachAll() {
     for(Positionable a: attached) {
-      a.detach();
+      a.detach(this);
     }
+    attached = new ArrayList<Positionable>();
   }
 
   /**
@@ -147,28 +148,68 @@ class Boundary extends Positionable {
   float[] blocks(Actor a) {
     if(disabled) return null;
 
-    float x1 = a.getPrevX(),
-           y1 = a.getPrevY(),
-           x2 = a.getX(),
-           y2 = a.getY(),
-           dx = x2-x1,
-           dy = y2-y1;
+    // get the basic positioning information
+    float px = a.getPrevX(),
+          py = a.getPrevY(),
+          cx = a.getX(),
+          cy = a.getY(),
+          dx = cx-px,
+          dy = cy-py;
 
-    // no trajectory means no new result since last time we checked.
-    if(x1==x2 && y1==y2) { return null; }
+    // no trajectory means nothing has changed
+    // since the last time we checked blocking.
+    if(dx==0 && dy==0) { return null; }
 
-    // FIXME: right now we're simply using the actor's
-    //        anchor point, but we really want to use the
-    //        path and boundary angles to determine which
-    //        point on the sprite is going to be hitting
-    //        the boundary, instead.
-    return blocks(x1, y1, x2, y2);
+    // continue: get the current and previous bounding boxes
+    float[] prev = a.getBoundingBox();
+    prev[0] -= dx;  prev[1] -= dy;
+    prev[2] -= dx;  prev[3] -= dy;
+    prev[4] -= dx;  prev[5] -= dy;
+    prev[6] -= dx;  prev[7] -= dy;
+    float[] current = a.getBoundingBox();
+
+    // check if any of the corners is blocked. If so, signal a block.
+    float[] alignment = { a.width/2, a.height,
+                         -a.width/2, a.height,
+                         -a.width/2, 0,
+                          a.width/2, 0};
+
+    // check if any of the corners is blocked
+    for(int i=0; i<8; i+=2) {
+      float[] overlap = blocks(prev[i], prev[i+1], current[i], current[i+1]);
+      if(overlap!=null) {
+        // FIXME: add in a 'but not actually blocked if: ...' criterium
+        //        so that we don't get "glued" to boundaries that we're
+        //        just passing through.
+        if(!above(prev)) { continue; }
+
+        // correct the intersection point for the corner's
+        // offset with respect to the sprite's anchor:
+        overlap[0] += alignment[i];
+        overlap[1] += alignment[i+1];
+        return overlap; }}
+
+    return null;
+  }
+  
+  /**
+   * Is the bounding box entirely above this boundary?
+   */
+  boolean above(float[] bounds) {
+    boolean failed = false;
+    for(int i=0; i<8; i+=2) {
+      if(!onPassThroughSide(x, y, bounds[i], bounds[i+1])) {
+        // we allow one of the four corners to be below
+        // the boundary. This means slants don't break.
+        if(!failed) { failed = true; }
+        else { return false; }}}
+    return true;
   }
 
   /**
    * May something on a path from (x1,y1) to (x2,y2) pass through this platform?
    */
-  float[] blocks(float x1, float y1, float x2, float y2) {
+  protected float[] blocks(float x1, float y1, float x2, float y2) {
     // perform a translation-rotation about (x3,y3)
     float[] tr = translateRotateXY3(x1, y1, x2, y2, x, y, xw, yh);
 
