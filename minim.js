@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Minim-emulation code by Daniel Hodgin
  */
 

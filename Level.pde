@@ -42,7 +42,10 @@ abstract class Level {
 
   // The list of sprites that may only interact with the player(s) (and boundaries)
   ArrayList<Pickup> pickups = new ArrayList<Pickup>();
-  void addForPlayerOnly(Pickup pickup) { pickups.add(pickup); }
+  void addForPlayerOnly(Pickup pickup) {
+    pickups.add(pickup); 
+    if(javascript!=null) { javascript.addActor(); }
+  }
 
   // The list of player sprites
   ArrayList<Decal> decals  = new ArrayList<Decal>();
@@ -50,20 +53,34 @@ abstract class Level {
 
   // The list of fully interacting non-player sprites
   ArrayList<Interactor> interactors = new ArrayList<Interactor>();
-  void addInteractor(Interactor interactor) { interactors.add(interactor); }
+  void addInteractor(Interactor interactor) {
+    interactors.add(interactor); 
+    if(javascript!=null) { javascript.addActor(); }
+  }
 
   // The list of fully interacting non-player sprites that have associated boundaries
   ArrayList<BoundedInteractor> bounded_interactors = new ArrayList<BoundedInteractor>();
-  void addBoundedInteractor(BoundedInteractor bounded_interactor) { bounded_interactors.add(bounded_interactor); }
+  void addBoundedInteractor(BoundedInteractor bounded_interactor) {
+    bounded_interactors.add(bounded_interactor); 
+    if(javascript!=null) { javascript.addActor(); }
+  }
 
   // The list of player sprites
   ArrayList<Player> players  = new ArrayList<Player>();
-  void addPlayer(Player player) { players.add(player); }
+  void addPlayer(Player player) {
+    players.add(player); 
+    if(javascript!=null) { javascript.addActor(); }
+  }
 
   // event triggers
   ArrayList<Trigger> triggers = new ArrayList<Trigger>();
   void addTrigger(Trigger trigger) { triggers.add(trigger); }
 
+
+  // used for statistics
+  int getActorCount() {
+    return players.size() + bounded_interactors.size() + interactors.size() + pickups.size();
+  }
 
   // level dimensions
   float width, height;
@@ -140,7 +157,10 @@ abstract class Level {
     if(showPickups) {
       for(int i = pickups.size()-1; i>=0; i--) {
         Pickup p = pickups.get(i);
-        if(p.remove) { pickups.remove(i); continue; }
+        if(p.remove) {
+          pickups.remove(i);
+          if(javascript!=null) { javascript.removeActor(); }
+          continue; }
 
         // boundary interference?
         if(p.interacting && !p.onlyplayerinteraction) {
@@ -166,7 +186,10 @@ abstract class Level {
     if(showInteractors) {
       for(int i = interactors.size()-1; i>=0; i--) {
         Interactor a = interactors.get(i);
-        if(a.remove) { interactors.remove(i); continue; }
+        if(a.remove) {
+          interactors.remove(i);
+          if(javascript!=null) { javascript.removeActor(); }
+          continue; }
 
         // boundary interference?
         if(a.interacting && !a.onlyplayerinteraction) {
@@ -185,7 +208,10 @@ abstract class Level {
       // FIXME: code duplication, since it's the same as for regular interactors.
       for(int i = bounded_interactors.size()-1; i>=0; i--) {
         Interactor a = bounded_interactors.get(i);
-        if(a.remove) { bounded_interactors.remove(i); continue; }
+        if(a.remove) {
+          bounded_interactors.remove(i);
+          if(javascript!=null) { javascript.removeActor(); }
+          continue; }
         // boundary interference?
         if(a.interacting && !a.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
@@ -199,7 +225,10 @@ abstract class Level {
     if(showActors) {
       for(int i=players.size()-1; i>=0; i--) {
         Player a = players.get(i);
-        if(a.remove) { players.remove(i); continue; }
+        if(a.remove) {
+          players.remove(i);
+          if(javascript!=null) { javascript.removeActor(); }
+          continue; }
         if(a.interacting) {
 
           // boundary interference?
@@ -285,32 +314,48 @@ abstract class Level {
    * Perform actor/boundary collision detection
    */
   void interact(Boundary b, Actor a) {
-    // skip if this is ther actor's own boundary.
-    if(a.boundary==b) { return; }
+    // skip if this is one of the actor's own boundary.
+    if(a.boundaries.contains(b)) { return; }
 
     // Determine whether our path is blocked.
     float[] intersection = b.blocks(a);
+    
     if(intersection!=null) {
-      // the actor has an associated boundary,
-      // but its trajectory will take it through
-      // this boundary, and so it must be stopped.
-      if(a.boundary!=null ) {
-        a.stop();
-        a.rewind();
-      }
-      // the actor has no associated boundary.
-      // stop it at the intersection coordinate,
-      // and attach it to the boundery so that
-      // its impulse can be controlled.
-      else {
-        float ix=a.ix, iy=a.iy;
-        a.stop(intersection[0], intersection[1]);
-        if(!(b instanceof CleanBoundary)) {
-          a.attachTo(b);
-          a.addImpulse(ix,iy);
-          a.update();
-        }
-      }
+      float ix=a.ix, iy=a.iy;
+      a.stop(intersection[0], intersection[1]);
+      a.attachTo(b);
+
+      float[] rdf = b.redirectForce(ix, iy);
+      // FIXME: this hack overcomes an odd deficiency caused
+      //        by the way actors and boundaries interact.
+      //        Using either value set causes problems:
+      //
+      //        - addImpulse(ix/iy) makes us momentarily glued
+      //        to boundaries that we should bounce off off,
+      //        while our impulse is dampened over X frames.
+      //
+      //        - addImpulse(rdf[0],rdf[1]) correctly kills our
+      //        momentum, but also allows us to pass through
+      //        certain boundaries (i.e. left side of pipe),
+      //        and makes walking to adjacent, connected,
+      //        platforms near-impossible.
+      //
+      //        I would love to find out why, but do not have
+      //        have the time to do so right now. I wasted
+      //        roughly half a day doing a rewrite of the
+      //        boundary/actor system, and ended up throwing
+      //        it away because it kept breaking more than it
+      //        fixed. This shows two things: this bug is big,
+      //        and the process of boundary collision is wrong.
+      //
+      //        CAUSES: Positionable.update interprets boundary's
+      //                redirectForce[2] as an "is on boundary"
+      //                value, while in fact it only indicates
+      //                whether forces are changed or not.
+      a.addImpulse(0.01 * ix + 0.99 * rdf[0],
+                   0.01 * iy + 0.99 * rdf[1]);
+
+      a.update();
       // process the block at the actor
       a.gotBlocked(b, intersection);
     }

@@ -4,10 +4,10 @@
 abstract class Positionable implements Drawable {
 
   // Positionable objects can be bound to
-  // a boundary, which will then be responsible
-  // for guiding the impulse vector along its
+  // boundaries, which will then be responsible
+  // for guiding the impulse vector along their
   // surface, rather than allowing free movement.
-  Boundary boundary = null;
+  ArrayList<Boundary> boundaries = new ArrayList<Boundary>();
 
   // dimensions and positioning
   float x=0, y=0, width=0, height=0;
@@ -54,7 +54,12 @@ abstract class Positionable implements Drawable {
    * Set up a manipulable object
    */
   Positionable(float _x, float _y, float _width, float _height) {
-    x = _x; y = _y; width = _width; height = _height;
+    x = _x;
+    y = _y;
+    width = _width;
+    height = _height;
+    ox = width/2;
+    oy = -height/2;
   }
 
   /**
@@ -160,7 +165,7 @@ abstract class Positionable implements Drawable {
    * Attach this positionable to a boundary.
    */
   void attachTo(Boundary b) {
-    boundary = b;
+    boundaries.add(b);
     b.attach(this);
     aFrameCount = 0;
   }
@@ -169,19 +174,19 @@ abstract class Positionable implements Drawable {
    * Detach from whichever boundary we're attached to.
    */
   void detach(Boundary b) {
-    if(boundary==b) {
-      detach();
-    }
+    boundaries.remove(b);
+    b.detach(this);
+    aFrameCount = 0;
   }
-
+  
   /**
-   * Detach from whichever boundary we're attached to.
+   * Detach from all platforms
    */
-  void detach() {
-    if(boundary!=null) {
+  void detachAll() {
+    for(Boundary boundary: boundaries) {
       boundary.detach(this);
     }
-    boundary = null;
+    boundaries = new ArrayList<Boundary>();
     aFrameCount = 0;
   }
 
@@ -270,24 +275,50 @@ abstract class Positionable implements Drawable {
    * get the midpoint
    */
   // FIXME: this doesn't look like a sprite center?
-  float getMidX() { return x + ox; }
+//  float getMidX() { return x + ox; }
 
   /**
    * get the midpoint
    */
   // FIXME: this doesn't look like a sprite center?
-  float getMidY() { return y + oy; }
+//  float getMidY() { return y + oy; }
+
+  /**
+   * Get this positionable's bounding box
+   */
+  float[] getBoundingBox() {
+    return new float[]{x+ox-width/2, y-oy-height/2,  // top-left
+                       x+ox+width/2, y-oy-height/2,  // top-right
+                       x+ox+width/2, y-oy+height/2,  // bottom-right
+                       x+ox-width/2, y-oy+height/2}; // bottom-left
+  }
 
   /**
    * Primitive sprite overlap test: bounding box
    * overlap using midpoint distance.
    */
   float[] overlap(Positionable other) {
-    float w=width,h=height,ow=other.width,oh=other.height;
+    float w=width, h=height, ow=other.width, oh=other.height;
+    float[] bounds = getBoundingBox();
+    float[] obounds = other.getBoundingBox();
+    
+    if (false) { 
+      drawBoundingBox(bounds);
+      drawBoundingBox(obounds);
+    }
+
+    float xmid1 = (bounds[0] + bounds[2])/2;
+    float ymid1 = (bounds[1] + bounds[5])/2;
+    float xmid2 = (obounds[0] + obounds[2])/2;
+    float ymid2 = (obounds[1] + obounds[5])/2;
+
+/*
     float xmid1 = getMidX();
     float ymid1 = getMidY();
     float xmid2 = other.getMidX();
     float ymid2 = other.getMidY();
+*/
+
     float dx = xmid2 - xmid1;
     float dy = ymid2 - ymid1;
     float dw = (w + ow)/2;
@@ -346,37 +377,63 @@ abstract class Positionable implements Drawable {
     addImpulse(fx,fy);
 
     // not on a boundary: unrestricted motion.
-    if(boundary==null) {
+    if(boundaries.size()==0) {
       x += ix + (aFrameCount * ixA);
       y += iy + (aFrameCount * iyA);
       aFrameCount++;
     }
+    
+    // FIXME: hot? not?
+    float[] bounds = getBoundingBox();
 
-    // previously on a boundary, but we moved off of it: still
-    // restricted motion, which should make sure that we move onto
-    // another, joining, platform.
-    else if(boundary.outOfBounds(x,y)) {
-      Boundary boundary = this.boundary;
-      detach();
-      // TODO: when we detach, we need to see if we pass
-      //       through some other boundary (such as in
-      //       corners).
-      if(boundary.prev!=null && !boundary.prev.outOfBounds(x,y)) {
-        attachTo(boundary.prev);
-      }
-      else if(boundary.next!=null && !boundary.next.outOfBounds(x,y)) {
-        attachTo(boundary.next);
+    // for each boundary we check if we should detach
+    for(int b=boundaries.size()-1; b>=0; b--) {
+      Boundary boundary = boundaries.get(b);
+      
+      boolean outOfBounds = boundary.outOfBounds(x,y);
+
+      // check for all four corners
+      float tx, ty;
+      for(int i=0; i<8; i+=2) {
+        tx = bounds[i];
+        ty = bounds[i+1];
+        outOfBounds = outOfBounds && boundary.outOfBounds(tx,ty); }
+      
+      if(outOfBounds) {
+        detach(boundary);
+        if(boundary.prev!=null && !boundary.prev.outOfBounds(x,y)) {
+          attachTo(boundary.prev);
+        }
+        else if(boundary.next!=null && !boundary.next.outOfBounds(x,y)) {
+          attachTo(boundary.next);
+        }
       }
     }
 
-    // we're attached to a boundary, so we're subject to impulse redirection.
-    if(boundary!=null) {
-      float[] redirected = boundary.redirectForce(x, y, ix + (aFrameCount * ixA), iy + (aFrameCount * iyA));
+    // we're attached to one or more boundaries, so we
+    // are subject to (compound) impulse redirection.
+    if(boundaries.size()>0) {
+      float[] redirected = new float[]{ix + (aFrameCount * ixA), iy + (aFrameCount * iyA)};
+      for(int b=boundaries.size()-1; b>=0; b--) {
+        Boundary boundary = boundaries.get(b);
+        redirected = boundary.redirectForce(x, y, redirected[0], redirected[1]);
+        // if impulse takes us off the boundary, detach
+        if(redirected[2]==0) {
+          // FIXME: This is at the heart of incorrect boundary behaviour,
+          //        because redirected[2] IN NO WAY says whether or not 
+          //        we're on this boundary. All it says is that the forced
+          //        were not transformed. This ocurs when we move off a
+          //        boundary, but ALSO when we move parallel or colinear
+          //        to it, so a lot of the time redirected[2]==0 should in
+          //        facto NOT lead to us detaching. This is currently
+          //        hack-fixed in Level.interact but really needs a real fix.
+          detach(boundary); 
+        }
+      }
       x += redirected[0];
       y += redirected[1];
-      // if this makes us fly off the boundary, detach
-      if(redirected[2]==0) { detach(); }
     }
+
     // dampen (or boost) our impulse, based on the impulse coefficients
     ix *= ixF;
     iy *= iyF;   

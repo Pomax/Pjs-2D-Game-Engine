@@ -27,6 +27,13 @@ canvas:focus {
   box-shadow: 0px 0px 15px 0px rgba(0, 0, 200, 0.5);
 }
 
+#touchinput:focus {
+  outline: none;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+}
+
 body {
   text-align: center;
   padding: 10px;
@@ -79,4 +86,20 @@ ul {
 
 .center {
   text-align: center;
+}
+
+#monitor {
+  display: none;
+  position: relative;
+  top: -430px;
+  left: 378px;
+  margin-bottom: -110px;
+}
+
+#touchinput {
+  display: none;
+  position: relative;
+  top: -50px;
+  left: 100px;
+  margin-bottom: -100px;
 }

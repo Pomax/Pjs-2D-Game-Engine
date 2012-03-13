@@ -12,6 +12,10 @@ abstract class JavaScript {
   JSConsole console;
   abstract void setCoordinate(float x, float y);
   abstract void setPaths(ArrayList<ShapePrimitive> segments);
+  abstract void recordFramerate(float frameRate);
+  abstract void addActor();
+  abstract void removeActor();
+  abstract void resetActorCount();
 }
 
 /**

@@ -38,10 +38,14 @@ void draw() {
   else { level.draw(); }
   resetMatrix();
   image(SoundManager.volume_overlay, width-20, 4);
+  if(javascript!=null) {
+    javascript.recordFramerate(frameRate);
+  }
 }
 
 void reset() { 
   SoundManager.reset();
+  if(javascript!=null) { javascript.resetActorCount(); }
   level = new TestLevel(width, height, 4, 1);
 }
 
@@ -74,6 +78,18 @@ void setDesignView() {
   level.showActors = true;
   level.showForeground = false;
   level.showTriggers = true;
+}
+
+int getActorCount() {
+  return level.getActorCount();
+}
+
+void keyPressFromPage(int keyCode) { 
+  level.keyPressed(' ', keyCode);
+}
+
+void keyReleaseFromPage(int keyCode) {
+  level.keyReleased(' ', keyCode);
 }
 
 
@@ -246,11 +262,11 @@ class TestLevel extends Level {
   // clouds platforms!
   void addCloudPlatforms() {
     addBoundary(new Boundary(54 +   0, 96 +   0, 105 +   0, 96 +   0));
-    addBoundary(new Boundary(54 + 256, 96 + 192, 105 + 256, 96 + 192));
-    addBoundary(new Boundary(54 + 336, 96 + 208, 105 + 336, 96 + 208));
-    addBoundary(new Boundary(54 + 138, 96 + 144, 105 + 112, 96 + 144));
-    addBoundary(new Boundary(54 + 186, 96 + 160, 105 + 160, 96 + 160));
-    addBoundary(new Boundary(54 + 330, 96 + 256, 105 + 322, 96 + 256));
+//    addBoundary(new Boundary(54 + 256, 96 + 192, 105 + 256, 96 + 192));
+//    addBoundary(new Boundary(54 + 336, 96 + 208, 105 + 336, 96 + 208));
+//    addBoundary(new Boundary(54 + 138, 96 + 144, 105 + 112, 96 + 144));
+//    addBoundary(new Boundary(54 + 186, 96 + 160, 105 + 160, 96 + 160));
+//    addBoundary(new Boundary(54 + 330, 96 + 256, 105 + 322, 96 + 256));
   }
 
   // some platforms made up of normal blocks
@@ -331,17 +347,23 @@ class TestLevel extends Level {
 
   // To demonstrate screen changing, also add some tubes
   void addTubes() {
-    // end of the level, teleports
-    addTube(56, height-48, false);
-    addTube(580, height-48, false);
-    addTube(778, height-48, false);
-    addTube(width-32, height-48, true);
+    // start of the level, above the coins
+    addUpsideDownTube(64, -16);
+  // level start test pipes
+  //addTube(64, height-16, null);
+  //addTube(128, height-48, null);
+    // plain pipe
+    addTube(580, height-48, null);
+    // teleporting pipe to the start of the level
+    addTube(778, height-48, new TubeTrigger(786, height-66, 16, 2, 78, -32));
     // end of the level, right above the goal posts
-    addUpsideDownTube(width - 6.25*32, -16);
+    addUpsideDownTube(width - 200, -16);
+    // teleporting pipe to the pipe above the goal
+    addTube(width-32, height-48, new TubeTrigger(width-24, height-66, 16, 2, 1864, -16));
   }
 
   // places a single tube with all the boundaries and behaviours
-  void addTube(float x, float y, boolean active) {
+  void addTube(float x, float y, TubeTrigger teleporter) {
     // pipe head as foreground, so we can disappear behind it.
     Sprite pipe_head = new Sprite("graphics/assorted/Pipe-head.gif");
     pipe_head.align(RIGHT,BOTTOM);
@@ -349,14 +371,13 @@ class TestLevel extends Level {
     addStaticSpriteFG(pipe_head);
 
     // active pipe; use a removable boundary for the top
-    if(active) {
-      addBoundary(new PipeBoundary(x, y-16-32, x+32, y-16-32));
-    }
+    if(teleporter!=null) {
+      Boundary lid = new PipeBoundary(x, y-16-32, x+32, y-16-32);
+      teleporter.setLid(lid);
+      addBoundary(lid); }
     
     // plain pipe; use a normal boundary for the top
-    else {
-      addBoundary(new Boundary(x, y-16-32, x+32, y-16-32)); 
-    }
+    else { addBoundary(new Boundary(x, y-16-32, x+32, y-16-32)); }
 
     // pipe body as background
     Sprite pipe = new Sprite("graphics/assorted/Pipe-body.gif");
@@ -364,10 +385,9 @@ class TestLevel extends Level {
     pipe.setPosition(x,y);
     addStaticSpriteBG(pipe);
 
-    if(active) {
+    if(teleporter!=null) {
       // add a trigger region for active pipes
-      TubeTrigger teleport = new TubeTrigger(x+8,y-18,16,2);
-      addTrigger(teleport);
+      addTrigger(teleporter);
       // add an invisible boundery inside the pipe, so
       // that actors don't fall through when the top
       // boundary is removed.
@@ -376,8 +396,8 @@ class TestLevel extends Level {
   
     // And add side-walls, so that actors don't run
     // through the pipe as if it weren't there.
-    addBoundary(new CleanBoundary(x, y, x, y-16-32));
-    addBoundary(new CleanBoundary(x+32, y-16-32, x+32, y));
+    addBoundary(new Boundary(x, y, x, y-16-32));
+    addBoundary(new Boundary(x+32, y-16-32, x+32, y));
   }
   
   // places a single tube with all the boundaries and behaviours, upside down
@@ -394,6 +414,12 @@ class TestLevel extends Level {
     pipe_head.flipVertical();
     pipe_head.setPosition(x,y+16);
     addStaticSpriteFG(pipe_head);
+
+    // And add side-walls and the bottom "lid.
+    addBoundary(new Boundary(x, y+16+32, x, y));
+    addBoundary(new Boundary(x+32, y, x+32, y+16+32));
+
+    addBoundary(new Boundary(x+32, y+16+32, x, y+16+32));
   }
 
   // And finally, the end of the level!
@@ -485,6 +511,7 @@ class TestLevel extends Level {
     if(mouseButton == LEFT) {
       Koopa koopa = new Koopa(mx + viewbox.x, my + viewbox.y);
       koopa.addForces(-0.2,0);
+      koopa.persistent = false;
       addInteractor(koopa); }
     else if(mouseButton == RIGHT) {
       addForPlayerOnly(new Mushroom(mx + viewbox.x, my + viewbox.y));
@@ -619,12 +646,12 @@ class Mario extends Player {
     if(active.mayChange())
     {
       // The jump button is pressed! Should we jump? How do we jump?
-      if (keyDown[BUTTON_A] && boundary!=null) {
+      if (keyDown[BUTTON_A] && boundaries.size()>0) {
         if (active.name != "jumping" && active.name != "crouchjumping" && active.name != "spinning") {
           // first off, jumps may not auto-repeat, so we lock the jump button
           ignore(BUTTON_A);
           // make sure we unglue ourselves from the platform we're standing on:
-          detach();
+          detachAll();
           // then generate a massive impulse upward:
           addImpulse(0,speedHeight*-speedStep);
           // now, if we're crouching, we need to crouch-jump.
@@ -637,12 +664,12 @@ class Mario extends Player {
 
       // The shoot button is pressed! When we don't have a shooty power-up,
       // this makes Mario spin-jump. But should we? And How?
-      else if (keyDown[BUTTON_B] && boundary!=null) {
+      else if (keyDown[BUTTON_B] && boundaries.size()>0) {
         if (active.name != "jumping" && active.name != "crouchjumping" && active.name != "spinning") {
           // first off, shooting and spin jumping may not auto-repeat, so we lock the shoot button
           ignore(BUTTON_B);
           // make sure we unglue ourselves from the platform we're standing on:
-          detach();
+          detachAll();
           // then generate a massive impulse upward:
           addImpulse(0,speedHeight*-speedStep);
           // and then make sure we spinjump, rather than jump normally
@@ -652,8 +679,8 @@ class Mario extends Player {
       }
       // The down button is pressed: crouch
       else if (keyDown[DOWN]) {
-        if(boundary instanceof PipeBoundary) {
-          ((PipeBoundary)boundary).teleport();
+        if(boundaries.size()==1 && boundaries.get(0) instanceof PipeBoundary) {
+          ((PipeBoundary)boundaries.get(0)).teleport();
         }
         setCurrentState("crouching");
       }
@@ -869,12 +896,10 @@ class Koopa extends Interactor {
   }
   
   /**
-   * When a boundary blocks us left or right,
-   * and it's not a boundary we can walk on/over,
-   * reverse the koopa's course.
+   * Turn around when we walk into a wall
    */
   void gotBlocked(Boundary b, float[] intersection) {
-    if(b instanceof CleanBoundary) {
+    if(intersection[0]-x==0 && intersection[1]-y==0) {
       fx = -fx;
       active.sprite.flipHorizontal();
     }
@@ -1385,9 +1410,12 @@ class PassThroughBlock extends BoundedInteractor {
   float[] overlap(Positionable other) {
     float[] overlap = super.overlap(other);
     if(overlap==null) {
-      return boundary.overlap(other);
+      for(Boundary boundary: boundaries) {
+        overlap = boundary.overlap(other);
+        if(overlap!=null) return overlap;
+      }
     }
-    return overlap;
+    return null;
   }
 
   /**
@@ -1447,9 +1475,11 @@ class MarioPickup extends Pickup {
   MarioPickup(String name, String spritesheet, int rows, int columns, float x, float y, boolean visible) {
     super(name,spritesheet,rows,columns,x,y,visible); }
   void gotBlocked(Boundary b, float[] intersection) {
-    if(b instanceof CleanBoundary) {
+    if(intersection[0]-x==0 && intersection[1]-y==0) {
       fx = -fx;
-      active.sprite.flipHorizontal(); }}
+      active.sprite.flipHorizontal();
+    }
+  }
 }
 
 /**
@@ -1595,8 +1625,8 @@ class SlantKoopaTrigger extends Trigger {
   void run(Level level, Actor actor, float[] intersection) {
     // this puts a slant-koopa at a very specific
     // location, namely on top of the slanted ground.
-    Koopa k = new Koopa(296,296);
-    k.setForces(-0.2,0);
+    Koopa k = new Koopa(296, 288);
+    k.addForces(-0.2,0);
     k.persistent = false;
     level.addInteractor(k);
     // remove this trigger so that it's not repeated
@@ -1630,13 +1660,20 @@ class BanzaiBillTrigger extends Trigger {
  * Tube trigger
  */
 class TubeTrigger extends Trigger {
-  TubeTrigger(float x, float y, float w, float h) {
+  float tx, ty;
+  Boundary lid;
+  TubeTrigger(float x, float y, float w, float h, float tx, float ty) {
     super("teleporter",x,y,w,h);
+    this.tx = tx;
+    this.ty = ty;
   }
+  void setLid(Boundary lid) { this.lid = lid; }
   void run(Level level, Actor actor, float[] intersection) {
     // spit mario back out
-    actor.setPosition(1860, -16);
+    //actor.setPosition(1860, -16);
+    actor.setPosition(tx,ty);
     actor.setImpulse(0,0);
+    lid.enable();
   }
 }
 

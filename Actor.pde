@@ -103,12 +103,27 @@ abstract class Actor extends Positionable {
   /**
    * get the midpoint
    */
-  float getMidX() { return super.getMidX() - (active==null ? 0 : active.sprite.ox); }
+  // FIXME: is this correct? it seems hackish
+//  float getMidX() { return super.getMidX() - (active==null ? 0 : active.sprite.ox); }
 
   /**
    * get the midpoint
    */
-  float getMidY() { return super.getMidY() - (active==null ? 0 : active.sprite.oy); }
+  // FIXME: is this correct? it seems hackish
+//  float getMidY() { return super.getMidY() - (active==null ? 0 : active.sprite.oy); }
+
+  /**
+   * Get the bounding box for this actor
+   */
+  float[] getBoundingBox() {
+
+    float[] bounds = active.sprite.getBoundingBox();
+    bounds[0] += x+ox; bounds[1] += y+oy;  // top left
+    bounds[2] += x+ox; bounds[3] += y+oy;  // top right
+    bounds[4] += x+ox; bounds[5] += y+oy;  // bottom right
+    bounds[6] += x+ox; bounds[7] += y+oy;  // bottom left
+    return bounds;
+  }
 
   /**
    * check overlap between sprites,
@@ -225,11 +240,17 @@ abstract class Actor extends Positionable {
     if(active!=null) {
       active.draw();
       if(debug) {
-        fill(255,0,0);
-        ellipse(0,0,5,5);
         noFill();
         stroke(255,0,0);
-        rect(-width/2-halign,-height/2-valign,width,height);
+        float[] bounds = getBoundingBox();
+        beginShape();
+        vertex(bounds[0]-x-ox,bounds[1]-y-oy);
+        vertex(bounds[2]-x-ox,bounds[3]-y-oy);
+        vertex(bounds[4]-x-ox,bounds[5]-y-oy);
+        vertex(bounds[6]-x-ox,bounds[7]-y-oy);
+        endShape(CLOSE); 
+        fill(255,0,0);
+        ellipse(0,0,5,5);
       }
     }
     else {
@@ -238,16 +259,6 @@ abstract class Actor extends Positionable {
       stroke(200,0,100);
       point(0,0); popStyle();
     }
-/*
-    if(active!=null && colliding) {
-      pushStyle();
-      noStroke();
-      fill(255,0,0,150);
-      rect(-width/2+active.sprite.ox,-height/2-active.sprite.oy,width,height);
-      popStyle();
-    }
-    colliding = false;
-*/
   }
 
 // ====== KEY HANDLING ======

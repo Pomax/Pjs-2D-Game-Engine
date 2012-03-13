@@ -104,9 +104,9 @@ class Sprite extends Positionable {
    * center point.
    */
   void align(int _halign, int _valign) {
-    if(_halign==LEFT) { halign=width/2; }
+    if(_halign==LEFT) { halign=-width/2; }
     else if(_halign==CENTER) { halign=0; }
-    else if(_halign==RIGHT)  { halign=-width/2; }
+    else if(_halign==RIGHT)  { halign=width/2; }
     ox = halign;
 
     if(_valign==TOP) { valign=-height/2; }
@@ -223,7 +223,7 @@ class Sprite extends Positionable {
         if(hflip) { scale(-1,1); }
         if(vflip) { scale(1,-1); }
         scale(sx,sy);
-        translate(-width/2 - ox, -height/2 - oy);
+        translate(-width/2 + ox, -height/2 - oy);
         image(img, 0, 0);
       }
       popMatrix();

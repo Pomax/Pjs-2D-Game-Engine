@@ -54,8 +54,8 @@ abstract class BoundedInteractor extends Interactor {
     bounding = false;
     for(int b=boundaries.size()-1; b>=0; b--) {
       Boundary boundary = boundaries.get(b);
-      boundary.disable();
       boundary.detachAll();
+      boundary.disable();
     }
   }
   
