@@ -43,7 +43,7 @@ void draw() {
   }
 }
 
-void reset() { 
+void reset() {
   SoundManager.reset();
   if(javascript!=null) { javascript.resetActorCount(); }
   level = new TestLevel(width, height, 4, 1);
@@ -84,7 +84,7 @@ int getActorCount() {
   return level.getActorCount();
 }
 
-void keyPressFromPage(int keyCode) { 
+void keyPressFromPage(int keyCode) {
   level.keyPressed(' ', keyCode);
 }
 
@@ -166,7 +166,7 @@ class TestLevel extends Level {
     addGroundPlatform(1442, 432/2 + 100, 128, 86);
     addGroundPlatform(1442+64, 432/2 + 130, 128, 50);
   }
-  
+
   // add the bit of ground that runs all the
   // way from the start to the finish
   void addBottom() {
@@ -284,7 +284,7 @@ class TestLevel extends Level {
   void addSpecialBlocks() {
     CoinBlock cb = new CoinBlockBoo(338,248);
     addBoundedInteractor(cb);
-    
+
     MushroomBlock mb = new MushroomBlock(1110, 208);
     addBoundedInteractor(mb);
   }
@@ -300,7 +300,7 @@ class TestLevel extends Level {
     addCoin(640+48*set++, height-48);
     addCoin(640+48*set++, height-48);
     addForPlayerOnly(new Coin(640+48*set++-16, height-48-40));
-        
+
     // coins on top of a platform at the end of the level
     addCoin(1448,316);
     addCoin(1448+84,316);
@@ -375,7 +375,7 @@ class TestLevel extends Level {
       Boundary lid = new PipeBoundary(x, y-16-32, x+32, y-16-32);
       teleporter.setLid(lid);
       addBoundary(lid); }
-    
+
     // plain pipe; use a normal boundary for the top
     else { addBoundary(new Boundary(x, y-16-32, x+32, y-16-32)); }
 
@@ -393,13 +393,13 @@ class TestLevel extends Level {
       // boundary is removed.
       addBoundary(new Boundary(x+1, y-16, x+30, y-16));
     }
-  
+
     // And add side-walls, so that actors don't run
     // through the pipe as if it weren't there.
     addBoundary(new Boundary(x, y, x, y-16-32));
     addBoundary(new Boundary(x+32, y-16-32, x+32, y));
   }
-  
+
   // places a single tube with all the boundaries and behaviours, upside down
   void addUpsideDownTube(float x, float y) {
     // pipe body as background
@@ -407,7 +407,7 @@ class TestLevel extends Level {
     pipe.align(RIGHT,TOP);
     pipe.setPosition(x,y);
     addStaticSpriteBG(pipe);
-  
+
     // pipe head as foreground, so we can disappear behind it.
     Sprite pipe_head = new Sprite("graphics/assorted/Pipe-head.gif");
     pipe_head.align(RIGHT,TOP);
@@ -867,7 +867,7 @@ class Koopa extends Interactor {
       SoundManager.play(active);
       // trigger some hitpoints
       level.addDecal(new HitPoints(x,y,100));
-      
+
       // mario should jump after trying to squish us
       return true;
     }
@@ -894,7 +894,7 @@ class Koopa extends Interactor {
       removeActor();
     }
   }
-  
+
   /**
    * Turn around when we walk into a wall
    */
@@ -1026,7 +1026,7 @@ class BanzaiBill extends Interactor {
    * Bill only has a single state to be in.
    */
   void handleStateFinished(State which) {}
-  
+
   /**
    * When we hit an actor, they die.
    */
@@ -1105,24 +1105,26 @@ abstract class SpecialBlock extends BoundedInteractor {
    * are we triggered?
    */
   void overlapOccuredWith(Actor other, float[] overlap) {
-    // First order of business: stop actor movement
-    other.rewindPartial();
-    other.ix=0;
-    other.iy=0;
+    if(active.state=="hanging") {
+      // First order of business: stop actor movement
+      other.rewindPartial();
+      other.ix=0;
+      other.iy=0;
 
-    // If we're exhausted, shortcircuit
-    if(content==0 || active.name=="boing") return;
+      // If we're exhausted, shortcircuit
+      if(content==0 || active.name=="boing") return;
 
-    // If we're not, see if we got hit
-    // from the right direction, and pop
-    // some coins out the top if we are.
-    float minv = 3*PI/2 - radians(45);
-    float maxv = 3*PI/2 + radians(45);
-    if(minv <=overlap[2] && overlap[2]<=maxv) {
-      content--;
-      setCurrentState("boing");
-      SoundManager.play(active);
-      generate(overlap);
+      // If we're not, see if we got hit
+      // from the right direction, and pop
+      // some coins out the top if we are.
+      float minv = 3*PI/2 - radians(45);
+      float maxv = 3*PI/2 + radians(45);
+      if(minv <=overlap[2] && overlap[2]<=maxv) {
+        content--;
+        setCurrentState("boing");
+        SoundManager.play(active);
+        generate(overlap);
+      }
     }
   }
 
@@ -1208,7 +1210,7 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
     setImpulseCoefficients(DAMPENING, DAMPENING);
     setPlayerInteractionOnly(true);
   }
-  
+
   /**
    * Of course, a coin block Boo
    * has a few more states than a
@@ -1229,7 +1231,7 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
 
     setCurrentState("hanging");
   }
-  
+
   /**
    * When we get bricked, give Mario 1000 points
    */
@@ -1240,7 +1242,7 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
       level.addDecal(new HitPoints(x,y,1000));
     }
   }
-  
+
   /**
    * Transition to boo-ness
    */
@@ -1252,7 +1254,7 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
       isBoo = true;
     }
   }
-  
+
   /**
    * How do we deal with tracking?
    * - if we're a coin block, and we can chase, first become a Boo
@@ -1265,10 +1267,10 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
     // if we're pretending to be a coin block, and mario's
     // standing on us, don't blow our cover either.
     if(active.name=="hanging" && havePassenger()) return;
-   
+
     // if we're too far away, don't track
     if(x<vx-vw || x>vx+vw*2 || y<vy-vh || y>vy+vh*2) return;
-   
+
     // otherwise: is mario not looking at us?
     if(notLookedAtBy(actor)) {
       // He is! but we're not a Boo yet... become one.
@@ -1308,7 +1310,7 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
       // float left
       setHorizontalFlip(true);
       return true; }
-    if(dx < 0 && abs(actor.direction-PI)>0.5*PI) { 
+    if(dx < 0 && abs(actor.direction-PI)>0.5*PI) {
       // float right
       setHorizontalFlip(false);
       return true; }
@@ -1344,7 +1346,7 @@ class MushroomBlock extends SpecialBlock {
   MushroomBlock(float x, float y) {
     super("Mushroom block",x,y);
   }
-  
+
   /**
    * Generate a mushroom
    */
@@ -1403,7 +1405,7 @@ class PassThroughBlock extends BoundedInteractor {
 
     setCurrentState("hanging");
   }
-  
+
   /**
    * Test for sprite overlap, as well as boundary overlap
    */
@@ -1431,7 +1433,7 @@ class PassThroughBlock extends BoundedInteractor {
       if(other instanceof Mario && ((Mario)other).active.name=="spinning") {
         removeActor();
         return; }
-      
+
       // We did not. See if we should become pass-through.
       other.rewindPartial();
       other.ix=0;
@@ -1558,12 +1560,12 @@ class Rope extends MarioPickup {
 class PipeBoundary extends Boundary {
   // wrapper constructor
   PipeBoundary(float x1, float y1, float x2, float y2) {
-    super(x1,y1,x2,y2); 
-    SoundManager.load(this, "audio/Pipe.mp3");    
+    super(x1,y1,x2,y2);
+    SoundManager.load(this, "audio/Pipe.mp3");
   }
   // used to effect "teleporting" incombination with the tube trigger
   void teleport() {
-    disable(); 
+    disable();
     SoundManager.play(this);
   }
 }
@@ -1691,7 +1693,7 @@ class TubeTrigger extends Trigger {
  * earned for jumping on enemies.
  */
 class HitPoints extends Decal {
-  // create a points text 
+  // create a points text
   HitPoints(float x, float y, int points) {
     super("graphics/decals/"+points+".gif",x,y-16,12);
   }
