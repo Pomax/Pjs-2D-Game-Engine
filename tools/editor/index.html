@@ -1,0 +1,215 @@
+<!doctype html>
+<html>
+  <head>
+    <title>2D gaming using Processing.js</title>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="../../processing.js"></script>
+    <script type="text/javascript" src="../../minim.js"></script>
+    <script type="text/javascript" src="../../keytrap.js"></script>
+    <script type="text/javascript" src="codeMaker.js"></script>
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Norican"></link>
+    <link rel="stylesheet" type="text/css" href="../../spriteengine.css"></link>
+
+    <script type="text/javascript">
+      // dynamically create an Actor
+      function injectP5Code(code) {
+        var dynamic = undef;
+        
+        var allScripts = document.getElementsByTagName("script");
+        for (var i=0, last=allScripts.length; i<last; i++) {
+          if(allScripts[i].id=="editor") {
+            dynamic = allScripts[i];
+            break; }}   
+
+        if(dynamic === undef) {
+          dynamic = document.createElement("script");
+          dynamic.type="text/processing";
+          dynamic.id="editor";
+          document.head.appendChild(dynamic); 
+          dynamic.innerHTML = code;
+        }
+        
+        else { dynamic.innerHTML += "\n\n" + code; }
+      }
+      
+      function addPreloads() {
+        var preloads = preloadString();
+        var dynamic = undef;
+        var allScripts = document.getElementsByTagName("script");
+        for (var i=0, last=allScripts.length; i<last; i++) {
+          if(allScripts[i].id=="editor") {
+            dynamic = allScripts[i];
+            break; }}   
+        if(dynamic === undef) {
+          return;
+        }
+        dynamic.innerHTML = preloads + dynamic.innerHTML;        
+      }
+
+      function createScreen () {
+        var screen = new Screen(400,400);
+        screen.setName("Editor Level");
+        screen.setConstructorArguments("float w", "float h");
+        
+        /** TEMP CODE **/
+          screen.addConstructorCode("// add boundaries so we don't fall through");
+          screen.addConstructorCode("addBoundary(new Boundary(w, 10, 0, 10));");
+          screen.addConstructorCode("addBoundary(new Boundary(0, h-10, w, h-10));");
+          screen.addConstructorCode("addBoundary(new Boundary(10, 0, 10, h));");
+          screen.addConstructorCode("addBoundary(new Boundary(w-10, h, w-10, 0));");
+          /*
+            screen.addConstructorCode("// also add inner boundaries to bounce against");
+            screen.addConstructorCode("addBoundary(new Boundary(w/2-50,h/2-50,w/2+50,h/2-50));");
+            screen.addConstructorCode("addBoundary(new Boundary(w/2+50,h/2+50,w/2-50,h/2+50));");
+            screen.addConstructorCode("addBoundary(new Boundary(w/2-50,h/2+50,w/2-50,h/2-50));");
+            screen.addConstructorCode("addBoundary(new Boundary(w/2+50,h/2-50,w/2+50,h/2+50));");
+          */
+          screen.addConstructorCode("// set up prototyping view");
+          screen.addConstructorCode("showBackground = false;");
+          screen.addConstructorCode("showBoundaries = true;");
+        /** TEMP CODE **/
+
+        /** TEMP CODE **/
+          screen.addDrawCode("super.draw();");
+          screen.addDrawCode("noStroke;");
+          screen.addDrawCode("fill(0,0,255,25);");
+          /*
+            screen.addDrawCode("rect(10,10,width-20,height/2-60);");
+            screen.addDrawCode("rect(10,height/2+50,width-20,height/2-60);");
+            screen.addDrawCode("rect(10,height/2-50,width/2-60, 100);");
+            screen.addDrawCode("rect(width/2+50,height/2-50,width/2-60, 100);"); 
+          */
+        /** TEMP CODE **/
+        
+        injectP5Code(screen.toString());
+      }
+
+      function createActor () {
+        var actor = new Actor();
+        actor.setName("My Sprite");
+        actor.setConstructorArguments("int x", "int y");
+
+        // set some actor values
+        actor.addConstructorCode("setImpulseCoefficients(0.85,0.85);");
+        actor.addConstructorCode("setPosition(x,y);");
+
+        // give the actor at least one state
+        actor.addState("standing", "resources/mario/small/Standing-mario.gif");
+        actor.addStateCode("standing.sprite.align(CENTER,BOTTOM);");
+
+        // key handling!
+        actor.addInputHandling("UP", "addImpulse(0,-1);");
+        actor.addInputHandling("DOWN", "addImpulse(0, 1);");
+        actor.addInputHandling("LEFT", "addImpulse(-1,0);");
+        actor.addInputHandling("RIGHT", "addImpulse( 1,0);");
+
+        injectP5Code(actor.toString());
+      }
+
+      function createInteractor() {
+        var actor = new Tracker();
+        actor.setName("My Nemesis");
+        actor.setConstructorArguments("int x", "int y");
+
+        // set some actor values
+        actor.addConstructorCode("setImpulseCoefficients(0.85,0.85);");
+        actor.addConstructorCode("setPosition(x+30, y+30);");
+
+        // give the actor at least one state
+        actor.addState("chasing", "resources/mario/small/Crouching-mario.gif");
+        actor.addStateCode("chasing.sprite.align(CENTER,BOTTOM);");
+
+        // actor tracking
+        var trackingCode = "    float a = atan2(actor.y - y, actor.x - x);\n"+
+                           "    addImpulse(cos(a), sin(a));"
+        actor.addTracking('actor.name=="My Sprite"',trackingCode);
+
+        injectP5Code(actor.toString());
+      }
+
+      createScreen();
+      createActor();
+      createInteractor();
+      addPreloads();
+      
+      function show() {
+        var showdiv = document.createElement("div");
+        showdiv.style.position = "absolute";
+        showdiv.style.top = "1em";
+        showdiv.style.width = "100%";
+        showdiv.onclick = function() { document.body.removeChild(showdiv); }
+        
+        var scriptText = "";
+        var allScripts = document.getElementsByTagName("script");
+        for (var i=0, last=allScripts.length; i<last; i++) {
+          if(allScripts[i].id=="editor") {
+            scriptText = allScripts[i].textContent;
+            break; }}
+        showdiv.innerHTML = "<table class='democode'><tr><td class='showtd'><h1>JavaScript Source Code</h1><pre>"+ createActor.toString() +"</pre><h1>and</h1><pre>"+ createInteractor.toString() +"</pre></td>" +
+                            "<td class='showtd'><h1>Processing Source Code</h1><pre>"+ scriptText +"</pre></td></tr><table>";
+        document.body.appendChild(showdiv);
+      }
+    </script>
+  </head>
+  <body>
+    <div class="content shaded">
+      <headers>
+        <h1>The level editor</h1>
+        <h4>Because you know you want to make games.</h4>
+      </headers>
+
+      <table><tr><td>
+
+        <canvas id="editor" data-processing-sources="#editor
+                                                    spriteloader.pde
+
+                                                    ../../drawbackground.pde
+                                                    ../../Level.pde
+
+                                                    ../../Drawable.pde
+                                                      ../../Positionable.pde
+                                                        ../../Actor.pde
+                                                          ../../Player.pde
+                                                          ../../Interactor.pde
+                                                            ../../BoundedInteractor.pde
+                                                          ../../Pickup.pde
+                                                        ../../Boundary.pde
+                                                        ../../Trigger.pde
+                                                        ../../Sprite.pde
+                                                          ../../Decal.pde
+                                                        ../../TilingSprite.pde
+
+                                                    ../../ShapePrimitives.pde
+                                                    ../../SpriteMapHandler.pde
+                                                    ../../SpritePath.pde
+                                                    ../../SpritePathChunker.pde
+                                                    ../../SoundManager.pde
+                                                    ../../State.pde
+                                                    ../../Tracking.pde
+
+                                                    ../../JavaScript.pde" style="border: 1px solid black;" tabindex="1"></canvas>
+        <p><i class="smaller">our test level - click to place a player actor and NPC</i></p>
+      </td><td>
+        <p>The object here is to use the web as a two-view level editor. The first
+        is the obvious graphical editor, letting you define actors (players) and
+        interactors (NPCs) and placing them in a level, with states and behaviours
+        tied to them.</p>
+
+        <p>The second is the source code view, which lets you see what your choices
+        in the graphical editor mean in terms of actual source code that gets run.
+        This lets you gain an understanding of game programming, and lets you fiddle
+        with values that don't directly translate to graphical options, to see what
+        they do.</p>
+        
+        <p>click <span class="clickable" onclick="show()">here</span> to see the code for this "level", for instance.</p>
+      </td></tr><table>
+    </div>
+  </body>
+  <script type="text/javascript">
+    <!-- We don't want the cursor keys to also be interpreted by the browser -->
+    (function(){
+      var canvas = document.getElementById('editor');
+      KeyTrap.trap(canvas,[37,38,39,40]);
+      canvas.focus(); }());
+  </script>
+</html>

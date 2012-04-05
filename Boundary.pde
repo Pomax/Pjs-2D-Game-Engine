@@ -291,7 +291,15 @@ class Boundary extends Positionable {
   }
 
   /**
-   * ` force along this boundary's surface
+   * redirect a force along this boundary's surface.
+   */
+  float[] redirectForce(float fx, float fy) {
+    float[] tr = translateRotateXY3(x,y,x+fx,y+fy, x,y,xw,yh);
+    return new float[]{round(tr[2] * cosa), round(tr[2] * sina), 1};
+  }
+
+  /**
+   * redirect force-based trajectory along this boundary's surface.
    */
   float[] redirectForce(float x, float y, float fx, float fy) {
     float x1 = x, y1 = y, x2 = x+fx, y2 = y+fy;

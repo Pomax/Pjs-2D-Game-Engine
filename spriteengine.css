@@ -103,3 +103,33 @@ ul {
   left: 100px;
   margin-bottom: -100px;
 }
+
+.democode {
+  font-size: 90%;
+  width: 80%;
+  margin: auto;
+  border: 1px solid black;
+  background: white;
+}
+
+.democode tr, .democode td {
+  margin: 0px;
+  padding: 0px;
+}
+
+.democode td {
+  overflow-y: auto;
+  overflow-x: hidden;
+  vertical-align: top;
+  width: auto;
+}
+
+.democode td+td {
+  border-left: 1px solid black;
+  padding-left: 1em;
+}
+
+.clickable {
+  cursor: pointer;
+  color: rgb(100,110,255);
+}

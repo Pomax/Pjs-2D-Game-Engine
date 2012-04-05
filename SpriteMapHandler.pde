@@ -27,7 +27,7 @@ static class SpriteMapHandler {
   /**
    * cut a sheet either ltr/tb or tb/ltr depending on whether leftToRightFirst is true or false, respectively.
    */
-  static PImage[] cutTiledSpritesheet(String _spritesheet, int widthCount, int heightCount, boolean leftToRightFirst) {
+  private static PImage[] cutTiledSpritesheet(String _spritesheet, int widthCount, int heightCount, boolean leftToRightFirst) {
     // safety first.
     if (globalSketch == null) {
       println("ERROR: SpriteMapHandler requires a reference to the sketch. Call SpriteMapHandler.setSketch(this) in setup().");

@@ -418,7 +418,17 @@ abstract class Positionable implements Drawable {
         Boundary boundary = boundaries.get(b);
         redirected = boundary.redirectForce(x, y, redirected[0], redirected[1]);
         // if impulse takes us off the boundary, detach
-        if(redirected[2]==0) { detach(boundary); }
+        if(redirected[2]==0) {
+          // FIXME: This is at the heart of incorrect boundary behaviour,
+          //        because redirected[2] IN NO WAY says whether or not 
+          //        we're on this boundary. All it says is that the forced
+          //        were not transformed. This ocurs when we move off a
+          //        boundary, but ALSO when we move parallel or colinear
+          //        to it, so a lot of the time redirected[2]==0 should in
+          //        facto NOT lead to us detaching. This is currently
+          //        hack-fixed in Level.interact but really needs a real fix.
+          detach(boundary); 
+        }
       }
       x += redirected[0];
       y += redirected[1];

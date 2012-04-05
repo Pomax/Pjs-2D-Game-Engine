@@ -77,15 +77,14 @@ abstract class Actor extends Positionable {
     State tmp = states.get(name);
     if (tmp!=active) {
       tmp.reset();
-      boolean hflip = active.sprite.hflip,
-               vflip = active.sprite.vflip;
+      boolean hflip = (active.sprite!=null ? active.sprite.hflip : false),
+               vflip = (active.sprite!=null ? active.sprite.vflip : false);
       active = tmp;
-      if(hflip) active.sprite.flipHorizontal();
-      if(vflip) active.sprite.flipVertical();
-      width = active.sprite.width;
-      height = active.sprite.height;
-      halign = active.sprite.halign;
-      valign = active.sprite.valign;
+      if(active.sprite!=null) {
+        if(hflip) active.sprite.flipHorizontal();
+        if(vflip) active.sprite.flipVertical();
+        updatePositioningInformation();
+      }
     }
   }
 
@@ -94,7 +93,7 @@ abstract class Actor extends Positionable {
    * on the currently active state.
    */
   void updatePositioningInformation() {
-    width = active.sprite.width;
+    width  = active.sprite.width;
     height = active.sprite.height;
     halign = active.sprite.halign;
     valign = active.sprite.valign;
@@ -248,7 +247,7 @@ abstract class Actor extends Positionable {
         vertex(bounds[2]-x-ox,bounds[3]-y-oy);
         vertex(bounds[4]-x-ox,bounds[5]-y-oy);
         vertex(bounds[6]-x-ox,bounds[7]-y-oy);
-        endShape(); 
+        endShape(CLOSE); 
         fill(255,0,0);
         ellipse(0,0,5,5);
       }
