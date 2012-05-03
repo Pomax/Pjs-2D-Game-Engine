@@ -1,5 +1,9 @@
 /**
- * Framerate monitor
+ * Framerate monitor for the game library.
+ * This sketch can be included on a page that
+ * is running a Pjs game, and linked to it
+ * via javascript for framerate and actor
+ * count monitoring.
  */
 
 final int xoff = 25;

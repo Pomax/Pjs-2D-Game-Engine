@@ -1,4 +1,5 @@
-Repository for work-in-progress code for a Processing.js-based 2D game engine
-
-Graphics and audio used under "fair use" policy, as they are only used to
-test whether the engine allows for the easy implementation of 2D games.
+Repository for work-in-progress code for a Processing.js-based 2D
+gaming library. This library offers scaffolding with which to build
+your own 2D games, with enough complexity to make a mario or zelda
+clone, but with enough generic properties to allow you to quickly
+implement a basic working game.
