@@ -29,5 +29,5 @@ abstract class Trigger extends Positionable {
   void disable() { disabled = true; }
   void removeTrigger() { remove = true; }
 
-  abstract void run(Level level, Actor actor, float[] intersection);
+  abstract void run(LevelLayer level, Actor actor, float[] intersection);
 }

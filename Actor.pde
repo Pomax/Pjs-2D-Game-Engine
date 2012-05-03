@@ -100,22 +100,9 @@ abstract class Actor extends Positionable {
   }
 
   /**
-   * get the midpoint
-   */
-  // FIXME: is this correct? it seems hackish
-//  float getMidX() { return super.getMidX() - (active==null ? 0 : active.sprite.ox); }
-
-  /**
-   * get the midpoint
-   */
-  // FIXME: is this correct? it seems hackish
-//  float getMidY() { return super.getMidY() - (active==null ? 0 : active.sprite.oy); }
-
-  /**
    * Get the bounding box for this actor
    */
   float[] getBoundingBox() {
-
     float[] bounds = active.sprite.getBoundingBox();
     bounds[0] += x+ox; bounds[1] += y+oy;  // top left
     bounds[2] += x+ox; bounds[3] += y+oy;  // top right

@@ -20,6 +20,7 @@
                  graphics/backgrounds/ground-side-right.gif,
 
                  graphics/backgrounds/sky.gif,
+                 graphics/backgrounds/sky_2.gif,
                  graphics/backgrounds/bush-01.gif,
                  graphics/backgrounds/bush-02.gif,
                  graphics/backgrounds/bush-03.gif,

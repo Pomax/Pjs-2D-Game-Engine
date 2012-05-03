@@ -68,7 +68,7 @@ function AudioPlayer(str) {
     if (!loaded) {
       return -1;
     }
-    if(audio.currenTime) {
+    if(audio.currentTime) {
       return audio.currentTime * 1000;
     }
     return -1;
@@ -77,7 +77,7 @@ function AudioPlayer(str) {
     if (!loaded) {
       return;
     }
-    if(audio.currenTime) {
+    if(audio.currentTime) {
       audio.currentTime = position / 1000;
     }
   };
