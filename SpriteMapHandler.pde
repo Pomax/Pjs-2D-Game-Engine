@@ -46,7 +46,7 @@ static class SpriteMapHandler {
     // safety first: Processing.js and possibly other
     // implementations may require image preloading.
     if(tileWidth == 0 || tileHeight == 0) {
-      println("tile width or height is 0 (possible missing image preload?)");
+      println("tile width or height is 0 (possible missing image preload for "+_spritesheet+"?)");
     }
 
     // we have all the information we need. Start cutting

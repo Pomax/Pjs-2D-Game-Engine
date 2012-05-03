@@ -77,15 +77,14 @@ abstract class Actor extends Positionable {
     State tmp = states.get(name);
     if (tmp!=active) {
       tmp.reset();
-      boolean hflip = active.sprite.hflip,
-               vflip = active.sprite.vflip;
+      boolean hflip = (active.sprite!=null ? active.sprite.hflip : false),
+               vflip = (active.sprite!=null ? active.sprite.vflip : false);
       active = tmp;
-      if(hflip) active.sprite.flipHorizontal();
-      if(vflip) active.sprite.flipVertical();
-      width = active.sprite.width;
-      height = active.sprite.height;
-      halign = active.sprite.halign;
-      valign = active.sprite.valign;
+      if(active.sprite!=null) {
+        if(hflip) active.sprite.flipHorizontal();
+        if(vflip) active.sprite.flipVertical();
+        updatePositioningInformation();
+      }
     }
   }
 
@@ -94,29 +93,16 @@ abstract class Actor extends Positionable {
    * on the currently active state.
    */
   void updatePositioningInformation() {
-    width = active.sprite.width;
+    width  = active.sprite.width;
     height = active.sprite.height;
     halign = active.sprite.halign;
     valign = active.sprite.valign;
   }
 
   /**
-   * get the midpoint
-   */
-  // FIXME: is this correct? it seems hackish
-//  float getMidX() { return super.getMidX() - (active==null ? 0 : active.sprite.ox); }
-
-  /**
-   * get the midpoint
-   */
-  // FIXME: is this correct? it seems hackish
-//  float getMidY() { return super.getMidY() - (active==null ? 0 : active.sprite.oy); }
-
-  /**
    * Get the bounding box for this actor
    */
   float[] getBoundingBox() {
-
     float[] bounds = active.sprite.getBoundingBox();
     bounds[0] += x+ox; bounds[1] += y+oy;  // top left
     bounds[2] += x+ox; bounds[3] += y+oy;  // top right
