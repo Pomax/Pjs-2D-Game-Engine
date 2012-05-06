@@ -26,6 +26,15 @@ abstract class LevelLayer {
           showForeground = true,
           showTriggers = false;
 
+  // Level layers need not share the same coordinate system
+  // as the managing level. For instance, things in the
+  // background might be rendered smaller to seem farther
+  // away, or larger, to create an exxagerated look.
+  float xTranslate = 0,
+         yTranslate = 0,
+         xScale = 1,
+         yScale = 1;
+
   // Fallback color if a layer has no background color.
   // By default, this color is 100% transparent black.
   color backgroundColor = -1;
@@ -41,54 +50,53 @@ abstract class LevelLayer {
 
   // The list of static, non-interacting sprites, building up the background
   ArrayList<Drawable> fixed_background = new ArrayList<Drawable>();
-  void addStaticSpriteBG(Drawable fixed) {
-    this.fixed_background.add(fixed);
-  }
+  void addStaticSpriteBG(Drawable fixed) { this.fixed_background.add(fixed); }
+  void removeStaticSpriteBG(Drawable fixed) { this.fixed_background.remove(fixed); }
 
   // The list of static, non-interacting sprites, building up the foreground
   ArrayList<Drawable> fixed_foreground = new ArrayList<Drawable>();
-  void addStaticSpriteFG(Drawable fixed) {
-    this.fixed_foreground.add(fixed); 
-  }
+  void addStaticSpriteFG(Drawable fixed) { this.fixed_foreground.add(fixed); }
+  void removeStaticSpriteFG(Drawable fixed) { this.fixed_foreground.remove(fixed); }
 
   // The list of sprites that may only interact with the player(s) (and boundaries)
   ArrayList<Pickup> pickups = new ArrayList<Pickup>();
-  void addForPlayerOnly(Pickup pickup) {
-    pickups.add(pickup); 
-    if(javascript!=null) { javascript.addActor(); }}
+  void addForPlayerOnly(Pickup pickup) { pickups.add(pickup); bind(pickup); if(javascript!=null) { javascript.addActor(); }}
+  void removeForPlayerOnly(Pickup pickup) { pickups.remove(pickup); if(javascript!=null) { javascript.removeActor(); }}
 
   // The list of player sprites
   ArrayList<Decal> decals  = new ArrayList<Decal>();
-  void addDecal(Decal decal) {
-    decals.add(decal); 
-  }
+  void addDecal(Decal decal) { decals.add(decal); }
+  void removeDecal(Decal decal) { decals.remove(decal); }
 
   // The list of fully interacting non-player sprites
   ArrayList<Interactor> interactors = new ArrayList<Interactor>();
-  void addInteractor(Interactor interactor) {
-    interactors.add(interactor); 
-    if(javascript!=null) { javascript.addActor(); }
-  }
+  void addInteractor(Interactor interactor) { interactors.add(interactor); bind(interactor); if(javascript!=null) { javascript.addActor(); }}
+  void removeInteractor(Interactor interactor) { interactors.remove(interactor); if(javascript!=null) { javascript.removeActor(); }}
 
   // The list of fully interacting non-player sprites that have associated boundaries
   ArrayList<BoundedInteractor> bounded_interactors = new ArrayList<BoundedInteractor>();
-  void addBoundedInteractor(BoundedInteractor bounded_interactor) {
-    bounded_interactors.add(bounded_interactor); 
-    if(javascript!=null) { javascript.addActor(); }
-  }
+  void addBoundedInteractor(BoundedInteractor bounded_interactor) { bounded_interactors.add(bounded_interactor); bind(bounded_interactor); if(javascript!=null) { javascript.addActor(); }}
+  void removeBoundedInteractor(BoundedInteractor bounded_interactor) { bounded_interactors.remove(bounded_interactor); if(javascript!=null) { javascript.removeActor(); }}
 
   // The list of player sprites
   ArrayList<Player> players  = new ArrayList<Player>();
-  void addPlayer(Player player) {
-    players.add(player); 
-    if(javascript!=null) { javascript.addActor(); }
+  void addPlayer(Player player) { players.add(player); bind(player); if(javascript!=null) { javascript.addActor(); }}
+  void removePlayer(Player player) { players.remove(player); if(javascript!=null) { javascript.removeActor(); }}
+  void updatePlayer(Player oldPlayer, Player newPlayer) {
+    int pos = players.indexOf(oldPlayer);
+    if (pos > -1) { 
+      players.set(pos, newPlayer);
+      bind(newPlayer);
+    }
   }
 
   // event triggers
   ArrayList<Trigger> triggers = new ArrayList<Trigger>();
-  void addTrigger(Trigger trigger) {
-    triggers.add(trigger); 
-  }
+  void addTrigger(Trigger trigger) { triggers.add(trigger); }
+  void removeTrigger(Trigger trigger) { triggers.remove(trigger); }
+
+  // private actor binding
+  void bind(Actor actor) { actor.setLevelLayer(this); }
 
   // used for statistics
   int getActorCount() {
@@ -123,20 +131,13 @@ abstract class LevelLayer {
     yTranslate = oy;
     xScale = sx;
     yScale = sy;
-    width = width * 1.0/xScale;
-    height = height * 1.0/yScale;
   }
   
-  
-  // Level layers need not share the same coordinate system
-  // as the managing level. For instance, things in the
-  // background might be rendered smaller to seem farther
-  // away, or larger, to create an exxagerated look.
-  float xTranslate = 0,
-         yTranslate = 0,
-         xScale = 1,
-         yScale = 1;
 
+  /**
+   * map a "normal" coordinate to this level's
+   * coordinate system.
+   */
   float[] mapCoordinate(float x, float y) {
     float vx = (x + xTranslate)*xScale,
           vy = (y + yTranslate)*yScale;
@@ -149,18 +150,19 @@ abstract class LevelLayer {
   void draw() {
     // get the level viewbox and tranform its
     // reference coordinate values.
-    float x = viewbox.x * xScale,
-          y = viewbox.y * yScale,
-          w = viewbox.w * xScale,
-          h = viewbox.h * yScale;
-    float[] mapped = mapCoordinate(x,y);
+    float x,y,w,h;
+    float[] mapped = mapCoordinate(viewbox.x,viewbox.y);
     x = mapped[0];
     y = mapped[1];
-    w = w * 1.0/xScale;
-    h = h * 1.0/yScale;
-    
+    w = viewbox.w/xScale;
+    h = viewbox.h/yScale;
+
+    // cache the global coordinate transforms
     pushMatrix();
+
+    // remember to transform the layer coordinates accordingly
     translate(viewbox.x-x, viewbox.y-y);
+    scale(xScale, yScale);
 
 // ----  draw fallback color
     if (backgroundColor != -1) {

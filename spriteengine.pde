@@ -15,15 +15,14 @@ float DOWN_FORCE = 0.7;
 float ACCELERATION = 1.3;
 
 // and this is the level we'll be playing.
-Level level;
-LevelLayer layer;
+MarioLevel mainLevel, darkLevel, level;
 
 // sprites in this demo are mostly multiples of 16
 final int BLOCK = 16;
 
 // boilerplate
 void setup() {
-  size(32*BLOCK,27*BLOCK);
+  size(32*BLOCK, 27*BLOCK);
   frameRate(24);
   // set up the sound manager
   SoundManager.init(this);
@@ -33,32 +32,60 @@ void setup() {
   reset();
 }
 
+// resetting is important
+void reset() {
+  level = null;
+  SoundManager.reset();
+  if (javascript!=null) { javascript.resetActorCount(); }
+  // set up two "persistent" levels
+  mainLevel = new MainLevel(width, height, 4, 1);
+  darkLevel = new DarkLevel(width, height, 1, 1);
+  // set up our running level as "main"
+  setLevel(mainLevel);
+}
+
+void setLevel(MarioLevel newLevel) {
+  if (level!=null) {
+    SoundManager.stop(level);
+    // carry over mario to the new level
+    newLevel.updateMario(level.mario);
+  }
+  level = newLevel;
+  SoundManager.loop(level);
+}
+
 // Render mario in glorious canvas definition
 void draw() {
-  if(level.finished && level.swappable) { reset(); }
-  else { level.draw(); }
+  if (level.finished && level.swappable) { 
+    reset();
+  }
+  else { 
+    level.draw();
+  }
   resetMatrix();
   image(SoundManager.volume_overlay, width-20, 4);
-  if(javascript!=null) {
+  if (javascript!=null) {
     javascript.recordFramerate(frameRate);
   }
 }
 
-// resetting is important
-void reset() {
-  SoundManager.reset();
-  if(javascript!=null) { javascript.resetActorCount(); }
-  level = new TestLevel(width, height, 4, 1);
+// pass-through for keyboard events
+void keyPressed() { 
+  level.keyPressed(key, keyCode);
+}
+void keyReleased() { 
+  level.keyReleased(key, keyCode);
 }
 
-// pass-through for keyboard events
-void keyPressed() { level.keyPressed(key,keyCode); }
-void keyReleased() { level.keyReleased(key, keyCode); }
 void mousePressed() {
   // mute button! very important
-  if(mouseX>width-20 && mouseY<20) { SoundManager.mute(); }
+  if (mouseX>width-20 && mouseY<20) { 
+    SoundManager.mute();
+  }
   // normal passthrough
-  else { level.mousePressed(mouseX, mouseY, mouseButton); }
+  else { 
+    level.mousePressed(mouseX, mouseY, mouseButton);
+  }
 }
 
 // shortcut method for setting up "game" views
@@ -91,8 +118,12 @@ int getActorCount() {
 }
 
 // TEST!
-void keyPressFromPage(int keyCode) { level.keyPressed(' ', keyCode); }
-void keyReleaseFromPage(int keyCode) { level.keyReleased(' ', keyCode); }
+void keyPressFromPage(int keyCode) { 
+  level.keyPressed(' ', keyCode);
+}
+void keyReleaseFromPage(int keyCode) { 
+  level.keyReleased(' ', keyCode);
+}
 
 
 /***************************************
@@ -101,32 +132,46 @@ void keyReleaseFromPage(int keyCode) { level.keyReleased(' ', keyCode); }
  *                                     *
  ***************************************/
 
+class MarioLevel extends Level {
+  Player mario;
+  MarioLevel(float w, float h) { 
+    super(w, h);
+  }
+  void updateMario(Player newMario) {
+    updatePlayer(mario, newMario);
+    mario = newMario;
+    // FIXME: hackish solution to viewbox repositioning
+    viewbox.x = 0;
+  }
+}
+
 /**
  * Test level implementation
  */
-class TestLevel extends Level {
-  // local handle for the mario sprite
-  Player mario;
-
+class MainLevel extends MarioLevel {
   // what we see when we win
   String wintext = "Goal!";
   int endCount = 0;
 
   // constructor sets up a level and level layer
-  TestLevel(float w, float h, int x_repeat, int y_repeat)
+  MainLevel(float w, float h, int x_repeat, int y_repeat)
   {
     super(w*x_repeat, h*y_repeat);
-    setViewBox(0,0,w,h);
-    addLevelLayer("color", new BackgroundColorLayer(this,width,height));
-    addLevelLayer("background 1",new BackgroundLayer(this,width,height, 0,0,0.5,1, "sky_2"));
-    addLevelLayer("background 2",new BackgroundLayer(this,width,height, 0,0,1,1, "sky"));
-    
-    layer = new TestLevelLayer(this,width,height);
-    addLevelLayer("main",layer);
+    setViewBox(0, 0, w, h);
+    addLevelLayer("color", new BackgroundColorLayer(this, width, height, color(0, 100, 190)));
+    float scaleFactor = 0.75;
+    addLevelLayer("background 1", new BackgroundLayer(this, width + (scaleFactor*w/2) /* HACK! */ - 21, height, 0, 0, scaleFactor, scaleFactor));
+
+    LevelLayer layer = new MainLevelLayer(this, width, height);
+    if (layer.players.size()==0 || mario == null) {
+      mario = new Mario();
+      mario.setPosition(32, 383);
+      layer.addPlayer(mario);
+    }
+    addLevelLayer("main", layer);
 
     // And of course some background music.
     SoundManager.load(this, "audio/bg/Overworld.mp3");
-    SoundManager.loop(this);
   }
 
   /**
@@ -135,31 +180,33 @@ class TestLevel extends Level {
    */
   void draw() {
     // Normal level draw
-    if(!finished) {
-      // make sure we always have a Mario!
-      if(layer.players.size()==0) {
-        // player one
-        mario = new Mario();
-        mario.setPosition(32, 383);
-        layer.addPlayer(mario);
-      }
+    if (!finished) {
 
       // draw the level content
       super.draw();
 
       // disallow running past the edges
-      for(Player p: new Player[]{mario}) {
-        if(p.x<p.width/2) { p.x=p.width/2; }
-        if(p.x>width-p.width/2) { p.x=width-p.width/2; }
+      Player p = mario;
+      LevelLayer l = p.getLevelLayer();
+      float sx = l.xScale;
+      {
+        if (p.x < p.width/2) { 
+          p.x = p.width/2;
+        }
+        if (p.x > l.width-p.width/2) { 
+          p.x = l.width-p.width/2;
+        }
 
         // slide viewbox along with players
-        if(0 <= viewbox.x && viewbox.x <= this.width - viewbox.w) {
+        if (0 <= viewbox.x && viewbox.x <= l.width - viewbox.w/sx) {
           viewbox.x = (int)(p.x-432/2);
-          viewbox.x = constrain(viewbox.x, 0, this.width - viewbox.w); }
+          viewbox.x = constrain(viewbox.x, 0, l.width - viewbox.w/sx);
+        }
       }
 
-      if(javascript!=null) {
-        javascript.setCoordinate(mario.x, mario.y); }
+      if (javascript!=null) {
+        javascript.setCoordinate(mario.x, mario.y);
+      }
     }
 
     // After mario's won, fade to black with
@@ -169,11 +216,11 @@ class TestLevel extends Level {
     else {
       endCount++;
       fill(255);
-      textFont(createFont("fonts/acmesa.ttf",62));
-      text(wintext,(512-textWidth(wintext))/2, 192);
-      fill(0,8);
-      rect(0,0,width,height);
-      if(endCount>7.5*frameRate) {
+      textFont(createFont("fonts/acmesa.ttf", 62));
+      text(wintext, (512-textWidth(wintext))/2, 192);
+      fill(0, 8);
+      rect(0, 0, width, height);
+      if (endCount>7.5*frameRate) {
         SoundManager.stop(this);
         setSwappable();
       }
@@ -194,102 +241,42 @@ class TestLevel extends Level {
   void finish() {
     SoundManager.pause(this);
     super.finish();
-  }  
-}
-
-/**
- * Plain color background layer
- */
-class BackgroundColorLayer extends LevelLayer {
-  BackgroundColorLayer(Level parent, float w, float h) {
-    super(parent,w,h);
-    backgroundColor = color(0,100,190);
   }
 }
 
 /**
- * Background layer
+ * This is kind of a "master" class with level construction
+ * methods, used by extensions to populate a level.
  */
-class BackgroundLayer extends LevelLayer {
-  // fairly simple constructor
-  BackgroundLayer(Level parent, float w, float h) {
-    this(parent,w,h,0,0,1,1,"sky_2");
+abstract class MarioLayer extends LevelLayer {
+
+  // fallthrough constructors
+  MarioLayer(Level parent, float w, float h) { 
+    super(parent, w, h);
   }
-  
-  BackgroundLayer(Level parent, float w, float h, float ox, float oy, float sx, float sy, String bgstring) {
-    super(parent, w,h,  ox,oy,  sx,sy);
-
-    // repeating background sprite image
-    Sprite bgsprite = new Sprite("graphics/backgrounds/" + bgstring + ".gif");
-    bgsprite.align(RIGHT, TOP);
-    TilingSprite backdrop = new TilingSprite(bgsprite, 0, 0, width, height);
-    addStaticSpriteBG(backdrop);
-  }
-}
-
-/**
- * The test implementaiton of the Level class
- * models the first normal level of Super Mario
- * World, "Yoshi's Island 1". With some liberties
- * taken, because this is a test.
- */
-class TestLevelLayer extends LevelLayer {
-  /**
-   * Test level implementation
-   */
-  TestLevelLayer(Level parent, float w, float h)
-  {
-    super(parent, w,h);
-    textFont(createFont("fonts/acmesa.ttf",12));
-    addGround();
-    addBottom();
-    addBushes();
-    addCloudPlatforms();
-    addBlockPlatforms();
-    addSpecialBlocks();
-    addCoins();
-    addDragonCoins();
-    addFlyingKoopas();
-    addTubes();
-    addGoal();
-    addTriggers();
-  }
-
-  // "ground" parts of the level
-  void addGround() {
-    // some random platforms
-    addGroundPlatform(928, 432/2, 96, 116);
-    addGroundPlatform(920, 432/2+48, 32, 70);
-    addGroundPlatform(912, 432/2 + 100, 128, 86);
-    addGroundPlatform(912+64, 432/2 + 130, 128, 50);
-
-    addSlant(256,  height-48);
-    addSlant(1300, height-48);
-    addSlant(1350, height-48);
-
-    addGroundPlatform(1442, 432/2 + 100, 128, 86);
-    addGroundPlatform(1442+64, 432/2 + 130, 128, 50);
+  MarioLayer(Level parent, float w, float h, float ox, float oy, float sx, float sy) { 
+    super(parent, w, h, ox, oy, sx, sy);
   }
 
   // add the bit of ground that runs all the
   // way from the start to the finish
-  void addBottom() {
+  void addBottom(float x, float y, float w, float h) {
     // top of the ground
     Sprite groundsprite = new Sprite("graphics/backgrounds/ground-top.gif");
-    TilingSprite groundline = new TilingSprite(groundsprite, 0, height-40, this.width+groundsprite.width, height - 40 + groundsprite.height);
+    TilingSprite groundline = new TilingSprite(groundsprite, x, y, w + groundsprite.width, y + groundsprite.height);
     addStaticSpriteBG(groundline);
     // ground filler
-    TilingSprite groundfiller = new TilingSprite(new Sprite("graphics/backgrounds/ground-filler.gif"), 0, height-40 + groundsprite.height, this.width+groundsprite.width, height);
+    TilingSprite groundfiller = new TilingSprite(new Sprite("graphics/backgrounds/ground-filler.gif"), x, y + groundsprite.height, w + groundsprite.width, y + h);
     addStaticSpriteBG(groundfiller);
     // remember to add a boundary
-    addBoundary(new Boundary(-20,height-48,this.width+20,height-48));
+    addBoundary(new Boundary(x-20, y-8, w+20, y-8));
   }
 
-  // this creates the a raised, angled sticking-out-ground bit.
+  // this creates the raised, angled sticking-out-ground bit.
   // it's actually a sprite, not a rotated generated bit of ground.
   void addSlant(float x, float y) {
     Sprite groundslant = new Sprite("graphics/backgrounds/ground-slant.gif");
-    groundslant.align(RIGHT,TOP);
+    groundslant.align(RIGHT, TOP);
     groundslant.setPosition(x, y - groundslant.height);
     addStaticSpriteBG(groundslant);
     addBoundary(new Boundary(x, y + 48 - groundslant.height, x + 48, y - groundslant.height));
@@ -301,8 +288,8 @@ class TestLevelLayer extends LevelLayer {
     Sprite lc = new Sprite("graphics/backgrounds/ground-corner-left.gif");
     Sprite tp = new Sprite("graphics/backgrounds/ground-top.gif");
     Sprite rc = new Sprite("graphics/backgrounds/ground-corner-right.gif");
-    lc.setPosition(x,y);
-    rc.setPosition(x+w-rc.width,y);
+    lc.setPosition(x, y);
+    rc.setPosition(x+w-rc.width, y);
     TilingSprite toprow = new TilingSprite(tp, x+lc.width, y, x+(w-rc.width), y+tp.height);
 
     addStaticSpriteBG(lc);
@@ -324,87 +311,6 @@ class TestLevelLayer extends LevelLayer {
     addStaticSpriteBG(sideright);
   }
 
-  // add some mario-style bushes
-  void addBushes() {
-    // one bush, composed of four segmetns (sprites 1, 3, 4 and 5)
-    int[] bush = {1, 3, 4, 5};
-    for(int i=0, xpos=0, end=bush.length; i<end; i++) {
-      Sprite sprite = new Sprite("graphics/backgrounds/bush-0"+bush[i]+".gif");
-      xpos += sprite.width;
-      sprite.align(CENTER,BOTTOM);
-      sprite.setPosition(116 + xpos, height-48);
-      addStaticSpriteFG(sprite); }
-
-    // two bush, composed of eight segments
-    bush = new int[]{1, 2, 4, 2, 3, 4, 2, 5};
-    for(int i=0, xpos=0, end=bush.length; i<end; i++) {
-      Sprite sprite = new Sprite("graphics/backgrounds/bush-0"+bush[i]+".gif");
-      xpos += sprite.width;
-      sprite.align(CENTER,BOTTOM);
-      sprite.setPosition(384 + xpos, height-48);
-      addStaticSpriteFG(sprite); }
-
-    // three bush
-    bush = new int[]{1, 3, 4, 5};
-    for(int i=0, xpos=0, end=bush.length; i<end; i++) {
-      Sprite sprite = new Sprite("graphics/backgrounds/bush-0"+bush[i]+".gif");
-      xpos += sprite.width;
-      sprite.align(CENTER,BOTTOM);
-      sprite.setPosition(868 + xpos, height-48);
-      addStaticSpriteFG(sprite); }
-
-    // four bush
-    bush = new int[]{1, 2, 4, 3, 4, 5};
-    for(int i=0, xpos=0, end=bush.length; i<end; i++) {
-      Sprite sprite = new Sprite("graphics/backgrounds/bush-0"+bush[i]+".gif");
-      xpos += sprite.width;
-      sprite.align(CENTER,BOTTOM);
-      sprite.setPosition(1344 + xpos, height-48);
-      addStaticSpriteFG(sprite); }
-  }
-
-  // clouds platforms!
-  void addCloudPlatforms() {
-    addBoundary(new Boundary(54 +   0, 96 +   0, 105 +   0, 96 +   0));
-  }
-
-  // some platforms made up of normal blocks
-  void addBlockPlatforms() {
-    PassThroughBlock p = null;
-    for(int x=1064; x<1064 + 14*16; x+=16) {
-      PassThroughBlock n = new PassThroughBlock(x, 264);
-      addBoundedInteractor(n);
-      if(p!=null) { n.setPrevious(p); p.setNext(n); }
-      p = n;
-    }
-  }
-
-  // coin blocks (we only use one)
-  void addSpecialBlocks() {
-    CoinBlock cb = new CoinBlockBoo(338,248);
-    addBoundedInteractor(cb);
-
-    MushroomBlock mb = new MushroomBlock(1110, 208);
-    addBoundedInteractor(mb);
-  }
-
-  // some coins in tactical places
-  void addCoins() {
-    // start coins
-    addCoin(80,96);
-
-    // coin chain!
-    int set = 0;
-    addCoin(640+48*set++, height-48);
-    addCoin(640+48*set++, height-48);
-    addCoin(640+48*set++, height-48);
-    addForPlayerOnly(new Coin(640+48*set++-16, height-48-40));
-
-    // coins on top of a platform at the end of the level
-    addCoin(1448,316);
-    addCoin(1448+84,316);
-  }
-
   // convenient shortcut method for placing three coins at once
   void addCoin(float x, float y) {
     addForPlayerOnly(new Coin(x-16, y - 40));
@@ -418,73 +324,33 @@ class TestLevelLayer extends LevelLayer {
     addForPlayerOnly(new DragonCoin(1490, 256));
   }
 
-  // Then, some flying koopas for getting to coins in the clouds
-  void addFlyingKoopas() {
-    for(int i=0; i<3; i++) {
-      FlyingKoopa fk = new FlyingKoopa(150,175 + i*30);
-      fk.active.sprite.setPathOffset(i*40);
-      addInteractor(fk);
-    }
-  }
-
-  // In order to effect "just-in-time" sprite placement,
-  // we set up some trigger regions.
-  void addTriggers() {
-    // when tripped, place a koopa on top of the slanted ground
-    addTrigger(new SlantKoopaTrigger(16, height-48-20,32,20));
-    // when tripped, spawn a mushroom 350 pixels to the right (behind the bush)
-    addTrigger(new PowerupTrigger(150,height-48-16,5,16));
-    // when tripped, add a koopa under the coin chain
-    addTrigger(new KoopaTrigger(412,0,5,height,  350,height-49,-0.2,0));
-    // when tripped, place a koopa on one of the platforms in the middle
-    addTrigger(new KoopaTrigger(562,0,5,height,  350,307,0.2,0));
-    // when tripped place a koopa on top of the passthrough block platform
-    addTrigger(new KoopaTrigger(916,0,5,height,  350,250,-0.2,0));
-    // when tripped, release a banzai bill
-    addTrigger(new BanzaiBillTrigger(1446,310,5,74,  400,432-48-24,-6,0));
-  }
-
-  // To demonstrate screen changing, also add some tubes
-  void addTubes() {
-    // start of the level, above the coins
-    addUpsideDownTube(64, -16);
-  // level start test pipes
-  //addTube(64, height-16, null);
-  //addTube(128, height-48, null);
-    // plain pipe
-    addTube(580, height-48, null);
-    // teleporting pipe to the start of the level
-    addTube(778, height-48, new TubeTrigger(786, height-66, 16, 2, 78, -32));
-    // end of the level, right above the goal posts
-    addUpsideDownTube(width - 200, -16);
-    // teleporting pipe to the pipe above the goal
-    addTube(width-32, height-48, new TubeTrigger(width-24, height-66, 16, 2, 1864, -16));
-  }
-
   // places a single tube with all the boundaries and behaviours
-  void addTube(float x, float y, TubeTrigger teleporter) {
+  void addTube(float x, float y, TeleportTrigger teleporter) {
     // pipe head as foreground, so we can disappear behind it.
     Sprite pipe_head = new Sprite("graphics/assorted/Pipe-head.gif");
-    pipe_head.align(RIGHT,BOTTOM);
-    pipe_head.setPosition(x,y-16);
+    pipe_head.align(RIGHT, BOTTOM);
+    pipe_head.setPosition(x, y-16);
     addStaticSpriteFG(pipe_head);
 
     // active pipe; use a removable boundary for the top
-    if(teleporter!=null) {
+    if (teleporter!=null) {
       Boundary lid = new PipeBoundary(x, y-16-32, x+32, y-16-32);
       teleporter.setLid(lid);
-      addBoundary(lid); }
+      addBoundary(lid);
+    }
 
     // plain pipe; use a normal boundary for the top
-    else { addBoundary(new Boundary(x, y-16-32, x+32, y-16-32)); }
+    else { 
+      addBoundary(new Boundary(x, y-16-32, x+32, y-16-32));
+    }
 
     // pipe body as background
     Sprite pipe = new Sprite("graphics/assorted/Pipe-body.gif");
-    pipe.align(RIGHT,BOTTOM);
-    pipe.setPosition(x,y);
+    pipe.align(RIGHT, BOTTOM);
+    pipe.setPosition(x, y);
     addStaticSpriteBG(pipe);
 
-    if(teleporter!=null) {
+    if (teleporter!=null) {
       // add a trigger region for active pipes
       addTrigger(teleporter);
       // add an invisible boundery inside the pipe, so
@@ -503,15 +369,15 @@ class TestLevelLayer extends LevelLayer {
   void addUpsideDownTube(float x, float y) {
     // pipe body as background
     Sprite pipe = new Sprite("graphics/assorted/Pipe-body.gif");
-    pipe.align(RIGHT,TOP);
-    pipe.setPosition(x,y);
+    pipe.align(RIGHT, TOP);
+    pipe.setPosition(x, y);
     addStaticSpriteBG(pipe);
 
     // pipe head as foreground, so we can disappear behind it.
     Sprite pipe_head = new Sprite("graphics/assorted/Pipe-head.gif");
-    pipe_head.align(RIGHT,TOP);
+    pipe_head.align(RIGHT, TOP);
     pipe_head.flipVertical();
-    pipe_head.setPosition(x,y+16);
+    pipe_head.setPosition(x, y+16);
     addStaticSpriteFG(pipe_head);
 
     // And add side-walls and the bottom "lid.
@@ -522,20 +388,251 @@ class TestLevelLayer extends LevelLayer {
   }
 
   // And finally, the end of the level!
-  void addGoal() {
-    int xpos = 1850;
+  void addGoal(float xpos, float hpos) {
+    hpos -= 7;
     // background post
     Sprite goal_b = new Sprite("graphics/assorted/Goal-back.gif");
-    goal_b.align(CENTER,BOTTOM);
-    goal_b.setPosition(xpos,height-47);
+    goal_b.align(CENTER, BOTTOM);
+    goal_b.setPosition(xpos, hpos);
     addStaticSpriteBG(goal_b);
     // foreground post
     Sprite goal_f = new Sprite("graphics/assorted/Goal-front.gif");
-    goal_f.align(CENTER,BOTTOM);
-    goal_f.setPosition(xpos+32,height-47);
+    goal_f.align(CENTER, BOTTOM);
+    goal_f.setPosition(xpos+32, hpos);
     addStaticSpriteFG(goal_f);
     // the finish line rope
-    addForPlayerOnly(new Rope(xpos+24,height-47-16));
+    addForPlayerOnly(new Rope(xpos+24, hpos-16));
+  }
+}
+
+/**
+ * Plain color background layer
+ */
+class BackgroundColorLayer extends MarioLayer {
+  BackgroundColorLayer(Level parent, float w, float h, color c) {
+    super(parent, w, h);
+    backgroundColor = c;
+  }
+}
+
+/**
+ * Background with level layer
+ */
+class BackgroundLayer extends MarioLayer {
+  // fairly simple constructor
+  BackgroundLayer(Level parent, float w, float h, float ox, float oy, float sx, float sy) {
+    super(parent, w, h, ox, oy, sx, sy);
+
+    // repeating background sprite image
+    Sprite bgsprite = new Sprite("graphics/backgrounds/sky_2.gif");
+    bgsprite.align(RIGHT, TOP);
+    TilingSprite backdrop = new TilingSprite(bgsprite, 0, 0, width, height);
+    addStaticSpriteBG(backdrop);
+
+
+    float bh = height;
+    // top of the ground
+    Sprite groundsprite = new Sprite("graphics/backgrounds/ground-top.gif");
+    TilingSprite groundline = new TilingSprite(groundsprite, 0, bh, this.width+groundsprite.width, bh + groundsprite.height);
+    addStaticSpriteBG(groundline);
+    // ground filler
+    TilingSprite groundfiller = new TilingSprite(new Sprite("graphics/backgrounds/ground-filler.gif"), 0, bh + groundsprite.height, this.width+groundsprite.width, 32);
+    addStaticSpriteBG(groundfiller);
+    // remember to add a boundary
+    addBoundary(new Boundary(-20, bh-8, this.width+20, bh-8));
+
+    addGoal(2000, bh);
+  }
+}
+
+/**
+ * The test implementaiton of the Level class
+ * models the first normal level of Super Mario
+ * World, "Yoshi's Island 1". With some liberties
+ * taken, because this is a test.
+ */
+class MainLevelLayer extends MarioLayer {
+  /**
+   * Test level implementation
+   */
+  MainLevelLayer(Level parent, float w, float h)
+  {
+    super(parent, w, h);
+    textFont(createFont("fonts/acmesa.ttf", 12));
+
+    // repeating background sprite image
+    Sprite bgsprite = new Sprite("graphics/backgrounds/sky.gif");
+    bgsprite.align(RIGHT, TOP);
+    TilingSprite backdrop = new TilingSprite(bgsprite, 0, 0, width, height);
+    addStaticSpriteBG(backdrop);
+    
+    // level components
+    addGround();
+    addBottom(0, height-40, width, 40);
+    addBushes();
+    addCloudPlatforms();
+    addBlockPlatforms();
+    addSpecialBlocks();
+    addCoins();
+    addDragonCoins();
+    addFlyingKoopas();
+    addTubes();
+    addTriggers();
+  }
+
+  // "ground" parts of the level
+  void addGround() {
+    // some random platforms
+    addGroundPlatform(928, 432/2, 96, 116);
+    addGroundPlatform(920, 432/2+48, 32, 70);
+    addGroundPlatform(912, 432/2 + 100, 128, 86);
+    addGroundPlatform(912+64, 432/2 + 130, 128, 50);
+
+    addSlant(256, height-48);
+    addSlant(1300, height-48);
+    addSlant(1350, height-48);
+
+    addGroundPlatform(1442, 432/2 + 100, 128, 86);
+    addGroundPlatform(1442+64, 432/2 + 130, 128, 50);
+  }
+
+  // add some mario-style bushes
+  void addBushes() {
+    // one bush, composed of four segmetns (sprites 1, 3, 4 and 5)
+    int[] bush = {
+      1, 3, 4, 5
+    };
+    for (int i=0, xpos=0, end=bush.length; i<end; i++) {
+      Sprite sprite = new Sprite("graphics/backgrounds/bush-0"+bush[i]+".gif");
+      xpos += sprite.width;
+      sprite.align(CENTER, BOTTOM);
+      sprite.setPosition(116 + xpos, height-48);
+      addStaticSpriteFG(sprite);
+    }
+
+    // two bush, composed of eight segments
+    bush = new int[] {
+      1, 2, 4, 2, 3, 4, 2, 5
+    };
+    for (int i=0, xpos=0, end=bush.length; i<end; i++) {
+      Sprite sprite = new Sprite("graphics/backgrounds/bush-0"+bush[i]+".gif");
+      xpos += sprite.width;
+      sprite.align(CENTER, BOTTOM);
+      sprite.setPosition(384 + xpos, height-48);
+      addStaticSpriteFG(sprite);
+    }
+
+    // three bush
+    bush = new int[] {
+      1, 3, 4, 5
+    };
+    for (int i=0, xpos=0, end=bush.length; i<end; i++) {
+      Sprite sprite = new Sprite("graphics/backgrounds/bush-0"+bush[i]+".gif");
+      xpos += sprite.width;
+      sprite.align(CENTER, BOTTOM);
+      sprite.setPosition(868 + xpos, height-48);
+      addStaticSpriteFG(sprite);
+    }
+
+    // four bush
+    bush = new int[] {
+      1, 2, 4, 3, 4, 5
+    };
+    for (int i=0, xpos=0, end=bush.length; i<end; i++) {
+      Sprite sprite = new Sprite("graphics/backgrounds/bush-0"+bush[i]+".gif");
+      xpos += sprite.width;
+      sprite.align(CENTER, BOTTOM);
+      sprite.setPosition(1344 + xpos, height-48);
+      addStaticSpriteFG(sprite);
+    }
+  }
+
+  // clouds platforms!
+  void addCloudPlatforms() {
+    addBoundary(new Boundary(54 +   0, 96 +   0, 105 +   0, 96 +   0));
+  }
+
+  // some platforms made up of normal blocks
+  void addBlockPlatforms() {
+    PassThroughBlock p = null;
+    for (int x=1064; x<1064 + 14*16; x+=16) {
+      PassThroughBlock n = new PassThroughBlock(x, 264);
+      addBoundedInteractor(n);
+      if (p!=null) { 
+        n.setPrevious(p); 
+        p.setNext(n);
+      }
+      p = n;
+    }
+  }
+
+  // coin blocks (we only use one)
+  void addSpecialBlocks() {
+    CoinBlock cb = new CoinBlockBoo(338, 248);
+    addBoundedInteractor(cb);
+
+    MushroomBlock mb = new MushroomBlock(1110, 208);
+    addBoundedInteractor(mb);
+  }
+
+  // some coins in tactical places
+  void addCoins() {
+    // start coins
+    addCoin(80, 96);
+
+    // coin chain!
+    int set = 0;
+    addCoin(640+48*set++, height-48);
+    addCoin(640+48*set++, height-48);
+    addCoin(640+48*set++, height-48);
+    addForPlayerOnly(new Coin(640+48*set++-16, height-48-40));
+
+    // coins on top of a platform at the end of the level
+    addCoin(1448, 316);
+    addCoin(1448+84, 316);
+  }
+
+  // Then, some flying koopas for getting to coins in the clouds
+  void addFlyingKoopas() {
+    for (int i=0; i<3; i++) {
+      FlyingKoopa fk = new FlyingKoopa(150, 175 + i*30);
+      fk.active.sprite.setPathOffset(i*40);
+      addInteractor(fk);
+    }
+  }
+
+  // In order to effect "just-in-time" sprite placement,
+  // we set up some trigger regions.
+  void addTriggers() {
+    // when tripped, place a koopa on top of the slanted ground
+    addTrigger(new SlantKoopaTrigger(16, height-48-20, 32, 20));
+    // when tripped, spawn a mushroom 350 pixels to the right (behind the bush)
+    addTrigger(new PowerupTrigger(150, height-48-16, 5, 16));
+    // when tripped, add a koopa under the coin chain
+    addTrigger(new KoopaTrigger(412, 0, 5, height, 350, height-49, -0.2, 0));
+    // when tripped, place a koopa on one of the platforms in the middle
+    addTrigger(new KoopaTrigger(562, 0, 5, height, 350, 307, 0.2, 0));
+    // when tripped place a koopa on top of the passthrough block platform
+    addTrigger(new KoopaTrigger(916, 0, 5, height, 350, 250, -0.2, 0));
+    // when tripped, release a banzai bill
+    addTrigger(new BanzaiBillTrigger(1446, 310, 5, 74, 400, 432-48-24, -6, 0));
+  }
+
+  // To demonstrate screen changing, also add some tubes
+  void addTubes() {
+    // start of the level, above the coins
+    addUpsideDownTube(64, -16);
+    // level start test pipes
+    //addTube(64, height-16, null);
+    //addTube(128, height-48, null);
+    // plain pipe
+    addTube(580, height-48, null);
+    // teleporting pipe to the start of the level
+    addTube(778, height-48, new LayerTeleportTrigger(786, height-66, 16, 2, 78, -32, "background 1"));
+    // end of the level, right above the goal posts
+    addUpsideDownTube(width - 200, -16);
+    // teleporting pipe to the pipe above the goal
+    addTube(width-32, height-48, new BonusLevelTrigger(width-24, height-66, 16, 2, 16, height-32));
   }
 
   /**
@@ -544,17 +641,119 @@ class TestLevelLayer extends LevelLayer {
    * (and mushrooms if we right click O_O)
    */
   void mousePressed(int mx, int my, int button) {
-    if(button == LEFT) {
+    if (button == LEFT) {
       Koopa koopa = new Koopa(mx + viewbox.x, my + viewbox.y);
-      koopa.addForces(-0.2,0);
+      koopa.addForces(-0.2, 0);
       koopa.persistent = false;
-      addInteractor(koopa); }
-    else if(button == RIGHT) {
+      addInteractor(koopa);
+    }
+    else if (button == RIGHT) {
       addForPlayerOnly(new Mushroom(mx + viewbox.x, my + viewbox.y));
     }
   }
 }
 
+
+/**
+ * To show level swapping we also have a small "dark"
+ * level that is teleport from, and back out of.
+ */
+class DarkLevel extends MarioLevel
+{
+  // constructor sets up a level and level layer
+  DarkLevel(float w, float h, int x_repeat, int y_repeat)
+  {
+    super(w*x_repeat, h*y_repeat);
+    setViewBox(0, 0, w, h);
+    addLevelLayer("color", new BackgroundColorLayer(this, width, height, color(0, 0, 100)));
+
+    LevelLayer layer = new DarkLevelLayer(this, width, height);
+    if (layer.players.size()==0 || mario==null) {
+      mario = new Mario();
+      mario.setPosition(16, height-32);
+      mario.setImpulse(0, -24);
+      layer.addPlayer(mario);
+    }
+    addLevelLayer("main", layer);
+
+    // And of course some background music.
+    SoundManager.load(this, "audio/bg/Bonus.mp3");
+  }
+
+  /**
+   * Now then, the draw loop: render mario in
+   * glorious canvas definition.
+   */
+  void draw() {
+    // Normal level draw
+    if (!finished) {
+
+      // draw the level content
+      super.draw();
+
+      // disallow running past the edges
+      Player p = mario;
+      LevelLayer l = p.getLevelLayer();
+      float sx = l.xScale;
+      {
+        if (p.x < p.width/2) { 
+          p.x = p.width/2;
+        }
+        if (p.x > l.width-p.width/2) { 
+          p.x = l.width-p.width/2;
+        }
+
+        // slide viewbox along with players
+        if (0 <= viewbox.x && viewbox.x <= l.width - viewbox.w/sx) {
+          viewbox.x = (int)(p.x-432/2);
+          viewbox.x = constrain(viewbox.x, 0, l.width - viewbox.w/sx);
+        }
+      }
+
+      if (javascript!=null) {
+        javascript.setCoordinate(mario.x, mario.y);
+      }
+    }
+  }
+
+  class DarkLevelLayer extends MarioLayer {
+    DarkLevelLayer(Level parent, float w, float h) {
+      super(parent, w, h);
+
+      // repeating background sprite image
+      Sprite bgsprite = new Sprite("graphics/backgrounds/bonus.gif");
+      bgsprite.align(RIGHT, TOP);
+      TilingSprite backdrop = new TilingSprite(bgsprite, 0, 0, width, height);
+      addStaticSpriteBG(backdrop);      
+      
+      // set up ground
+      addBottom(0, h, w, 40);
+      float x, y, wth;
+      for (int i=1; i<=4; i++) {
+        x = 8+i*56;
+        y = h-i*48;
+        wth = w-2*i*56;
+        addGroundPlatform(x, y, wth, 64);
+        for (int j=1; j<wth/48; j++) {
+          addCoin(x+24+(j-1)*48, y+16);
+        }
+      }
+
+      // set up two tubes
+      addTube(0, height - 8, null);
+      // second tube teleports back to level
+      addTube(width-32, height-8, new MainLevelTrigger(width-24, height-26, 16, 2, mainLevel.width-184, -16));
+      // and some Koopas
+      Koopa koopa;
+      for (int i=1; i<=4; i++) {
+        koopa = new Koopa(i * width/5, height-16);
+        koopa.addForces(-0.2, 0);
+        koopa.persistent = true;
+        addInteractor(koopa);
+      }
+    }
+  }
+}
 
 /***************************************
  *                                     *
@@ -569,7 +768,7 @@ class TestLevelLayer extends LevelLayer {
 class Mario extends Player {
 
   String spriteset = "mario";
-  
+
   // every 'step' has an impulse of 1.3
   float speedStep = 1.3;
 
@@ -582,7 +781,7 @@ class Mario extends Player {
   Mario() {
     this("Mario", DAMPENING, DAMPENING);
   }
-  
+
   Mario(String name, float xdamp, float ydamp) {
     super(name, xdamp, ydamp);    
     setForces(0, DOWN_FORCE);
@@ -597,60 +796,61 @@ class Mario extends Player {
     states.clear();
 
     // when not moving
-    State standing = new State("standing","graphics/mario/"+sizeSet+"/Standing-"+spriteset+".gif");
+    State standing = new State("standing", "graphics/mario/"+sizeSet+"/Standing-"+spriteset+".gif");
     standing.sprite.align(CENTER, BOTTOM);
     addState(standing);
 
     // when either running right or left
-    State running = new State("running","graphics/mario/"+sizeSet+"/Running-"+spriteset+".gif",1,4);
+    State running = new State("running", "graphics/mario/"+sizeSet+"/Running-"+spriteset+".gif", 1, 4);
     running.sprite.align(CENTER, BOTTOM);
     running.sprite.setAnimationSpeed(0.75);
     addState(running);
 
     // when [down] is pressed
-    State crouching = new State("crouching","graphics/mario/"+sizeSet+"/Crouching-"+spriteset+".gif");
+    State crouching = new State("crouching", "graphics/mario/"+sizeSet+"/Crouching-"+spriteset+".gif");
     crouching.sprite.align(CENTER, BOTTOM);
     addState(crouching);
 
     // when [up] is pressed
-    State looking = new State("looking","graphics/mario/"+sizeSet+"/Looking-"+spriteset+".gif");
+    State looking = new State("looking", "graphics/mario/"+sizeSet+"/Looking-"+spriteset+".gif");
     looking.sprite.align(CENTER, BOTTOM);
     addState(looking);
 
     // when pressing the A (jump) button
-    State jumping = new State("jumping","graphics/mario/"+sizeSet+"/Jumping-"+spriteset+".gif");
+    State jumping = new State("jumping", "graphics/mario/"+sizeSet+"/Jumping-"+spriteset+".gif");
     jumping.sprite.align(CENTER, BOTTOM);
-    jumping.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  24);
+    jumping.sprite.addPathLine(0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 24);
     SoundManager.load(jumping, "audio/Jump.mp3");
     addState(jumping);
 
     // when pressing the A button while crouching
-    State crouchjumping = new State("crouchjumping","graphics/mario/"+sizeSet+"/Crouching-"+spriteset+".gif");
+    State crouchjumping = new State("crouchjumping", "graphics/mario/"+sizeSet+"/Crouching-"+spriteset+".gif");
     crouchjumping.sprite.align(CENTER, BOTTOM);
-    crouchjumping.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  24);
+    crouchjumping.sprite.addPathLine(0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 24);
     SoundManager.load(crouchjumping, "audio/Jump.mp3");
     addState(crouchjumping);
 
     // when pressing the B (shoot) button
-    State spinning = new State("spinning","graphics/mario/"+sizeSet+"/Spinning-"+spriteset+".gif",1,4);
+    State spinning = new State("spinning", "graphics/mario/"+sizeSet+"/Spinning-"+spriteset+".gif", 1, 4);
     spinning.sprite.align(CENTER, BOTTOM);
-    spinning.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  24);
+    spinning.sprite.addPathLine(0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 24);
     SoundManager.load(spinning, "audio/Spin jump.mp3");
     addState(spinning);
 
     // if we mess up, and we're small, we lose...
-    if(sizeSet=="small") {
-      State dead = new State("dead","graphics/mario/"+sizeSet+"/Dead-"+spriteset+".gif",1,2);
+    if (sizeSet=="small") {
+      State dead = new State("dead", "graphics/mario/"+sizeSet+"/Dead-"+spriteset+".gif", 1, 2);
       dead.sprite.align(CENTER, BOTTOM);
       dead.sprite.setAnimationSpeed(0.5);
       dead.sprite.setNoRotation(true);
       dead.sprite.setLooping(false);
-      dead.sprite.addPathCurve(0,0,1,1,0,
-                               0,-50,
-                               0,250,
-                               0,1200,1,1,0,  72,1);
+      dead.sprite.addPathCurve(0, 0, 1, 1, 0, 
+      0, -50, 
+      0, 250, 
+      0, 1200, 1, 1, 0, 72, 1);
       SoundManager.load(dead, "audio/Dead mario.mp3");
-      addState(dead); }
+      addState(dead);
+    }
 
     // Finally, we make sure to start off in the "standing" state
     setCurrentState("standing");
@@ -671,21 +871,21 @@ class Mario extends Player {
         setHorizontalFlip(true);
         // walking left means we get a negative impulse along the x-axis:
         addImpulse(-speedStep, 0);
-        setViewDirection(-1,0);
+        setViewDirection(-1, 0);
       }
       if (keyDown[RIGHT]) {
         // when we walk right, we need to NOT flip the sprite =)
         setHorizontalFlip(false);
         // walking right means we get a positive impulse along the x-axis:
         addImpulse( speedStep, 0);
-        setViewDirection(1,0);
+        setViewDirection(1, 0);
       }
     }
 
     // Because some states will not allow use to change,
     // such as jump animations, we check whether we're
     // allowed to change our state before we check keys.
-    if(active.mayChange())
+    if (active.mayChange())
     {
       // The jump button is pressed! Should we jump? How do we jump?
       if (keyDown[BUTTON_A] && boundaries.size()>0) {
@@ -695,11 +895,15 @@ class Mario extends Player {
           // make sure we unglue ourselves from the platform we're standing on:
           detachAll();
           // then generate a massive impulse upward:
-          addImpulse(0,speedHeight*-speedStep);
+          addImpulse(0, speedHeight*-speedStep);
           // now, if we're crouching, we need to crouch-jump.
           // Otherwise, we can jump normally.
-          if (active.name == "crouching") { setCurrentState("crouchjumping"); }
-          else { setCurrentState("jumping"); }
+          if (active.name == "crouching") { 
+            setCurrentState("crouchjumping");
+          }
+          else { 
+            setCurrentState("jumping");
+          }
           SoundManager.play(active);
         }
       }
@@ -713,7 +917,7 @@ class Mario extends Player {
           // make sure we unglue ourselves from the platform we're standing on:
           detachAll();
           // then generate a massive impulse upward:
-          addImpulse(0,speedHeight*-speedStep);
+          addImpulse(0, speedHeight*-speedStep);
           // and then make sure we spinjump, rather than jump normally
           setCurrentState("spinning");
           SoundManager.play(active);
@@ -721,7 +925,7 @@ class Mario extends Player {
       }
       // The down button is pressed: crouch
       else if (keyDown[DOWN]) {
-        if(boundaries.size()==1 && boundaries.get(0) instanceof PipeBoundary) {
+        if (boundaries.size()==1 && boundaries.get(0) instanceof PipeBoundary) {
           ((PipeBoundary)boundaries.get(0)).teleport();
         }
         setCurrentState("crouching");
@@ -735,7 +939,9 @@ class Mario extends Player {
         setCurrentState("running");
       }
       // okay, nothing's being pressed. Let's just stand there.
-      else { setCurrentState("standing"); }
+      else { 
+        setCurrentState("standing");
+      }
     }
   }
 
@@ -743,7 +949,7 @@ class Mario extends Player {
    * If Mario loses, remove him from the level.
    */
   void handleStateFinished(State which) {
-    if(which.name == "dead") {
+    if (which.name == "dead") {
       // well, we died.. restart!
       level.end();
       level.setSwappable();
@@ -757,7 +963,7 @@ class Mario extends Player {
   void attachTo(Boundary boundary) {
     super.attachTo(boundary);
     // After crouch-jumping, Mario should be crouching
-    if(active.name=="crouchjump") {
+    if (active.name=="crouchjump") {
       setCurrentState("crouching");
     }
     // after other jumps, he should be standing.
@@ -770,24 +976,26 @@ class Mario extends Player {
    * What happens when we touch another actor?
    */
   void overlapOccuredWith(Actor other, float[] direction) {
-    if(other instanceof Koopa) {
+    if (other instanceof Koopa) {
       Koopa koopa = (Koopa) other;
       float angle = direction[2];
 
       // We bopped a koopa on the head!
       float tolerance = radians(75);
-      if(PI/2 - tolerance <= angle && angle <= PI/2 + tolerance) {
+      if (PI/2 - tolerance <= angle && angle <= PI/2 + tolerance) {
         boolean shouldJump = koopa.squish();
-        if(shouldJump) {
-          setImpulse(0,ACCELERATION*speedHeight*-speedStep);
-          if(active.name!="spinning") {
+        if (shouldJump) {
+          setImpulse(0, ACCELERATION*speedHeight*-speedStep);
+          if (active.name!="spinning") {
             setCurrentState("jumping");
           }
         }
       }
 
       // Oh no! We missed and touched a koopa!
-      else { die(); }
+      else { 
+        die();
+      }
     }
   }
 
@@ -796,7 +1004,7 @@ class Mario extends Player {
    */
   void die() {
     // wait! are we big? we don't die when we're big!
-    if(getState("dead")==null) {
+    if (getState("dead")==null) {
       disableInteractionFor(48);
       setupStates("small");
     }
@@ -813,13 +1021,13 @@ class Mario extends Player {
    * What happens when we get pickups?
    */
   void pickedUp(Pickup pickup) {
-    if(pickup.name=="Regular coin") {
+    if (pickup.name=="Regular coin") {
       // increase our score
     }
-    else if(pickup.name=="Dragon coin") {
+    else if (pickup.name=="Dragon coin") {
       // increase our secret dragon score
     }
-    else if(pickup.name=="Mushroom") {
+    else if (pickup.name=="Mushroom") {
       // become big!
       powerUp();
     }
@@ -862,27 +1070,27 @@ class Koopa extends Interactor {
    */
   void setupStates() {
     // when walking around
-    State walking = new State("walking","graphics/enemies/Red-koopa-walking.gif",1,2);
+    State walking = new State("walking", "graphics/enemies/Red-koopa-walking.gif", 1, 2);
     walking.sprite.align(CENTER, BOTTOM);
     walking.sprite.setAnimationSpeed(0.25);
     addState(walking);
 
     // when just standing, doing nothing
-    State standing = new State("standing","graphics/enemies/Red-koopa-standing.gif",1,2);
+    State standing = new State("standing", "graphics/enemies/Red-koopa-standing.gif", 1, 2);
     standing.sprite.align(CENTER, BOTTOM);
     addState(standing);
 
     // if we get squished, we first get naked...
-    State naked = new State("naked","graphics/enemies/Naked-koopa-walking.gif",1,2);
+    State naked = new State("naked", "graphics/enemies/Naked-koopa-walking.gif", 1, 2);
     naked.sprite.setAnimationSpeed(0.25);
     naked.sprite.align(CENTER, BOTTOM);
     SoundManager.load(naked, "audio/Squish.mp3");
     addState(naked);
 
     // if we get squished again, we die!
-    State dead = new State("dead","graphics/enemies/Dead-koopa.gif");
+    State dead = new State("dead", "graphics/enemies/Dead-koopa.gif");
     dead.sprite.align(CENTER, BOTTOM);
-    dead.sprite.addPathLine(0,0,1,1,0,  0,0,1,1,0,  12);
+    dead.sprite.addPathLine(0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 12);
     dead.sprite.setLooping(false);
     SoundManager.load(dead, "audio/Squish.mp3");
     addState(dead);
@@ -900,14 +1108,14 @@ class Koopa extends Interactor {
   boolean squish() {
     // if we're scheduled for removal,
     // don't do anything.
-    if(remove) return false;
+    if (remove) return false;
 
     // We're okay, we just lost our shell.
-    if(active.name != "naked" && active.name != "dead") {
+    if (active.name != "naked" && active.name != "dead") {
       setCurrentState("naked");
       SoundManager.play(active);
       // trigger some hitpoints
-      layer.addDecal(new HitPoints(x,y,100));
+      layer.addDecal(new HitPoints(x, y, 100));
 
       // mario should jump after trying to squish us
       return true;
@@ -915,12 +1123,12 @@ class Koopa extends Interactor {
 
     // Ohnoes! we've been squished properly!
     // make sure we stop moving forward
-    setForces(0,0);
+    setForces(0, 0);
     setInteracting(false);
     setCurrentState("dead");
     SoundManager.play(active);
     // trigger some hitpoints
-    layer.addDecal(new HitPoints(x,y,200));
+    layer.addDecal(new HitPoints(x, y, 200));
     // mario should also jump after squishing us dead
     return true;
   }
@@ -931,7 +1139,7 @@ class Koopa extends Interactor {
    * to remove this koopa from the game.
    */
   void handleStateFinished(State which) {
-    if(which.name=="dead") {
+    if (which.name=="dead") {
       removeActor();
     }
   }
@@ -940,7 +1148,7 @@ class Koopa extends Interactor {
    * Turn around when we walk into a wall
    */
   void gotBlocked(Boundary b, float[] intersection) {
-    if(intersection[0]-x==0 && intersection[1]-y==0) {
+    if (intersection[0]-x==0 && intersection[1]-y==0) {
       fx = -fx;
       active.sprite.flipHorizontal();
     }
@@ -968,9 +1176,9 @@ class FlyingKoopa extends Koopa {
    * but gravity does not apply to this one!
    */
   FlyingKoopa(float mx, float my) {
-    super(mx,my);
-    setForces(0,0);
-    setAcceleration(0,0);
+    super(mx, my);
+    setForces(0, 0);
+    setAcceleration(0, 0);
   }
 
   /**
@@ -980,22 +1188,22 @@ class FlyingKoopa extends Koopa {
     super.setupStates();
 
     // they can fly!
-    State flying = new State("flying","graphics/enemies/Red-koopa-flying.gif",1,2);
+    State flying = new State("flying", "graphics/enemies/Red-koopa-flying.gif", 1, 2);
     flying.sprite.align(CENTER, BOTTOM);
     flying.sprite.setAnimationSpeed(0.2);
     // in fact, they can do a flying patrolling pattern
-    flying.sprite.addPathLine(   0,0,1,1,0,
-                              -100,0,1,1,0,
-                               100);
-    flying.sprite.addPathLine(-100,0,1,1,0,
-                              -100,0,-1,1,0,
-                               5);
-    flying.sprite.addPathLine(-100,0,-1,1,0,
-                                 0,0,-1,1,0,
-                               100);
-    flying.sprite.addPathLine(0,0,-1,1,0,
-                              0,0,1,1,0,
-                              5);
+    flying.sprite.addPathLine(   0, 0, 1, 1, 0, 
+    -100, 0, 1, 1, 0, 
+    100);
+    flying.sprite.addPathLine(-100, 0, 1, 1, 0, 
+    -100, 0, -1, 1, 0, 
+    5);
+    flying.sprite.addPathLine(-100, 0, -1, 1, 0, 
+    0, 0, -1, 1, 0, 
+    100);
+    flying.sprite.addPathLine(0, 0, -1, 1, 0, 
+    0, 0, 1, 1, 0, 
+    5);
     SoundManager.load(flying, "audio/Squish.mp3");
     addState(flying);
 
@@ -1007,13 +1215,13 @@ class FlyingKoopa extends Koopa {
    * When mario squishes us, we lose our wings.
    */
   boolean squish() {
-    if(flying) {
+    if (flying) {
       flying = false;
-      setForces(-0.2,DOWN_FORCE);
-      setAcceleration(0,ACCELERATION);
+      setForces(-0.2, DOWN_FORCE);
+      setAcceleration(0, ACCELERATION);
       SoundManager.play(active);
       // trigger some hitpoints
-      layer.addDecal(new HitPoints(x,y,300));
+      layer.addDecal(new HitPoints(x, y, 300));
       setCurrentState("walking");
       return true;
     }
@@ -1038,7 +1246,7 @@ class BanzaiBill extends Interactor {
    * Relatively straight-forward constructor
    */
   BanzaiBill(float mx, float my) {
-    super("Banzai Bill", 1,1);
+    super("Banzai Bill", 1, 1);
     setPosition(mx, my);
     setImpulse(-0.5, 0);
     setForces(0, 0);
@@ -1054,8 +1262,8 @@ class BanzaiBill extends Interactor {
    * Banzai bill flies with great purpose.
    */
   void setupStates() {
-    State flying = new State("flying","graphics/enemies/Banzai-bill.gif");
-    flying.sprite.align(LEFT,BOTTOM);
+    State flying = new State("flying", "graphics/enemies/Banzai-bill.gif");
+    flying.sprite.align(LEFT, BOTTOM);
     SoundManager.load(flying, "audio/Banzai.mp3");
     addState(flying);
     setCurrentState("flying");
@@ -1066,14 +1274,15 @@ class BanzaiBill extends Interactor {
    * state handling is unused, since Banzai
    * Bill only has a single state to be in.
    */
-  void handleStateFinished(State which) {}
+  void handleStateFinished(State which) {
+  }
 
   /**
    * When we hit an actor, they die.
    */
   void overlapOccuredWith(Actor other, float[] overlap) {
     super.overlapOccuredWith(other, overlap);
-    if(other instanceof Mario) {
+    if (other instanceof Mario) {
       ((Mario)other).die();
     }
   }
@@ -1103,12 +1312,12 @@ abstract class SpecialBlock extends BoundedInteractor {
    */
   SpecialBlock(String name, float x, float y) {
     super(name);
-    setPosition(x,y);
-    setForces(0,0);
-    setAcceleration(0,0);
+    setPosition(x, y);
+    setForces(0, 0);
+    setAcceleration(0, 0);
     setupStates();
     // make the top of this block a platform
-    addBoundary(new Boundary(x-width/2,y-height/2-1,x+width/2,y-height/2-1));
+    addBoundary(new Boundary(x-width/2, y-height/2-1, x+width/2, y-height/2-1));
   }
 
   /**
@@ -1117,26 +1326,26 @@ abstract class SpecialBlock extends BoundedInteractor {
    */
   void setupStates() {
     // when just hanging in the level
-    State hanging = new State("hanging","graphics/assorted/Coin-block.gif",1,4);
+    State hanging = new State("hanging", "graphics/assorted/Coin-block.gif", 1, 4);
     hanging.sprite.setAnimationSpeed(0.25);
     addState(hanging);
 
     // when Mario jumps into us from below
-    State boing = new State("boing","graphics/assorted/Coin-block.gif",1,4);
+    State boing = new State("boing", "graphics/assorted/Coin-block.gif", 1, 4);
     boing.sprite.setAnimationSpeed(0.25);
     boing.sprite.setNoRotation(true);
     boing.sprite.setLooping(false);
-    boing.sprite.addPathLine(0,0,1,1,0,
-                             0,-8,1,1,0,
-                             1);
-    boing.sprite.addPathLine(0,-12,1,1,0,
-                             0,0,1,1,0,
-                             2);
+    boing.sprite.addPathLine(0, 0, 1, 1, 0, 
+    0, -8, 1, 1, 0, 
+    1);
+    boing.sprite.addPathLine(0, -12, 1, 1, 0, 
+    0, 0, 1, 1, 0, 
+    2);
     SoundManager.load(boing, "audio/Coin.mp3");
     addState(boing);
 
     // when we've run out of things to spit out
-    State exhausted = new State("exhausted","graphics/assorted/Coin-block-exhausted.gif",1,1);
+    State exhausted = new State("exhausted", "graphics/assorted/Coin-block-exhausted.gif", 1, 1);
     addState(exhausted);
 
     setCurrentState("hanging");
@@ -1146,21 +1355,21 @@ abstract class SpecialBlock extends BoundedInteractor {
    * are we triggered?
    */
   void overlapOccuredWith(Actor other, float[] overlap) {
-    if(active.name=="hanging" || active.name=="exhausted") {
+    if (active.name=="hanging" || active.name=="exhausted") {
       // First order of business: stop actor movement
       other.rewindPartial();
       other.ix=0;
       other.iy=0;
 
       // If we're exhausted, shortcircuit
-      if(content==0 || active.name=="boing") return;
+      if (content==0 || active.name=="boing") return;
 
       // If we're not, see if we got hit
       // from the right direction, and pop
       // some coins out the top if we are.
       float minv = 3*PI/2 - radians(45);
       float maxv = 3*PI/2 + radians(45);
-      if(minv <=overlap[2] && overlap[2]<=maxv) {
+      if (minv <=overlap[2] && overlap[2]<=maxv) {
         content--;
         setCurrentState("boing");
         SoundManager.play(active);
@@ -1174,9 +1383,13 @@ abstract class SpecialBlock extends BoundedInteractor {
    * out of coins, turn into a brick.
    */
   void handleStateFinished(State which) {
-    if(which.name=="boing") {
-      if(content>0) { setCurrentState("hanging"); }
-      else { setCurrentState("exhausted"); }
+    if (which.name=="boing") {
+      if (content>0) { 
+        setCurrentState("hanging");
+      }
+      else { 
+        setCurrentState("exhausted");
+      }
     }
   }
 
@@ -1207,7 +1420,7 @@ class CoinBlock extends SpecialBlock {
    * A coin block holds eight items
    */
   CoinBlock(float x, float y) {
-    super("Coin block",x,y);
+    super("Coin block", x, y);
     content = 8;
   }
 
@@ -1215,11 +1428,11 @@ class CoinBlock extends SpecialBlock {
    * generate a coin
    */
   void generate(float[] overlap) {
-    Coin coin = new Coin(x,y-30);
-    coin.align(CENTER,BOTTOM);
-    coin.setImpulse(random(-3,3), -10);
-    coin.setImpulseCoefficients(1,DAMPENING);
-    coin.setForces(0,DOWN_FORCE);
+    Coin coin = new Coin(x, y-30);
+    coin.align(CENTER, BOTTOM);
+    coin.setImpulse(random(-3, 3), -10);
+    coin.setImpulseCoefficients(1, DAMPENING);
+    coin.setForces(0, DOWN_FORCE);
     coin.setAcceleration(0, ACCELERATION);
     coin.persistent = false;
     layer.addForPlayerOnly(coin);
@@ -1247,7 +1460,7 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
    * the same as a normal coin block.
    */
   CoinBlockBoo(float x, float y) {
-    super(x,y);
+    super(x, y);
     setImpulseCoefficients(DAMPENING, DAMPENING);
     setPlayerInteractionOnly(true);
   }
@@ -1261,13 +1474,13 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
     super.setupStates();
 
     // an important state is the "from block to boo" state
-    State transition = new State("transition","graphics/enemies/Coin-boo-transition.gif",1,5);
+    State transition = new State("transition", "graphics/enemies/Coin-boo-transition.gif", 1, 5);
     transition.sprite.setAnimationSpeed(0.4);
     transition.sprite.setLooping(false);
-    transition.sprite.addPathPoint(0,0,1,1,0, 10);
+    transition.sprite.addPathPoint(0, 0, 1, 1, 0, 10);
     addState(transition);
 
-    State chasing = new State("chasing","graphics/enemies/Boo-chasing.gif");
+    State chasing = new State("chasing", "graphics/enemies/Boo-chasing.gif");
     addState(chasing);
 
     setCurrentState("hanging");
@@ -1278,9 +1491,9 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
    */
   void setCurrentState(String name) {
     super.setCurrentState(name);
-    if(name=="exhausted") {
+    if (name=="exhausted") {
       // trigger some hitpoints
-      layer.addDecal(new HitPoints(x,y,1000));
+      layer.addDecal(new HitPoints(x, y, 1000));
     }
   }
 
@@ -1289,7 +1502,7 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
    */
   void handleStateFinished(State which) {
     super.handleStateFinished(which);
-    if(which.name=="transition") {
+    if (which.name=="transition") {
       disableBoundaries();
       setCurrentState("chasing");
       isBoo = true;
@@ -1303,23 +1516,25 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
    */
   void track(Actor actor, float vx, float vy, float vw, float vh) {
     // if we got bricked, we never become a Boo =(
-    if(active.name=="exhausted") return;
+    if (active.name=="exhausted") return;
 
     // if we're pretending to be a coin block, and mario's
     // standing on us, don't blow our cover either.
-    if(active.name=="hanging" && havePassenger()) return;
+    if (active.name=="hanging" && havePassenger()) return;
 
     // if we're too far away, don't track
-    if(x<vx-vw || x>vx+vw*2 || y<vy-vh || y>vy+vh*2) return;
+    if (x<vx-vw || x>vx+vw*2 || y<vy-vh || y>vy+vh*2) return;
 
     // otherwise: is mario not looking at us?
-    if(notLookedAtBy(actor)) {
+    if (notLookedAtBy(actor)) {
       // He is! but we're not a Boo yet... become one.
-      if(!isBoo) { setCurrentState("transition"); }
+      if (!isBoo) { 
+        setCurrentState("transition");
+      }
 
       // We're a Boo! And Mario's not looking! Chase him~!
       else {
-        if(active.name != "chasing") {
+        if (active.name != "chasing") {
           setCurrentState("chasing");
         }
         GenericTracker.track(this, actor, 0.3);
@@ -1327,7 +1542,7 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
     }
 
     // Uh-oh, he's looking at us...
-    else if(active.name == "chasing") {
+    else if (active.name == "chasing") {
       isBoo = false;
       enableBoundaries();
       setHorizontalFlip(false);
@@ -1340,21 +1555,25 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
    */
   boolean notLookedAtBy(Actor actor) {
     // if the actor hasn't moved yet, shortcircuit
-    if(actor.direction==-1) return false;
+    if (actor.direction==-1) return false;
     // if the actor jumped up/down, we pretend it's
     // looking at us if we were already chasing.
-    if(actor.direction==PI/2 || actor.direction==PI+PI/2) { return (active.name=="chasing"); }
+    if (actor.direction==PI/2 || actor.direction==PI+PI/2) { 
+      return (active.name=="chasing");
+    }
     // now the real check: where are we relative to the actor:
     float dx = x - actor.x;
     // and what does that mean for the actor's direction?
-    if(dx > 0 && abs(actor.direction-PI)<0.5*PI) {
+    if (dx > 0 && abs(actor.direction-PI)<0.5*PI) {
       // float left
       setHorizontalFlip(true);
-      return true; }
-    if(dx < 0 && abs(actor.direction-PI)>0.5*PI) {
+      return true;
+    }
+    if (dx < 0 && abs(actor.direction-PI)>0.5*PI) {
       // float right
       setHorizontalFlip(false);
-      return true; }
+      return true;
+    }
     return false;
   }
 
@@ -1363,7 +1582,7 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
    */
   void overlapOccuredWith(Actor other, float[] overlap) {
     super.overlapOccuredWith(other, overlap);
-    if(isBoo && other instanceof Mario) {
+    if (isBoo && other instanceof Mario) {
       ((Mario)other).die();
     }
   }
@@ -1385,14 +1604,14 @@ class MushroomBlock extends SpecialBlock {
    * Passthrough constructor
    */
   MushroomBlock(float x, float y) {
-    super("Mushroom block",x,y);
+    super("Mushroom block", x, y);
   }
 
   /**
    * Generate a mushroom
    */
   void generate(float[] overlap) {
-    Mushroom mushroom = new Mushroom(x,y-16);
+    Mushroom mushroom = new Mushroom(x, y-16);
     mushroom.setForces((overlap[0]<0 ? 1 : -1) * 2, DOWN_FORCE);
     mushroom.persistent = false;
     layer.addForPlayerOnly(mushroom);
@@ -1419,12 +1638,12 @@ class PassThroughBlock extends BoundedInteractor {
    */
   PassThroughBlock(float x, float y) {
     super("Pass-through block");
-    setPosition(x,y);
-    setForces(0,0);
-    setAcceleration(0,0);
+    setPosition(x, y);
+    setForces(0, 0);
+    setAcceleration(0, 0);
     setupStates();
     // make the top of this block a platform
-    addBoundary(new Boundary(x-width/2,y-height/2-1,x+width/2,y-height/2-1));
+    addBoundary(new Boundary(x-width/2, y-height/2-1, x+width/2, y-height/2-1));
   }
 
   /**
@@ -1433,15 +1652,15 @@ class PassThroughBlock extends BoundedInteractor {
    * sprite that signals it can be jumped through.
    */
   void setupStates() {
-    State hanging = new State("hanging","graphics/assorted/Block.gif");
+    State hanging = new State("hanging", "graphics/assorted/Block.gif");
     hanging.sprite.setAnimationSpeed(0.25);
     addState(hanging);
 
-    State passthrough = new State("passthrough","graphics/assorted/Passthrough-block.gif",1,4);
+    State passthrough = new State("passthrough", "graphics/assorted/Passthrough-block.gif", 1, 4);
     passthrough.sprite.setAnimationSpeed(0.25);
     passthrough.sprite.setLooping(false);
     // the passthrough state lasts for 96 frames
-    passthrough.sprite.addPathPoint(0,0,1,1,0, 96);
+    passthrough.sprite.addPathPoint(0, 0, 1, 1, 0, 96);
     addState(passthrough);
 
     setCurrentState("hanging");
@@ -1452,10 +1671,10 @@ class PassThroughBlock extends BoundedInteractor {
    */
   float[] overlap(Positionable other) {
     float[] overlap = super.overlap(other);
-    if(overlap==null) {
-      for(Boundary boundary: boundaries) {
+    if (overlap==null) {
+      for (Boundary boundary: boundaries) {
         overlap = boundary.overlap(other);
-        if(overlap!=null) return overlap;
+        if (overlap!=null) return overlap;
       }
     }
     return null;
@@ -1468,12 +1687,13 @@ class PassThroughBlock extends BoundedInteractor {
    */
   void overlapOccuredWith(Actor other, float[] overlap) {
     // stop actor movement if we're not in passthrough state
-    if(active.name!="passthrough") {
+    if (active.name!="passthrough") {
 
       // Did we get spin-jumped on?
-      if(other instanceof Mario && ((Mario)other).active.name=="spinning") {
+      if (other instanceof Mario && ((Mario)other).active.name=="spinning") {
         removeActor();
-        return; }
+        return;
+      }
 
       // We did not. See if we should become pass-through.
       other.rewindPartial();
@@ -1481,7 +1701,7 @@ class PassThroughBlock extends BoundedInteractor {
       other.iy=0;
       float minv = 3*PI/2 - radians(45);
       float maxv = 3*PI/2 + radians(45);
-      if(minv <=overlap[2] && overlap[2]<=maxv) {
+      if (minv <=overlap[2] && overlap[2]<=maxv) {
         setCurrentState("passthrough");
         disableBoundaries();
       }
@@ -1494,7 +1714,7 @@ class PassThroughBlock extends BoundedInteractor {
    * someone decides to hit us from below.
    */
   void handleStateFinished(State which) {
-    if(which.name=="passthrough") {
+    if (which.name=="passthrough") {
       setCurrentState("hanging");
       enableBoundaries();
     }
@@ -1516,9 +1736,10 @@ class PassThroughBlock extends BoundedInteractor {
  */
 class MarioPickup extends Pickup {
   MarioPickup(String name, String spritesheet, int rows, int columns, float x, float y, boolean visible) {
-    super(name,spritesheet,rows,columns,x,y,visible); }
+    super(name, spritesheet, rows, columns, x, y, visible);
+  }
   void gotBlocked(Boundary b, float[] intersection) {
-    if(intersection[0]-x==0 && intersection[1]-y==0) {
+    if (intersection[0]-x==0 && intersection[1]-y==0) {
       fx = -fx;
       active.sprite.flipHorizontal();
     }
@@ -1533,7 +1754,9 @@ class Coin extends MarioPickup {
     super("Regular coin", "graphics/assorted/Regular-coin.gif", 1, 4, x, y, true);
     SoundManager.load(this, "audio/Coin.mp3");
   }
-  void pickedUp() { SoundManager.play(this); }
+  void pickedUp() { 
+    SoundManager.play(this);
+  }
 }
 
 /**
@@ -1544,7 +1767,9 @@ class DragonCoin extends MarioPickup {
     super("Dragon coin", "graphics/assorted/Dragon-coin.gif", 1, 10, x, y, true);
     SoundManager.load(this, "audio/Dragon coin.mp3");
   }
-  void pickedUp() { SoundManager.play(this); }
+  void pickedUp() { 
+    SoundManager.play(this);
+  }
 }
 
 /**
@@ -1553,16 +1778,18 @@ class DragonCoin extends MarioPickup {
 class Mushroom extends MarioPickup {
   Mushroom(float x, float y) {
     super("Mushroom", "graphics/assorted/Mushroom.gif", 1, 1, x, y, false);
-    getState("Mushroom").sprite.align(CENTER,BOTTOM);
+    getState("Mushroom").sprite.align(CENTER, BOTTOM);
     // make mushroom gently slide to the right
-    setImpulseCoefficients(0,0);
+    setImpulseCoefficients(0, 0);
     setForces(2, DOWN_FORCE);
-    setAcceleration(0,ACCELERATION);
+    setAcceleration(0, ACCELERATION);
     updatePositioningInformation();
     SoundManager.load(this, "audio/Powerup.mp3");
     persistent = false;
   }
-  void pickedUp() { SoundManager.play(this); }
+  void pickedUp() { 
+    SoundManager.play(this);
+  }
 }
 
 /**
@@ -1574,10 +1801,10 @@ class Rope extends MarioPickup {
   Rope(float x, float y) {
     super("Finish line", "graphics/assorted/Goal-slider.gif", 1, 1, x, y, true);
     Sprite s = getState("Finish line").sprite;
-    s.align(LEFT,CENTER);
+    s.align(LEFT, CENTER);
     s.setNoRotation(true);
-    s.addPathLine(0,0,1,1,0,  0,-116,1,1,0, 50);
-    s.addPathLine(0,-116,1,1,0,  0,0,1,1,0, 50);
+    s.addPathLine(0, 0, 1, 1, 0, 0, -116, 1, 1, 0, 50);
+    s.addPathLine(0, -116, 1, 1, 0, 0, 0, 1, 1, 0, 50);
     SoundManager.load(this, "audio/bg/Course-clear.mp3");
   }
 
@@ -1601,7 +1828,7 @@ class Rope extends MarioPickup {
 class PipeBoundary extends Boundary {
   // wrapper constructor
   PipeBoundary(float x1, float y1, float x2, float y2) {
-    super(x1,y1,x2,y2);
+    super(x1, y1, x2, y2);
     SoundManager.load(this, "audio/Pipe.mp3");
   }
   // used to effect "teleporting" incombination with the tube trigger
@@ -1624,11 +1851,11 @@ class PipeBoundary extends Boundary {
  */
 class PowerupTrigger extends Trigger {
   PowerupTrigger(float x, float y, float w, float h) {
-    super("powerup",x,y,w,h);
+    super("powerup", x, y, w, h);
   }
-  void run(LevelLayer level, Actor actor, float[] intersection) {
-    Mushroom m = new Mushroom(452,432-49);
-    m.setImpulse(0.3,0);
+  void run(LevelLayer layer, Actor actor, float[] intersection) {
+    Mushroom m = new Mushroom(452, 432-49);
+    m.setImpulse(0.3, 0);
     layer.addForPlayerOnly(m);
     // remove this trigger so that it's not repeated
     removeTrigger();
@@ -1641,16 +1868,18 @@ class PowerupTrigger extends Trigger {
 class KoopaTrigger extends Trigger {
   float kx, ky, fx, fy;
   KoopaTrigger(float x, float y, float w, float h, float kx, float ky, float fx, float fy) {
-    super("koopa",x,y,w,h);
+    super("koopa", x, y, w, h);
     this.kx = kx;
     this.ky = ky;
     this.fx = fx;
     this.fy = fy;
   }
-  void run(LevelLayer level, Actor actor, float[] intersection) {
-    Koopa k = new Koopa(x+kx,ky);
-    k.setForces(fx,fy);
-    if(fx>0) { k.active.sprite.flipHorizontal(); }
+  void run(LevelLayer layer, Actor actor, float[] intersection) {
+    Koopa k = new Koopa(x+kx, ky);
+    k.setForces(fx, fy);
+    if (fx>0) { 
+      k.active.sprite.flipHorizontal();
+    }
     k.persistent = false;
     layer.addInteractor(k);
     // remove this trigger so that it's not repeated
@@ -1663,13 +1892,13 @@ class KoopaTrigger extends Trigger {
  */
 class SlantKoopaTrigger extends Trigger {
   SlantKoopaTrigger(float x, float y, float w, float h) {
-    super("slant koopa",x,y,w,h);
+    super("slant koopa", x, y, w, h);
   }
-  void run(LevelLayer level, Actor actor, float[] intersection) {
+  void run(LevelLayer layer, Actor actor, float[] intersection) {
     // this puts a slant-koopa at a very specific
     // location, namely on top of the slanted ground.
     Koopa k = new Koopa(296, 288);
-    k.addForces(-0.2,0);
+    k.addForces(-0.2, 0);
     k.persistent = false;
     layer.addInteractor(k);
     // remove this trigger so that it's not repeated
@@ -1683,15 +1912,15 @@ class SlantKoopaTrigger extends Trigger {
 class BanzaiBillTrigger extends Trigger {
   float kx, ky, fx, fy;
   BanzaiBillTrigger(float x, float y, float w, float h, float kx, float ky, float fx, float fy) {
-    super("banzai bill",x,y,w,h);
+    super("banzai bill", x, y, w, h);
     this.kx = kx;
     this.ky = ky;
     this.fx = fx;
     this.fy = fy;
   }
-  void run(LevelLayer level, Actor actor, float[] intersection) {
-    BanzaiBill k = new BanzaiBill(x+kx,ky);
-    k.setImpulse(fx,fy);
+  void run(LevelLayer layer, Actor actor, float[] intersection) {
+    BanzaiBill k = new BanzaiBill(x+kx, ky);
+    k.setImpulse(fx, fy);
     k.persistent = false;
     layer.addInteractor(k);
     // remove this trigger so that it's not repeated
@@ -1702,24 +1931,85 @@ class BanzaiBillTrigger extends Trigger {
 /**
  * Tube trigger
  */
-class TubeTrigger extends Trigger {
+class TeleportTrigger extends Trigger {
   float tx, ty;
   Boundary lid;
-  TubeTrigger(float x, float y, float w, float h, float tx, float ty) {
-    super("teleporter",x,y,w,h);
+  TeleportTrigger(float x, float y, float w, float h, float tx, float ty) {
+    super("teleporter", x, y, w, h);
     this.tx = tx;
     this.ty = ty;
   }
-  void setLid(Boundary lid) { this.lid = lid; }
-  void run(LevelLayer level, Actor actor, float[] intersection) {
+  void setLid(Boundary lid) { 
+    this.lid = lid;
+  }
+  void run(LevelLayer layer, Actor actor, float[] intersection) {
     // spit mario back out
-    //actor.setPosition(1860, -16);
-    actor.setPosition(tx,ty);
-    actor.setImpulse(0,0);
+    actor.setPosition(tx, ty);
+    actor.setImpulse(0, 0);
     lid.enable();
   }
 }
 
+/**
+ * Tube trigger
+ */
+class LayerTeleportTrigger extends TeleportTrigger {
+  String target;
+  LayerTeleportTrigger(float x, float y, float w, float h, float tx, float ty, String target) {
+    super(x, y, w, h, tx, ty);
+    this.target = target;
+  }
+  void run(LevelLayer layer, Actor actor, float[] intersection) {
+    layer.removePlayer((Player)actor);
+    level.getLevelLayer(target).addPlayer((Player)actor);
+    actor.setPosition(tx, ty);
+    actor.setImpulse(0, 0);
+    lid.enable();
+  }
+}
+
+
+/***************************************
+ *                                     *
+ *        LEVEL TELEPORTERS            *
+ *                                     *
+ ***************************************/
+
+
+/**
+ * to the dark bonus level
+ */
+class BonusLevelTrigger extends TeleportTrigger {
+  BonusLevelTrigger(float x, float y, float w, float h, float tx, float ty) { 
+    super(x, y, w, h, tx, ty);
+  }
+  void run(LevelLayer layer, Actor actor, float[] intersection) {
+    // make sure mario's in the right place
+    actor.setPosition(16, darkLevel.height-32);
+    actor.setImpulse(0, -24);
+    // switch to bonus level
+    setLevel(darkLevel);
+    // seal tube
+    lid.enable();
+  }
+}
+
+/**
+ * back to main level 
+ */
+class MainLevelTrigger extends TeleportTrigger {
+  MainLevelTrigger(float x, float y, float w, float h, float tx, float ty) { 
+    super(x, y, w, h, tx, ty);
+  }
+  void run(LevelLayer layer, Actor actor, float[] intersection) {
+    // make sure mario's in the right place
+    actor.setPosition(tx, ty);
+    // switch back to main level
+    setLevel(mainLevel);
+    // seal tube
+    lid.enable();
+  }
+}
 
 
 /***************************************
@@ -1736,12 +2026,13 @@ class TubeTrigger extends Trigger {
 class HitPoints extends Decal {
   // create a points text
   HitPoints(float x, float y, int points) {
-    super("graphics/decals/"+points+".gif",x,y-16,12);
+    super("graphics/decals/"+points+".gif", x, y-16, 12);
   }
   // path: straight up, 64 pixels
   void setPath() {
-    addPathLine(0,0,1,1,0,
-                0,32,1,1,0,
-                duration);
+    addPathLine(0, 0, 1, 1, 0, 
+    0, 32, 1, 1, 0, 
+    duration);
   }
 }
+

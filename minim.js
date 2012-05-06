@@ -60,7 +60,7 @@ function AudioPlayer(str) {
       return;
     }
     // rewind the sound to start
-    if(audio.currenTime) {
+    if(audio.currentTime) {
       audio.currentTime = 0;
     }
   };

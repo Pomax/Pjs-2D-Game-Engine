@@ -33,6 +33,9 @@ abstract class Actor extends Positionable {
   // is this actor persistent with respect to viewbox draws?
   boolean persistent = true;
 
+  // the layer this actor is in
+  LevelLayer layer;
+
   // The active state for this actor (with associated sprite)
   State active;
 
@@ -68,6 +71,20 @@ abstract class Actor extends Positionable {
    */
   State getState(String name) {
     return states.get(name);
+  }
+  
+  /**
+   * Tell this actor which layer it is operating in
+   */
+  void setLevelLayer(LevelLayer layer) {
+    this.layer = layer;
+  }
+
+  /**
+   * Tell this actor which layer it is operating in
+   */
+  LevelLayer getLevelLayer() {
+    return layer;
   }
 
   /**

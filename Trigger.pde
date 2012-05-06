@@ -4,7 +4,9 @@
  * Actor has to pass for it to trigger.
  */
 abstract class Trigger extends Positionable {
+  // does this trigger need removing? is it enabled?
   boolean remove = false, disabled = false;
+  
   String triggername="";
   
   Trigger(String name, float x, float y, float w, float h) {

@@ -46,6 +46,13 @@ abstract class Level {
   LevelLayer getLevelLayer(String name) {
     return layers.get(layerids.get(name));
   }
+  
+  // FIXME: THIS IS A TEST FUNCTION. KEEP? REJECT?
+  void updatePlayer(Player oldPlayer, Player newPlayer) {
+    for(LevelLayer l: layers) {
+      l.updatePlayer(oldPlayer, newPlayer);
+    }
+  }
 
   /**
    * Change the behaviour when the level finishes
