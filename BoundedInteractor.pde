@@ -6,17 +6,20 @@
  */
 abstract class BoundedInteractor extends Interactor {
   // the list of associated boundaries
-  ArrayList<Boundary> boundaries = new ArrayList<Boundary>();
+  ArrayList<Boundary> boundaries;
 
   // are the boundaries active?
   boolean bounding = true;
   
   // simple constructor
-  BoundedInteractor(String name) { super(name); }
+  BoundedInteractor(String name) { this(name,0,0); }
 
   // full constructor
   BoundedInteractor(String name, float dampening_x, float dampening_y) {
-    super(name, dampening_x, dampening_y); }
+    super(name, dampening_x, dampening_y);
+    boundaries = new ArrayList<Boundary>();
+    Computer.arraylists("Boundary");
+  }
 
   // add a boundary
   void addBoundary(Boundary boundary) { 

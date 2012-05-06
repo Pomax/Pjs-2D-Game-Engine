@@ -5,7 +5,7 @@
 class SpritePath {
 
   // container for all path points
-  ArrayList<FrameInformation> data = new ArrayList<FrameInformation>();
+  ArrayList<FrameInformation> data;
 
   // animation path offset
   int pathOffset = 0;
@@ -24,6 +24,14 @@ class SpritePath {
       x=_x; y=_y; sx=_sx; sy=_sy; r=_r; }
     String toString() {
       return "FrameInformation ["+x+", "+y+", "+sx+", "+sy+", "+r+"]"; }}
+
+  /**
+   * constructor
+   */
+  SpritePath() {
+    data = new ArrayList<FrameInformation>();
+    Computer.arraylists("FrameInformation");
+  }
 
   /**
    * How many frames are there in this path?

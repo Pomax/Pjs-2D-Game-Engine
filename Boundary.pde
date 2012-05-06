@@ -39,6 +39,7 @@ class Boundary extends Positionable {
     updateBounds();
     updateAngle();
     attached = new ArrayList<Positionable>();
+    Computer.arraylists("Positionable");
   }
   
   /**
@@ -109,7 +110,7 @@ class Boundary extends Positionable {
     for(Positionable a: attached) {
       a.detach(this);
     }
-    attached = new ArrayList<Positionable>();
+    attached.clear();
   }
 
   /**

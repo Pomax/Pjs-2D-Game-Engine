@@ -41,7 +41,7 @@ class Pickup extends Actor {
   /**
    * A pickup disappears when touched by a player actor.
    */
-  void overlapOccuredWith(Actor other) {
+  void overlapOccurredWith(Actor other) {
     removeActor();
     other.pickedUp(this);
     pickedUp();

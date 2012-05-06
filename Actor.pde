@@ -40,14 +40,17 @@ abstract class Actor extends Positionable {
   State active;
 
   // all states for this actor
-  HashMap<String, State> states = new HashMap<String, State>();
+  HashMap<String, State> states;
 
   // actor name
   String name = "";
 
   // simple constructor
   Actor(String _name) {
+    Computer.actors();
     name = _name;
+    states = new HashMap<String, State>();
+    Computer.hashmaps("String","State");
   }
 
   // full constructor
@@ -149,7 +152,7 @@ abstract class Actor extends Positionable {
   /**
    * What happens when we touch another actor?
    */
-  void overlapOccuredWith(Actor other, float[] direction) {
+  void overlapOccurredWith(Actor other, float[] direction) {
     colliding = true;
   }
   
@@ -255,12 +258,6 @@ abstract class Actor extends Positionable {
         fill(255,0,0);
         ellipse(0,0,5,5);
       }
-    }
-    else {
-      pushStyle();
-      strokeWeight(7);
-      stroke(200,0,100);
-      point(0,0); popStyle();
     }
   }
 

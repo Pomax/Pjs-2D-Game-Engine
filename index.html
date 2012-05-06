@@ -7,7 +7,7 @@
     <script type="text/javascript" src="minim.js"></script>
     <script type="text/javascript" src="keytrap.js"></script>
     <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Norican"></link>
-    <link rel="stylesheet" type="text/css" href="EasyPageComments.css"></link>
+
     <link rel="stylesheet" type="text/css" href="spriteengine.css"></link>
     <script type="text/javascript"> 
       function setCoordinate(x,y) {
@@ -146,7 +146,9 @@
         </p>
 
         <canvas id="monitor" data-processing-sources="tools/monitor/monitor.pde"></canvas>
+        <!--
         <canvas id="touchinput" data-processing-sources="tools/touchinput/touchinput.pde"></canvas>
+        -->
 
       </td><td>     
         <div style="border: 1px solid black; background-color: rgba(255,255,100,0.2); margin-top: 1em;">
@@ -208,21 +210,6 @@
       <h1>Leave a comment, I love comments!</h1>
       <div id="pagecomments"></div>
       <div id="pagecommentform"></div>
-       
-      <script type="text/javascript" src="EasyPageComments.js"></script>
-      <script type="text/javascript">
-        function showEasyPageComments(data) {
-          document.getElementById("pagecomments").innerHTML = data+"<hr>"; }
-
-        function showEasyPageCommentForm(data) {
-          document.getElementById("pagecommentform").innerHTML = data; }
-
-        function addEasyPageComments() {
-          EasyPageComments.createCommentsList("EasyPageComments");
-          EasyPageComments.createCommentForm("EasyPageComments"); }
-
-        document.addEventListener("DOMContentLoaded", addEasyPageComments, false)
-      </script>
     </div>
   </body>
   <script type="text/javascript">

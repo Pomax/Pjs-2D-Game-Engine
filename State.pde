@@ -16,6 +16,7 @@ class State {
     name = _name;
     sprite = new Sprite(spritesheet, rows, cols);
     sprite.setState(this);
+    Computer.states();
   }
 
   // bind this state to an actor

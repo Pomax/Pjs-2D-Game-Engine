@@ -26,6 +26,16 @@ abstract class LevelLayer {
           showForeground = true,
           showTriggers = false;
 
+  // The various layer components
+  ArrayList<Boundary> boundaries;
+  ArrayList<Drawable> fixed_background, fixed_foreground;
+  ArrayList<Pickup> pickups;
+  ArrayList<Decal> decals;
+  ArrayList<Interactor> interactors;
+  ArrayList<BoundedInteractor> bounded_interactors;
+  ArrayList<Player> players;
+  ArrayList<Trigger> triggers;
+
   // Level layers need not share the same coordinate system
   // as the managing level. For instance, things in the
   // background might be rendered smaller to seem farther
@@ -43,65 +53,74 @@ abstract class LevelLayer {
   }
 
   // the list of "collision" regions
-  ArrayList<Boundary> boundaries = new ArrayList<Boundary>();
-  void addBoundary(Boundary boundary) {
-    boundaries.add(boundary);
-  }
+  void addBoundary(Boundary boundary)    { boundaries.add(boundary);    }
+  void removeBoundary(Boundary boundary) { boundaries.remove(boundary); }
 
   // The list of static, non-interacting sprites, building up the background
-  ArrayList<Drawable> fixed_background = new ArrayList<Drawable>();
-  void addStaticSpriteBG(Drawable fixed) { this.fixed_background.add(fixed); }
-  void removeStaticSpriteBG(Drawable fixed) { this.fixed_background.remove(fixed); }
+  void addStaticSpriteBG(Drawable fixed)    { fixed_background.add(fixed);    }
+  void removeStaticSpriteBG(Drawable fixed) { fixed_background.remove(fixed); }
 
   // The list of static, non-interacting sprites, building up the foreground
-  ArrayList<Drawable> fixed_foreground = new ArrayList<Drawable>();
-  void addStaticSpriteFG(Drawable fixed) { this.fixed_foreground.add(fixed); }
-  void removeStaticSpriteFG(Drawable fixed) { this.fixed_foreground.remove(fixed); }
+  void addStaticSpriteFG(Drawable fixed)    { fixed_foreground.add(fixed);    }
+  void removeStaticSpriteFG(Drawable fixed) { fixed_foreground.remove(fixed); }
 
-  // The list of sprites that may only interact with the player(s) (and boundaries)
-  ArrayList<Pickup> pickups = new ArrayList<Pickup>();
-  void addForPlayerOnly(Pickup pickup) { pickups.add(pickup); bind(pickup); if(javascript!=null) { javascript.addActor(); }}
-  void removeForPlayerOnly(Pickup pickup) { pickups.remove(pickup); if(javascript!=null) { javascript.removeActor(); }}
-
-  // The list of player sprites
-  ArrayList<Decal> decals  = new ArrayList<Decal>();
-  void addDecal(Decal decal) { decals.add(decal); }
+  // The list of decals (pure graphic visuals)
+  void addDecal(Decal decal)    { decals.add(decal);   }
   void removeDecal(Decal decal) { decals.remove(decal); }
 
+  // event triggers
+  void addTrigger(Trigger trigger)    { triggers.add(trigger);    }
+  void removeTrigger(Trigger trigger) { triggers.remove(trigger); }
+
+
+  // The list of sprites that may only interact with the player(s) (and boundaries)
+  void addForPlayerOnly(Pickup pickup) {
+    pickups.add(pickup);
+    bind(pickup);
+    if(javascript!=null) { javascript.addActor(); }}
+  void removeForPlayerOnly(Pickup pickup) {
+    pickups.remove(pickup);
+    if(javascript!=null) { javascript.removeActor(); }}
+
   // The list of fully interacting non-player sprites
-  ArrayList<Interactor> interactors = new ArrayList<Interactor>();
-  void addInteractor(Interactor interactor) { interactors.add(interactor); bind(interactor); if(javascript!=null) { javascript.addActor(); }}
-  void removeInteractor(Interactor interactor) { interactors.remove(interactor); if(javascript!=null) { javascript.removeActor(); }}
+  void addInteractor(Interactor interactor) {
+    interactors.add(interactor);
+    bind(interactor);
+    if(javascript!=null) { javascript.addActor(); }}
+  void removeInteractor(Interactor interactor) {
+    interactors.remove(interactor);
+    if(javascript!=null) { javascript.removeActor(); }}
 
   // The list of fully interacting non-player sprites that have associated boundaries
-  ArrayList<BoundedInteractor> bounded_interactors = new ArrayList<BoundedInteractor>();
-  void addBoundedInteractor(BoundedInteractor bounded_interactor) { bounded_interactors.add(bounded_interactor); bind(bounded_interactor); if(javascript!=null) { javascript.addActor(); }}
-  void removeBoundedInteractor(BoundedInteractor bounded_interactor) { bounded_interactors.remove(bounded_interactor); if(javascript!=null) { javascript.removeActor(); }}
+  void addBoundedInteractor(BoundedInteractor bounded_interactor) {
+    bounded_interactors.add(bounded_interactor);
+    bind(bounded_interactor);
+    if(javascript!=null) { javascript.addActor(); }}
+  void removeBoundedInteractor(BoundedInteractor bounded_interactor) {
+    bounded_interactors.remove(bounded_interactor);
+    if(javascript!=null) { javascript.removeActor(); }}
 
   // The list of player sprites
-  ArrayList<Player> players  = new ArrayList<Player>();
-  void addPlayer(Player player) { players.add(player); bind(player); if(javascript!=null) { javascript.addActor(); }}
-  void removePlayer(Player player) { players.remove(player); if(javascript!=null) { javascript.removeActor(); }}
+  void addPlayer(Player player) {
+    players.add(player);
+    bind(player);
+    if(javascript!=null) { javascript.addActor(); }}
+  void removePlayer(Player player) {
+    players.remove(player);
+    if(javascript!=null) { javascript.removeActor(); }}
   void updatePlayer(Player oldPlayer, Player newPlayer) {
     int pos = players.indexOf(oldPlayer);
     if (pos > -1) { 
       players.set(pos, newPlayer);
-      bind(newPlayer);
-    }
-  }
+      bind(newPlayer); }}
 
-  // event triggers
-  ArrayList<Trigger> triggers = new ArrayList<Trigger>();
-  void addTrigger(Trigger trigger) { triggers.add(trigger); }
-  void removeTrigger(Trigger trigger) { triggers.remove(trigger); }
 
   // private actor binding
   void bind(Actor actor) { actor.setLevelLayer(this); }
 
-  // used for statistics
-  int getActorCount() {
-    return players.size() + bounded_interactors.size() + interactors.size() + pickups.size();
-  }
+  // =============================== //
+  //   MAIN CLASS CODE STARTS HERE   //
+  // =============================== //
   
   // level layer size
   float width=0, height=0;
@@ -120,6 +139,25 @@ abstract class LevelLayer {
     this.viewbox = p.viewbox;
     this.width = w;
     this.height = h;
+    
+    boundaries = new ArrayList<Boundary>();
+    Computer.arraylists("Boundary");
+    fixed_background = new ArrayList<Drawable>();
+    Computer.arraylists("Drawable");
+    fixed_foreground = new ArrayList<Drawable>();
+    Computer.arraylists("Drawable");
+    pickups = new ArrayList<Pickup>();
+    Computer.arraylists("Pickup");
+    decals = new ArrayList<Decal>();
+    Computer.arraylists("Decal");
+    interactors = new ArrayList<Interactor>();
+    Computer.arraylists("Interactor");
+    bounded_interactors = new ArrayList<BoundedInteractor>();
+    Computer.arraylists("BoundedInteractor");
+    players  = new ArrayList<Player>();
+    Computer.arraylists("Player");
+    triggers = new ArrayList<Trigger>();
+    Computer.arraylists("Trigger");
   }
 
   /**
@@ -132,7 +170,11 @@ abstract class LevelLayer {
     xScale = sx;
     yScale = sy;
   }
-  
+
+  // used for statistics
+  int getActorCount() {
+    return players.size() + bounded_interactors.size() + interactors.size() + pickups.size();
+  }
 
   /**
    * map a "normal" coordinate to this level's
@@ -158,7 +200,7 @@ abstract class LevelLayer {
     h = viewbox.h/yScale;
 
     // cache the global coordinate transforms
-    pushMatrix();
+    if(xScale!=1 || yScale!=1 || xTranslate!=0 || yTranslate!=0) { pushMatrix(); }
 
     // remember to transform the layer coordinates accordingly
     translate(viewbox.x-x, viewbox.y-y);
@@ -215,7 +257,7 @@ abstract class LevelLayer {
           if(!a.interacting) continue;
           float[] overlap = a.overlap(p);
           if(overlap!=null) {
-            p.overlapOccuredWith(a);
+            p.overlapOccurredWith(a);
             break; }}
 
         // draw pickup
@@ -288,8 +330,8 @@ abstract class LevelLayer {
               if(!o.interacting) continue;
               float[] overlap = a.overlap(o);
               if(overlap!=null) {
-                a.overlapOccuredWith(o, overlap);
-                o.overlapOccuredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
+                a.overlapOccurredWith(o, overlap);
+                o.overlapOccurredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
               else if(o instanceof Tracker) {
                 ((Tracker)o).track(a, x,y,w,h);
               }
@@ -300,8 +342,8 @@ abstract class LevelLayer {
               if(!o.interacting) continue;
               float[] overlap = a.overlap(o);
               if(overlap!=null) {
-                a.overlapOccuredWith(o, overlap);
-                o.overlapOccuredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
+                a.overlapOccurredWith(o, overlap);
+                o.overlapOccurredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
               else if(o instanceof Tracker) {
                 ((Tracker)o).track(a, x,y,w,h);
               }
@@ -350,7 +392,7 @@ abstract class LevelLayer {
       }
     }
 
-    popMatrix();
+    if(xScale!=1 || yScale!=1 || xTranslate!=0 || yTranslate!=0) { popMatrix(); }
   }
 
   /**

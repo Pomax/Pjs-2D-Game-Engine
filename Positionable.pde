@@ -7,7 +7,7 @@ abstract class Positionable implements Drawable {
   // boundaries, which will then be responsible
   // for guiding the impulse vector along their
   // surface, rather than allowing free movement.
-  ArrayList<Boundary> boundaries = new ArrayList<Boundary>();
+  ArrayList<Boundary> boundaries;
 
   // dimensions and positioning
   float x=0, y=0, width=0, height=0;
@@ -48,12 +48,17 @@ abstract class Positionable implements Drawable {
   /**
    * Cheap constructor
    */
-  Positionable() {}
+  Positionable() {
+    Computer.positionables();
+    boundaries = new ArrayList<Boundary>();
+    Computer.arraylists("boundary");
+  }
 
   /**
    * Set up a manipulable object
    */
   Positionable(float _x, float _y, float _width, float _height) {
+    this();
     x = _x;
     y = _y;
     width = _width;
@@ -186,7 +191,7 @@ abstract class Positionable implements Drawable {
     for(Boundary boundary: boundaries) {
       boundary.detach(this);
     }
-    boundaries = new ArrayList<Boundary>();
+    boundaries.clear();
     aFrameCount = 0;
   }
 

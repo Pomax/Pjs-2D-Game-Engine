@@ -23,7 +23,7 @@ final int BLOCK = 16;
 // boilerplate
 void setup() {
   size(32*BLOCK, 27*BLOCK);
-  frameRate(24);
+  frameRate(30);
   // set up the sound manager
   SoundManager.init(this);
   // It is essential that this is called
@@ -37,7 +37,7 @@ void reset() {
   level = null;
   SoundManager.reset();
   if (javascript!=null) { javascript.resetActorCount(); }
-  // set up two "persistent" levels
+  // set up two "persistent" levelsz
   mainLevel = new MainLevel(width, height, 4, 1);
   darkLevel = new DarkLevel(width, height, 1, 1);
   // set up our running level as "main"
@@ -975,7 +975,7 @@ class Mario extends Player {
   /**
    * What happens when we touch another actor?
    */
-  void overlapOccuredWith(Actor other, float[] direction) {
+  void overlapOccurredWith(Actor other, float[] direction) {
     if (other instanceof Koopa) {
       Koopa koopa = (Koopa) other;
       float angle = direction[2];
@@ -1280,8 +1280,8 @@ class BanzaiBill extends Interactor {
   /**
    * When we hit an actor, they die.
    */
-  void overlapOccuredWith(Actor other, float[] overlap) {
-    super.overlapOccuredWith(other, overlap);
+  void overlapOccurredWith(Actor other, float[] overlap) {
+    super.overlapOccurredWith(other, overlap);
     if (other instanceof Mario) {
       ((Mario)other).die();
     }
@@ -1354,7 +1354,7 @@ abstract class SpecialBlock extends BoundedInteractor {
   /**
    * are we triggered?
    */
-  void overlapOccuredWith(Actor other, float[] overlap) {
+  void overlapOccurredWith(Actor other, float[] overlap) {
     if (active.name=="hanging" || active.name=="exhausted") {
       // First order of business: stop actor movement
       other.rewindPartial();
@@ -1580,8 +1580,8 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
   /**
    * When we hit an actor as a Boo, they die.
    */
-  void overlapOccuredWith(Actor other, float[] overlap) {
-    super.overlapOccuredWith(other, overlap);
+  void overlapOccurredWith(Actor other, float[] overlap) {
+    super.overlapOccurredWith(other, overlap);
     if (isBoo && other instanceof Mario) {
       ((Mario)other).die();
     }
@@ -1685,7 +1685,7 @@ class PassThroughBlock extends BoundedInteractor {
    * state, we switch to pass-through state and stop being
    * interactive until the state finishes.
    */
-  void overlapOccuredWith(Actor other, float[] overlap) {
+  void overlapOccurredWith(Actor other, float[] overlap) {
     // stop actor movement if we're not in passthrough state
     if (active.name!="passthrough") {
 
