@@ -27,7 +27,6 @@ static class Computer {
       a.attachTo(b);
 
       float[] rdf = b.redirectForce(ix, iy);
-      //
       // FIXME: this hack overcomes an odd deficiency caused
       //        by the way actors and boundaries interact.
       //        Using either value set causes problems:
@@ -47,17 +46,16 @@ static class Computer {
       //        roughly half a day doing a rewrite of the
       //        boundary/actor system, and ended up throwing
       //        it away because it kept breaking more than it
-      //        fixed. This shows two things: this bug is 
-      //        more complicated than this codebase should allow,
+      //        fixed. This shows two things: this bug is big,
       //        and the process of boundary collision is wrong.
       //
       //        CAUSES: Positionable.update interprets boundary's
       //                redirectForce[2] as an "is on boundary"
       //                value, while in fact it only indicates
       //                whether forces are changed or not.
-      //
       a.addImpulse(0.01 * ix + 0.99 * rdf[0],
                    0.01 * iy + 0.99 * rdf[1]);
+
       a.update();
       // process the block at the actor
       a.gotBlocked(b, intersection);

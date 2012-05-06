@@ -1,11 +1,5 @@
 /**
- * A partial implementation of Minim in JavaScript,
- * to allow the engine to run both in Processing
- * as well as in Processing.js through inclusion
- * via:
- *
- *  <script type="text/javascript" src="minim.js"></script>
- *
+ * Minim-emulation code by Daniel Hodgin
  */
 
 // wrap the P5 Minim sound library classes
@@ -66,7 +60,7 @@ function AudioPlayer(str) {
       return;
     }
     // rewind the sound to start
-    if(audio.currenTime) {
+    if(audio.currentTime) {
       audio.currentTime = 0;
     }
   };
