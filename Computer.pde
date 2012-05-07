@@ -62,6 +62,7 @@ static class Computer {
     }
   }
   
+  
   static boolean debug = false;
   static int _actors = 0, _states = 0, _positionables = 0, _sprites = 0, _arraylists = 0, _hashmaps = 0;
   static void actors() { if(debug) { ts("Actor"); _actors++; }}
@@ -71,6 +72,14 @@ static class Computer {
   static void arraylists(String t) { if(debug) { ts("ArrayList<"+t+">"); _arraylists++; }}
   static void hashmaps(String t, String e) { if(debug) { ts("HashMap<"+t+","+e+">"); _hashmaps++; }}
 
+
   // time stamping log function
-  static void ts(String s) { /* window.console.log("["+Date.now()+"] "+s); */ }
+  static void ts(String s) { return "["+Date.now()+"] " + s; }
+  
+  static void create(String name, String type, int line) {
+    if(typeof PJScreates[type] === "undefined") {
+      PJScreates[type] = [];
+    }
+    PJScreates[type].push(ts(name + "[" + line + "]"));
+  }
 }

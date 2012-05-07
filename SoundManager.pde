@@ -14,14 +14,16 @@ import ddf.minim.effects.*;
 static class SoundManager {
   private static boolean muted = true;
   private static Minim minim;
-  private static HashMap<Object,AudioPlayer> owners = new HashMap<Object,AudioPlayer>();
-  private static HashMap<String,AudioPlayer> audioplayers = new HashMap<String,AudioPlayer>();
+  private static HashMap<Object,AudioPlayer> owners;
+  private static HashMap<String,AudioPlayer> audioplayers;
   public static PImage mute_overlay;
   public static PImage unmute_overlay;
   public static PImage volume_overlay;
 
 
   static void init(PApplet sketch) { 
+    owners = new HashMap<Object,AudioPlayer>();
+    audioplayers = new HashMap<String,AudioPlayer>();
     mute_overlay = sketch.loadImage("graphics/mute.gif");
     unmute_overlay = sketch.loadImage("graphics/unmute.gif");
     volume_overlay = (muted ? unmute_overlay : mute_overlay);

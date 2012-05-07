@@ -9,7 +9,7 @@
 class Sprite extends Positionable {
 
   State state;
-  SpritePath path = new SpritePath();;
+  SpritePath path;
   float halign=0, valign=0;
 
   // frame data
@@ -52,6 +52,7 @@ class Sprite extends Positionable {
    * Full constructor.
    */
   private Sprite(PImage[] _frames, float _xpos, float _ypos, boolean _visible) {
+    path = new SpritePath();
     Computer.sprites();
     setFrames(_frames);
     visible = _visible;

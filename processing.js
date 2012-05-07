@@ -19756,6 +19756,13 @@
         if (loaded === sourcesCount) {
           if (errors.length === 0) {
             try {
+
+              // DEBUGGING HACK PATCH TEST TEST TEST
+              if(debugPJS) {
+                code = preProcessProcessingCode(code.join("\n"));
+              }
+              // DEBUGGING HACK PATCH TEST TEST TEST
+            
               return new Processing(canvas, code.join("\n"));
             } catch(e) {
               throw "Processing.js: Unable to execute pjs sketch: " + e;

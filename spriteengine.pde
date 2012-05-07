@@ -39,7 +39,9 @@ void reset() {
   if (javascript!=null) { javascript.resetActorCount(); }
   // set up two "persistent" levelsz
   mainLevel = new MainLevel(width, height, 4, 1);
-  darkLevel = new DarkLevel(width, height, 1, 1);
+  if(!debugPJS) {
+    darkLevel = new DarkLevel(width, height, 1, 1);
+  }
   // set up our running level as "main"
   setLevel(mainLevel);
 }
@@ -158,9 +160,11 @@ class MainLevel extends MarioLevel {
   {
     super(w*x_repeat, h*y_repeat);
     setViewBox(0, 0, w, h);
-    addLevelLayer("color", new BackgroundColorLayer(this, width, height, color(0, 100, 190)));
-    float scaleFactor = 0.75;
-    addLevelLayer("background 1", new BackgroundLayer(this, width + (scaleFactor*w/2) /* HACK! */ - 21, height, 0, 0, scaleFactor, scaleFactor));
+    if(!debugPJS) {
+      addLevelLayer("color", new BackgroundColorLayer(this, width, height, color(0, 100, 190)));
+      float scaleFactor = 0.75;
+      addLevelLayer("background 1", new BackgroundLayer(this, width + (scaleFactor*w/2) /* HACK! */ - 21, height, 0, 0, scaleFactor, scaleFactor));
+    }
 
     LevelLayer layer = new MainLevelLayer(this, width, height);
     if (layer.players.size()==0 || mario == null) {
@@ -467,17 +471,19 @@ class MainLevelLayer extends MarioLayer {
     addStaticSpriteBG(backdrop);
     
     // level components
-    addGround();
     addBottom(0, height-40, width, 40);
-    addBushes();
-    addCloudPlatforms();
-    addBlockPlatforms();
-    addSpecialBlocks();
-    addCoins();
-    addDragonCoins();
-    addFlyingKoopas();
-    addTubes();
-    addTriggers();
+    if(!debugPJS) {
+      addGround();
+      addBushes();
+      addCloudPlatforms();
+      addBlockPlatforms();
+      addSpecialBlocks();
+      addCoins();
+      addDragonCoins();
+      addFlyingKoopas();
+      addTubes(); 
+      addTriggers();
+    }
   }
 
   // "ground" parts of the level

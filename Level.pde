@@ -16,7 +16,7 @@ abstract class Level {
   float width, height;
 
   // current viewbox
-  ViewBox viewbox = new ViewBox();
+  ViewBox viewbox;
 
   /**
    * Levels have dimensions!
@@ -28,6 +28,7 @@ abstract class Level {
     Computer.arraylists("LevelLayer");
     layerids = new HashMap<String, Integer>();
     Computer.hashmaps("String","Integer");
+    viewbox = new ViewBox();
   }
 
   /**
