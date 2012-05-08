@@ -433,19 +433,8 @@ class BackgroundLayer extends MarioLayer {
     TilingSprite backdrop = new TilingSprite(bgsprite, 0, 0, width, height);
     addStaticSpriteBG(backdrop);
 
-
-    float bh = height;
-    // top of the ground
-    Sprite groundsprite = new Sprite("graphics/backgrounds/ground-top.gif");
-    TilingSprite groundline = new TilingSprite(groundsprite, 0, bh, this.width+groundsprite.width, bh + groundsprite.height);
-    addStaticSpriteBG(groundline);
-    // ground filler
-    TilingSprite groundfiller = new TilingSprite(new Sprite("graphics/backgrounds/ground-filler.gif"), 0, bh + groundsprite.height, this.width+groundsprite.width, 32);
-    addStaticSpriteBG(groundfiller);
-    // remember to add a boundary
-    addBoundary(new Boundary(-20, bh-8, this.width+20, bh-8));
-
-    addGoal(2000, bh);
+    addBottom("ground",0,height,width,16);
+    addGoal(2000, height);
   }
 }
 
