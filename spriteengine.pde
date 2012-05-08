@@ -264,13 +264,13 @@ abstract class MarioLayer extends LevelLayer {
 
   // add the bit of ground that runs all the
   // way from the start to the finish
-  void addBottom(float x, float y, float w, float h) {
+  void addBottom(String tileset, float x, float y, float w, float h) {
     // top of the ground
-    Sprite groundsprite = new Sprite("graphics/backgrounds/ground-top.gif");
+    Sprite groundsprite = new Sprite("graphics/backgrounds/"+tileset+"-top.gif");
     TilingSprite groundline = new TilingSprite(groundsprite, x, y, w + groundsprite.width, y + groundsprite.height);
     addStaticSpriteBG(groundline);
     // ground filler
-    TilingSprite groundfiller = new TilingSprite(new Sprite("graphics/backgrounds/ground-filler.gif"), x, y + groundsprite.height, w + groundsprite.width, y + h);
+    TilingSprite groundfiller = new TilingSprite(new Sprite("graphics/backgrounds/"+tileset+"-filler.gif"), x, y + groundsprite.height, w + groundsprite.width, y + h);
     addStaticSpriteBG(groundfiller);
     // remember to add a boundary
     addBoundary(new Boundary(x-20, y-8, w+20, y-8));
@@ -287,11 +287,11 @@ abstract class MarioLayer extends LevelLayer {
   }
 
   // this creates a platform with soil filling underneath
-  void addGroundPlatform(float x, float y, float w, float h) {
+  void addGroundPlatform(String tileset, float x, float y, float w, float h) {
     // top layer
-    Sprite lc = new Sprite("graphics/backgrounds/ground-corner-left.gif");
-    Sprite tp = new Sprite("graphics/backgrounds/ground-top.gif");
-    Sprite rc = new Sprite("graphics/backgrounds/ground-corner-right.gif");
+    Sprite lc = new Sprite("graphics/backgrounds/"+tileset+"-corner-left.gif");
+    Sprite tp = new Sprite("graphics/backgrounds/"+tileset+"-top.gif");
+    Sprite rc = new Sprite("graphics/backgrounds/"+tileset+"-corner-right.gif");
     lc.setPosition(x, y);
     rc.setPosition(x+w-rc.width, y);
     TilingSprite toprow = new TilingSprite(tp, x+lc.width, y, x+(w-rc.width), y+tp.height);
@@ -302,9 +302,9 @@ abstract class MarioLayer extends LevelLayer {
     addBoundary(new Boundary(x-lc.width/2, y-tp.height/2, x+w-rc.width/2, y-tp.height/2));
 
     // sides/filler
-    Sprite ls = new Sprite("graphics/backgrounds/ground-side-left.gif");
-    Sprite rs = new Sprite("graphics/backgrounds/ground-side-right.gif");
-    Sprite fl = new Sprite("graphics/backgrounds/ground-filler.gif");
+    Sprite ls = new Sprite("graphics/backgrounds/"+tileset+"-side-left.gif");
+    Sprite rs = new Sprite("graphics/backgrounds/"+tileset+"-side-right.gif");
+    Sprite fl = new Sprite("graphics/backgrounds/"+tileset+"-filler.gif");
 
     TilingSprite sideleft  = new TilingSprite(ls, x, y+lc.height, x+ls.width, y+h-lc.height);
     TilingSprite sideright = new TilingSprite(rs, x+w-rc.width, y+rc.height, x+w, y+h-rc.height);
@@ -471,9 +471,11 @@ class MainLevelLayer extends MarioLayer {
     addStaticSpriteBG(backdrop);
     
     // level components
-    addBottom(0, height-40, width, 40);
     if(!debugPJS) {
-      addGround();
+      addGround("ground");
+    }
+    addBottom("ground", 0, height-40, width, 40);    
+    if(!debugPJS) {
       addBushes();
       addCloudPlatforms();
       addBlockPlatforms();
@@ -487,19 +489,19 @@ class MainLevelLayer extends MarioLayer {
   }
 
   // "ground" parts of the level
-  void addGround() {
+  void addGround(String tileset) {
     // some random platforms
-    addGroundPlatform(928, 432/2, 96, 116);
-    addGroundPlatform(920, 432/2+48, 32, 70);
-    addGroundPlatform(912, 432/2 + 100, 128, 86);
-    addGroundPlatform(912+64, 432/2 + 130, 128, 50);
+    addGroundPlatform(tileset, 928, 432/2, 96, 116);
+    addGroundPlatform(tileset, 920, 432/2+48, 32, 70);
+    addGroundPlatform(tileset, 912, 432/2 + 100, 128, 86);
+    addGroundPlatform(tileset, 912+64, 432/2 + 130, 128, 50);
 
     addSlant(256, height-48);
     addSlant(1300, height-48);
     addSlant(1350, height-48);
 
-    addGroundPlatform(1442, 432/2 + 100, 128, 86);
-    addGroundPlatform(1442+64, 432/2 + 130, 128, 50);
+    addGroundPlatform(tileset, 1442, 432/2 + 100, 128, 86);
+    addGroundPlatform(tileset, 1442+64, 432/2 + 130, 128, 50);
   }
 
   // add some mario-style bushes
@@ -733,13 +735,13 @@ class DarkLevel extends MarioLevel
       addStaticSpriteBG(backdrop);      
       
       // set up ground
-      addBottom(0, h, w, 40);
+      addBottom("cave", 0, h, w, 40);
       float x, y, wth;
       for (int i=1; i<=4; i++) {
         x = 8+i*56;
         y = h-i*48;
         wth = w-2*i*56;
-        addGroundPlatform(x, y, wth, 64);
+        addGroundPlatform("cave", x, y, wth, 64);
         for (int j=1; j<wth/48; j++) {
           addCoin(x+24+(j-1)*48, y+16);
         }

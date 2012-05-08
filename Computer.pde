@@ -72,9 +72,10 @@ static class Computer {
   static void arraylists(String t) { if(debug) { ts("ArrayList<"+t+">"); _arraylists++; }}
   static void hashmaps(String t, String e) { if(debug) { ts("HashMap<"+t+","+e+">"); _hashmaps++; }}
 
-
   // time stamping log function
-  static void ts(String s) { return "["+Date.now()+"] " + s; }
+  static void ts(String s) { 
+    return "["+Date.now()+"] " + s; 
+  }
   
   static void create(String name, String type, int line) {
     if(typeof PJScreates[type] === "undefined") {
@@ -83,3 +84,4 @@ static class Computer {
     PJScreates[type].push(ts(name + "[" + line + "]"));
   }
 }
+

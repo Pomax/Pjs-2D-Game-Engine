@@ -13,11 +13,17 @@
                  graphics/backgrounds/ground-filler.gif,
                  graphics/backgrounds/ground-slant.gif,
                  graphics/backgrounds/ground-top.gif,
-
                  graphics/backgrounds/ground-corner-left.gif,
                  graphics/backgrounds/ground-corner-right.gif,
                  graphics/backgrounds/ground-side-left.gif,
                  graphics/backgrounds/ground-side-right.gif,
+
+                 graphics/backgrounds/cave-filler.gif,
+                 graphics/backgrounds/cave-top.gif,
+                 graphics/backgrounds/cave-corner-left.gif,
+                 graphics/backgrounds/cave-corner-right.gif,
+                 graphics/backgrounds/cave-side-left.gif,
+                 graphics/backgrounds/cave-side-right.gif,
 
                  graphics/backgrounds/sky.gif,
                  graphics/backgrounds/sky_2.gif,
