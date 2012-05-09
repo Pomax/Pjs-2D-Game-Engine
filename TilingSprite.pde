@@ -22,16 +22,20 @@ class TilingSprite extends Positionable {
    * draw this sprite repretitively
    */
   void draw(float vx, float vy, float vw, float vh) {
+    // FIXME: we should know what the viewbox transform
+    //        is at this point, because it matters for
+    //        determining how many sprite blocks to draw.
     float ox = sprite.x, oy = sprite.y, x, y,
-          // FIXME: find out why sx/sy don't work with viewbox dimensions
-          sx = x1, //max(vx-vw,x1),
-          sy = y1, //max(vy-vh,y1),
-          ex = min(x2,vx+2*vw),
-          ey = min(y2,vy+2*vh);
+          sx = max(x1, vx - (vx-x1)%sprite.width);
+          sy = max(y1, vy - (vy-y1)%sprite.height);
+          ex = min(x2, vx+2*vw); // ideally, this is vx + vw + {something that ensures the rightmost block is drawn}
+          ey = min(y2, vy+2*vh); // ideally, this is vy + vh + {something that ensures the bottommost block is drawn}
     for(x = sx; x < ex; x += sprite.width){
       for(y = sy; y < ey; y += sprite.height){
         sprite.setPosition(x,y);
-        sprite.draw(); }}
+        sprite.draw();
+      }
+    }
     sprite.setPosition(ox,oy);
   }
 

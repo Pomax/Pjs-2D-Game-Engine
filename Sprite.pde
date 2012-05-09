@@ -231,7 +231,7 @@ class Sprite extends Positionable {
       popMatrix();
     }
   }
-
+ 
   // pass-through/unused
   void draw(float _a, float _b, float _c, float _d) { this.draw(); }
   void drawObject() {}

@@ -44,6 +44,7 @@ abstract class LevelLayer {
          yTranslate = 0,
          xScale = 1,
          yScale = 1;
+   boolean nonstandard = false;
 
   // Fallback color if a layer has no background color.
   // By default, this color is 100% transparent black.
@@ -200,7 +201,8 @@ abstract class LevelLayer {
     h = viewbox.h/yScale;
 
     // cache the global coordinate transforms
-    if(xScale!=1 || yScale!=1 || xTranslate!=0 || yTranslate!=0) { pushMatrix(); }
+    nonstandard = (xScale!=1 || yScale!=1 || xTranslate!=0 || yTranslate!=0);
+    if(nonstandard) { pushMatrix(); }
 
     // remember to transform the layer coordinates accordingly
     translate(viewbox.x-x, viewbox.y-y);
@@ -392,7 +394,7 @@ abstract class LevelLayer {
       }
     }
 
-    if(xScale!=1 || yScale!=1 || xTranslate!=0 || yTranslate!=0) { popMatrix(); }
+    if(nonstandard) { popMatrix(); }
   }
 
   /**

@@ -22,7 +22,7 @@ final int BLOCK = 16;
 
 // boilerplate
 void setup() {
-  size(32*BLOCK, 27*BLOCK);
+  size(32*BLOCK, 27*BLOCK, (P3Dmode ? P3D : P2D));
   frameRate(30);
   // set up the sound manager
   SoundManager.init(this);
@@ -434,6 +434,13 @@ class BackgroundLayer extends MarioLayer {
     addStaticSpriteBG(backdrop);
 
     addBottom("ground",0,height,width,16);
+
+    // start of the level, above the coins
+    addUpsideDownTube(64, -16);
+
+    // teleporting pipe to the pipe above the goal
+    addTube(64, height, new LayerTeleportTrigger(64+8, height-24, 16, 2, 594, 335, "main"));
+    
     addGoal(2000, height);
   }
 }
@@ -574,9 +581,6 @@ class MainLevelLayer extends MarioLayer {
 
   // some coins in tactical places
   void addCoins() {
-    // start coins
-    addCoin(80, 96);
-
     // coin chain!
     int set = 0;
     addCoin(640+48*set++, height-48);
@@ -617,8 +621,6 @@ class MainLevelLayer extends MarioLayer {
 
   // To demonstrate screen changing, also add some tubes
   void addTubes() {
-    // start of the level, above the coins
-    addUpsideDownTube(64, -16);
     // level start test pipes
     //addTube(64, height-16, null);
     //addTube(128, height-48, null);
@@ -628,7 +630,7 @@ class MainLevelLayer extends MarioLayer {
     addTube(778, height-48, new LayerTeleportTrigger(786, height-66, 16, 2, 78, -32, "background 1"));
     // end of the level, right above the goal posts
     addUpsideDownTube(width - 200, -16);
-    // teleporting pipe to the pipe above the goal
+    // teleporting pipe to the bonus level
     addTube(width-32, height-48, new BonusLevelTrigger(width-24, height-66, 16, 2, 16, height-32));
   }
 
