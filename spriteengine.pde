@@ -391,6 +391,20 @@ abstract class MarioLayer extends LevelLayer {
     addBoundary(new Boundary(x+32, y+16+32, x, y+16+32));
   }
 
+  // some platforms made up of normal blocks
+  void addBlockPlatforms(float x, float y, int howmany) {
+    PassThroughBlock p = null;
+    for (int e=x+14*howmany; x<e; x+=16) {
+      PassThroughBlock n = new PassThroughBlock(x, y);
+      addBoundedInteractor(n);
+      if (p!=null) { 
+        n.setPrevious(p); 
+        p.setNext(n);
+      }
+      p = n;
+    }
+  }
+
   // And finally, the end of the level!
   void addGoal(float xpos, float hpos) {
     hpos -= 7;
@@ -433,15 +447,30 @@ class BackgroundLayer extends MarioLayer {
     TilingSprite backdrop = new TilingSprite(bgsprite, 0, 0, width, height);
     addStaticSpriteBG(backdrop);
 
-    addBottom("ground",0,height,width,16);
+    // flat ground
+    addBottom("ground",0,height+8,width,16);
+
+    // some slants and platforms
+    addGroundPlatform("ground",372,height-48,300,24);
+    addGroundPlatform("ground",572,height-96,700,24);
+    
+    // block platforms because why not
+    addBlockPlatforms()
 
     // start of the level, above the coins
     addUpsideDownTube(64, -16);
 
     // teleporting pipe to the pipe above the goal
     addTube(64, height, new LayerTeleportTrigger(64+8, height-24, 16, 2, 594, 335, "main"));
+
+    addGroundPlatform("ground",1550,height-144,100,24);
+    addGroundPlatform("ground",1700,height-120,100,24);
+    addGroundPlatform("ground",1850,height-144,100,24);
+
     
-    addGoal(2000, height);
+    // raised goal. because sneaky~
+    addGroundPlatform("ground",2000,height-96,300,24);
+    addGoal(2100, height-96);
   }
 }
 
@@ -474,7 +503,7 @@ class MainLevelLayer extends MarioLayer {
     if(!debugPJS) {
       addBushes();
       addCloudPlatforms();
-      addBlockPlatforms();
+      addBlockPlatforms(1064, 264, 16);
       addSpecialBlocks();
       addCoins();
       addDragonCoins();
@@ -554,20 +583,6 @@ class MainLevelLayer extends MarioLayer {
   // clouds platforms!
   void addCloudPlatforms() {
     addBoundary(new Boundary(54 +   0, 96 +   0, 105 +   0, 96 +   0));
-  }
-
-  // some platforms made up of normal blocks
-  void addBlockPlatforms() {
-    PassThroughBlock p = null;
-    for (int x=1064; x<1064 + 14*16; x+=16) {
-      PassThroughBlock n = new PassThroughBlock(x, 264);
-      addBoundedInteractor(n);
-      if (p!=null) { 
-        n.setPrevious(p); 
-        p.setNext(n);
-      }
-      p = n;
-    }
   }
 
   // coin blocks (we only use one)
