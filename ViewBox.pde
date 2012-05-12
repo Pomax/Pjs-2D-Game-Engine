@@ -13,7 +13,7 @@ class ViewBox {
 
   // current layer transform values
   float llox=0, lloy=0, llsx=1, llsy=1;
-  
+
   // ye olde getterse
   float getX()      { return x-llox; }
   float getY()      { return y-lloy; }
@@ -51,13 +51,15 @@ class ViewBox {
     //        We leave things as they are so
     //        actors are positioned at scale*midpoint
 
-    // Get actor coordinates, transformed
-    // to screen coordinates.
-    float ax = who.getX(), ay = who.getY();
+    // Get actor coordinates, transformed to screen
+    // coordinates, and forced to integer values.
+    float ax = who.getX() | 0,
+          ay = who.getY() | 0;
 
     // Ideally the actor is in the center of the viewbox,
     // but the level edges may require different positioning.
-    float idealx = ax - w/2, idealy = ay - h/2;
+    float (idealx = ax - w/2) | 0,
+          (idealy = ay - h/2) | 0;
 
     // set values based on visual constraints
     x = min( max(0,idealx), level.width - w );
