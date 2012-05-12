@@ -3,129 +3,12 @@
   <head>
     <title>2D gaming using Processing.js</title>
     <meta charset="utf-8">
-    <!-- the following script refuses to bind propertly if external-sourced -->
-    <script type="text/javascript">
-      /**
-       * code preprocessor to wrap all "new" statements
-       * to find out whether there's constant object
-       * creation.
-       */
-      function preProcessProcessingCode(code) {
-        var lines = code.split("\n"), l=0, last = lines.length;
-        var search = "(([a-zA-Z\d]+)\\s*=\\s*new\\s+([A-Z][A-Za-z\\d]+).+;)";
-        var replace;
-      
-        for(l=0; l<last; l++) {
-             replace = "$1\nComputer.create(\"$2\",\"$3\", "+l+");";
-          lines[l] = lines[l].replace(new RegExp(search,'gm'), replace);
-        }
-        
-        var cnt = document.createElement("textarea");
-        cnt.style.display = "block";
-        cnt.style.height = "900px";
-        cnt.style.width = "1024px";
-        
-        cnt.innerHTML = lines.join("\n");
-        document.body.appendChild(cnt);
-        return lines;
-      }
-      
-      PJScreates = {};
-
-      function showPJSstats() {
-        var s = "";
-        for(type in PJScreates) {
-          s += type + ": " + PJScreates[type].length + "\n";
-        }
-        window.console.log(s);
-      }
-      
-      var debugPJS = (window.location.toString().indexOf("debug=true") > -1);
-      
-      var P3Dmode = (window.location.toString().indexOf("3d=true") > -1);
-    </script>
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Norican"></link>
+    <link rel="stylesheet" type="text/css" href="EasyPageComments.css"></link>
+    <link rel="stylesheet" type="text/css" href="spriteengine.css"></link>
+    <script type="text/javascript" src="processing.js"></script>
     <script type="text/javascript" src="minim.js"></script>
     <script type="text/javascript" src="keytrap.js"></script>
-    <script type="text/javascript" src="processing.js"></script>
-    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Norican"></link>
-
-    <link rel="stylesheet" type="text/css" href="spriteengine.css"></link>
-    <script type="text/javascript"> 
-      function setCoordinate(x,y) {
-        document.getElementById("x").innerHTML = x|0;
-        document.getElementById("y").innerHTML = y|0;
-      }
-      
-      function gameView() {
-        pjs.setGameView();
-        pjs.externals.canvas.focus();
-      }
-      
-      function designView() {
-        pjs.setDesignView();
-        pjs.externals.canvas.focus();
-      }
-
-      var pjs;
-      var monitor;
-      var touchinput;
-      function bindSketch() {
-        var tmp;
-        if(!pjs) {
-          tmp = Processing.getInstanceById("mario");
-          if(tmp && tmp.bindJavaScript) {
-            pjs = tmp;
-            pjs.bindJavaScript(this);
-          } else { setTimeout(bindSketch, 250); }
-        }
-        if(pjs && !monitor) {
-          tmp = Processing.getInstanceById("monitor");
-          if(tmp) {
-            monitor = tmp;         
-            monitor.setActorCount(pjs.getActorCount());
-          } else { setTimeout(bindSketch, 250); }
-        }
-        if(pjs && monitor && !touchinput) {
-          tmp = Processing.getInstanceById("touchinput");
-          if(tmp) {
-            touchinput = tmp;         
-            touchinput.bindJavaScript(this);
-          } else { setTimeout(bindSketch, 250); }
-        }
-      }
-      
-      // monitor framerate
-      function recordFramerate(frameRate) {
-        monitor.addPoint(frameRate);
-      }
-      
-      function toggleMonitor() {
-        var mon = monitor.externals.canvas;
-        if(mon.style.display !== "block") {
-          mon.style.display = "block";
-        } else { mon.style.display = "none"; }
-      }
-      
-      function addActor() { monitor.addActor(); }
-      function removeActor() { monitor.removeActor(); }
-      function resetActorCount() { monitor.resetActorCount(); }
-      
-      function toggleInputs() {
-        var tch = touchinput.externals.canvas;
-        if(tch.style.display !== "block") {
-          tch.style.display = "block";
-        } else { tch.style.display = "none"; }
-      }
-
-      function pressKey(keyCode) { pjs.keyPressFromPage(keyCode); }
-      function releaseKey(keyCode) { pjs.keyReleaseFromPage(keyCode); }
-
-      document.addEventListener("DOMContentLoaded",function(){
-        var mario = document.getElementById("mario");
-        mario.focus();
-        bindSketch();
-      },false);
-    </script>
   </head>
   <body>
     <div class="content shaded">
@@ -180,16 +63,9 @@
            <span> [<a href="javascript:designView()">design view</a>] </span>
            -
            <span> [<a href="javascript:toggleMonitor()">toggle Statistics</a>] </span>
-           <!--
-           -
-           <span> [<a href="javascript:toggleInputs()">touch</a>] </span>
-           -->
         </p>
 
         <canvas id="monitor" data-processing-sources="tools/monitor/monitor.pde"></canvas>
-        <!--
-        <canvas id="touchinput" data-processing-sources="tools/touchinput/touchinput.pde"></canvas>
-        -->
 
       </td><td>     
         <div style="border: 1px solid black; background-color: rgba(255,255,100,0.2); margin-top: 1em;">
@@ -246,15 +122,153 @@
          although of course you can also just leave a comment in the comment section!
       </p>
 
+      <!--
       <hr>
        
       <h1>Leave a comment, I love comments!</h1>
       <div id="pagecomments"></div>
       <div id="pagecommentform"></div>
+       
+      <script type="text/javascript" src="EasyPageComments.js"></script>
+      <script type="text/javascript">
+        function showEasyPageComments(data) {
+          document.getElementById("pagecomments").innerHTML = data+"<hr>"; }
+
+        function showEasyPageCommentForm(data) {
+          document.getElementById("pagecommentform").innerHTML = data; }
+
+        function addEasyPageComments() {
+          EasyPageComments.createCommentsList("EasyPageComments");
+          EasyPageComments.createCommentForm("EasyPageComments"); }
+
+        document.addEventListener("DOMContentLoaded", addEasyPageComments, false)
+      </script>
+      -->
     </div>
   </body>
+
   <script type="text/javascript">
-    <!-- We don't want the cursor keys to also be interpreted by the browser -->
     KeyTrap.trap(document.getElementById('mario'),[37,38,39,40]);
+  </script>
+
+  <!--
+    code preprocessor to wrap all "new" statements
+    to find out whether there's constant object
+    creation. Hooks into PJS in loadBlocks
+  -->
+  <script type="text/javascript">
+    function preProcessProcessingCode(code) {
+      var lines = code.split("\n"), l=0, last = lines.length;
+      var search = "(([a-zA-Z\d]+)\\s*=\\s*new\\s+([A-Z][A-Za-z\\d]+).+;)";
+      var replace;
+    
+      for(l=0; l<last; l++) {
+           replace = "$1\nComputer.create(\"$2\",\"$3\", "+l+");";
+        lines[l] = lines[l].replace(new RegExp(search,'gm'), replace);
+      }
+      
+      var cnt = document.createElement("textarea");
+      cnt.style.display = "block";
+      cnt.style.height = "900px";
+      cnt.style.width = "1024px";
+      
+      cnt.innerHTML = lines.join("\n");
+      document.body.appendChild(cnt);
+      return lines;
+    }
+    
+    PJScreates = {};
+
+    function showPJSstats() {
+      var s = "";
+      for(type in PJScreates) {
+        s += type + ": " + PJScreates[type].length + "\n";
+      }
+      window.console.log(s);
+    }
+    
+    var debugPJS = (window.location.toString().indexOf("debug=true") > -1);
+    
+    var P3Dmode = (window.location.toString().indexOf("3d=true") > -1);
+  </script>
+
+  <!--
+    Sketch interfacing javascript
+  -->
+  <script type="text/javascript"> 
+    function setCoordinate(x,y) {
+      document.getElementById("x").innerHTML = x|0;
+      document.getElementById("y").innerHTML = y|0;
+    }
+    
+    function gameView() {
+      pjs.setGameView();
+      pjs.externals.canvas.focus();
+    }
+    
+    function designView() {
+      pjs.setDesignView();
+      pjs.externals.canvas.focus();
+    }
+
+    var pjs;
+    var monitor;
+    var touchinput;
+    function bindSketch() {
+      var tmp;
+      if(!pjs) {
+        tmp = Processing.getInstanceById("mario");
+        if(tmp && tmp.bindJavaScript) {
+          pjs = tmp;
+          pjs.bindJavaScript(this);
+        } else { setTimeout(bindSketch, 250); }
+      }
+      if(pjs && !monitor) {
+        tmp = Processing.getInstanceById("monitor");
+        if(tmp) {
+          monitor = tmp;         
+          monitor.setActorCount(pjs.getActorCount());
+        } else { setTimeout(bindSketch, 250); }
+      }
+      if(pjs && monitor && !touchinput) {
+        tmp = Processing.getInstanceById("touchinput");
+        if(tmp) {
+          touchinput = tmp;         
+          touchinput.bindJavaScript(this);
+        } else { setTimeout(bindSketch, 250); }
+      }
+    }
+    
+    // monitor framerate
+    function recordFramerate(frameRate) {
+      monitor.addPoint(frameRate);
+    }
+    
+    function toggleMonitor() {
+      var mon = monitor.externals.canvas;
+      if(mon.style.display !== "block") {
+        mon.style.display = "block";
+      } else { mon.style.display = "none"; }
+    }
+    
+    function addActor() { monitor.addActor(); }
+    function removeActor() { monitor.removeActor(); }
+    function resetActorCount() { monitor.resetActorCount(); }
+    
+    function toggleInputs() {
+      var tch = touchinput.externals.canvas;
+      if(tch.style.display !== "block") {
+        tch.style.display = "block";
+      } else { tch.style.display = "none"; }
+    }
+
+    function pressKey(keyCode) { pjs.keyPressFromPage(keyCode); }
+    function releaseKey(keyCode) { pjs.keyReleaseFromPage(keyCode); }
+
+    document.addEventListener("DOMContentLoaded",function(){
+      var mario = document.getElementById("mario");
+      mario.focus();
+      bindSketch();
+    },false);
   </script>
 </html>
