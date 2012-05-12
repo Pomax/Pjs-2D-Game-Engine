@@ -9,7 +9,7 @@
 class Sprite extends Positionable {
 
   State state;
-  SpritePath path = new SpritePath();
+  SpritePath path;
   float halign=0, valign=0;
 
   // frame data
@@ -52,6 +52,8 @@ class Sprite extends Positionable {
    * Full constructor.
    */
   private Sprite(PImage[] _frames, float _xpos, float _ypos, boolean _visible) {
+    path = new SpritePath();
+    Computer.sprites();
     setFrames(_frames);
     visible = _visible;
   }
@@ -176,7 +178,7 @@ class Sprite extends Positionable {
   PImage getFrame() {
     // update sprite based on path frames
     currentFrame = getCurrentFrameNumber();
-    if (path.size()>0) {
+    if (path != null && path.size()>0) {
       float[] pathdata = path.getNextFrameInformation();
       setScale(pathdata[2], pathdata[3]);
       setRotation(pathdata[4]);
@@ -229,7 +231,7 @@ class Sprite extends Positionable {
       popMatrix();
     }
   }
-
+ 
   // pass-through/unused
   void draw(float _a, float _b, float _c, float _d) { this.draw(); }
   void drawObject() {}

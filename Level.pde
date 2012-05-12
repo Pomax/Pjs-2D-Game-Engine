@@ -9,14 +9,14 @@ abstract class Level {
   boolean finished  = false;
   boolean swappable = false;
 
-  ArrayList<LevelLayer> layers = new ArrayList<LevelLayer>();
-  HashMap<String, Integer> layerids = new HashMap<String, Integer>();
+  ArrayList<LevelLayer> layers;
+  HashMap<String, Integer> layerids;
 
   // level dimensions
   float width, height;
 
   // current viewbox
-  ViewBox viewbox = new ViewBox();
+  ViewBox viewbox;
 
   /**
    * Levels have dimensions!
@@ -24,6 +24,11 @@ abstract class Level {
   Level(float _width, float _height) {
     width = _width;
     height = _height; 
+    layers = new ArrayList<LevelLayer>();
+    Computer.arraylists("LevelLayer");
+    layerids = new HashMap<String, Integer>();
+    Computer.hashmaps("String","Integer");
+    viewbox = new ViewBox();
   }
 
   /**
