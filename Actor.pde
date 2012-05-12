@@ -120,6 +120,16 @@ abstract class Actor extends Positionable {
   }
 
   /**
+   * constrain the actor position based on
+   * the layer they are located in.
+   */
+  void constrainPosition() {
+    float w2 = width/2, lw = layer.width;
+    if (x < w2) { x = w2; }
+    if (x > lw - w2) { x = lw - w2; }
+  }
+
+  /**
    * Get the bounding box for this actor
    */
   float[] getBoundingBox() {

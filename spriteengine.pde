@@ -22,7 +22,8 @@ final int BLOCK = 16;
 
 // boilerplate
 void setup() {
-  size(32*BLOCK, 27*BLOCK, (P3Dmode ? P3D : P2D));
+//  size(32*BLOCK, 27*BLOCK, (P3Dmode ? P3D : P2D));
+  size(32*BLOCK, 27*BLOCK,P2D);
   frameRate(30);
   // set up the sound manager
   SoundManager.init(this);
@@ -39,9 +40,8 @@ void reset() {
   if (javascript!=null) { javascript.resetActorCount(); }
   // set up two "persistent" levelsz
   mainLevel = new MainLevel(width, height, 4, 1);
-  if(!debugPJS) {
-    darkLevel = new DarkLevel(width, height, 1, 1);
-  }
+  darkLevel = new DarkLevel(width, height, 1, 1);
+
   // set up our running level as "main"
   setLevel(mainLevel);
 }
@@ -136,78 +136,27 @@ void keyReleaseFromPage(int keyCode) {
 
 class MarioLevel extends Level {
   Player mario;
+  String wintext = "Goal!";
+  int endCount = 0;
+  
   MarioLevel(float w, float h) { 
     super(w, h);
   }
+
   void updateMario(Player newMario) {
     updatePlayer(mario, newMario);
     mario = newMario;
-    // FIXME: hackish solution to viewbox repositioning
-    viewbox.x = 0;
   }
-}
-
-/**
- * Test level implementation
- */
-class MainLevel extends MarioLevel {
-  // what we see when we win
-  String wintext = "Goal!";
-  int endCount = 0;
-
-  // constructor sets up a level and level layer
-  MainLevel(float w, float h, int x_repeat, int y_repeat)
-  {
-    super(w*x_repeat, h*y_repeat);
-    setViewBox(0, 0, w, h);
-    if(!debugPJS) {
-      addLevelLayer("color", new BackgroundColorLayer(this, width, height, color(0, 100, 190)));
-      float scaleFactor = 0.75;
-      addLevelLayer("background 1", new BackgroundLayer(this, width + (scaleFactor*w/2) /* HACK! */ - 21, height, 0, 0, scaleFactor, scaleFactor));
-    }
-
-    LevelLayer layer = new MainLevelLayer(this, width, height);
-    if (layer.players.size()==0 || mario == null) {
-      mario = new Mario();
-      mario.setPosition(32, 383);
-      layer.addPlayer(mario);
-    }
-    addLevelLayer("main", layer);
-
-    // And of course some background music.
-    SoundManager.load(this, "audio/bg/Overworld.mp3");
-  }
-
+  
   /**
    * Now then, the draw loop: render mario in
    * glorious canvas definition.
    */
   void draw() {
-    // Normal level draw
     if (!finished) {
-
-      // draw the level content
       super.draw();
-
-      // disallow running past the edges
-      Player p = mario;
-      LevelLayer l = p.getLevelLayer();
-      float sx = l.xScale;
-      {
-        if (p.x < p.width/2) { 
-          p.x = p.width/2;
-        }
-        if (p.x > l.width-p.width/2) { 
-          p.x = l.width-p.width/2;
-        }
-
-        // slide viewbox along with players
-        if (0 <= viewbox.x && viewbox.x <= l.width - viewbox.w/sx) {
-          viewbox.x = (int)(p.x-432/2);
-          viewbox.x = constrain(viewbox.x, 0, l.width - viewbox.w/sx);
-        }
-      }
-
+      mario.constrainPosition();
+      viewbox.track(this, mario);
       if (javascript!=null) {
         javascript.setCoordinate(mario.x, mario.y);
       }
@@ -229,6 +178,35 @@ class MainLevel extends MarioLevel {
         setSwappable();
       }
     }
+  }
+
+}
+
+/**
+ * Test level implementation
+ */
+class MainLevel extends MarioLevel {
+
+  // constructor sets up a level and level layer
+  MainLevel(float w, float h, int x_repeat, int y_repeat)
+  {
+    super(w*x_repeat, h*y_repeat);
+    setViewBox(0, 0, w, h);
+
+    addLevelLayer("color", new BackgroundColorLayer(this, width, height, color(0, 100, 190)));
+    float scaleFactor = 0.75;
+    addLevelLayer("background 1", new BackgroundLayer(this, width + (scaleFactor*w/2) /* HACK! */ - 21, height, 0, 0, scaleFactor, scaleFactor));
+
+    LevelLayer layer = new MainLevelLayer(this, width, height);
+    if (layer.players.size()==0 || mario == null) {
+      mario = new Mario();
+      mario.setPosition(32, 383);
+      layer.addPlayer(mario);
+    }
+    addLevelLayer("main", layer);
+
+    // And of course some background music.
+    SoundManager.load(this, "audio/bg/Overworld.mp3");
   }
 
   /**
@@ -394,7 +372,7 @@ abstract class MarioLayer extends LevelLayer {
   // some platforms made up of normal blocks
   void addBlockPlatforms(float x, float y, int howmany) {
     PassThroughBlock p = null;
-    for (int e=x+14*howmany; x<e; x+=16) {
+    for (float e=x+14*howmany; x<e; x+=16) {
       PassThroughBlock n = new PassThroughBlock(x, y);
       addBoundedInteractor(n);
       if (p!=null) { 
@@ -450,27 +428,16 @@ class BackgroundLayer extends MarioLayer {
     // flat ground
     addBottom("ground",0,height+8,width,16);
 
-    // some slants and platforms
-    addGroundPlatform("ground",372,height-48,300,24);
-    addGroundPlatform("ground",572,height-96,700,24);
-    
-    // block platforms because why not
-    addBlockPlatforms()
-
-    // start of the level, above the coins
+    // teleport-in tube
     addUpsideDownTube(64, -16);
-
-    // teleporting pipe to the pipe above the goal
+    // teleport-out tube
     addTube(64, height, new LayerTeleportTrigger(64+8, height-24, 16, 2, 594, 335, "main"));
 
-    addGroundPlatform("ground",1550,height-144,100,24);
-    addGroundPlatform("ground",1700,height-120,100,24);
-    addGroundPlatform("ground",1850,height-144,100,24);
-
-    
-    // raised goal. because sneaky~
-    addGroundPlatform("ground",2000,height-96,300,24);
-    addGoal(2100, height-96);
+    // raised goal.
+    addGroundPlatform("ground",1975,height-48,250,24);
+    addGroundPlatform("ground",2025,height-96,150,24);
+    addGroundPlatform("ground",2050,height-144,100,24);
+    addGoal(2075, height-144);
   }
 }
 
@@ -496,21 +463,17 @@ class MainLevelLayer extends MarioLayer {
     addStaticSpriteBG(backdrop);
     
     // level components
-    if(!debugPJS) {
-      addGround("ground");
-    }
+    addGround("ground");
     addBottom("ground", 0, height-40, width, 40);    
-    if(!debugPJS) {
-      addBushes();
-      addCloudPlatforms();
-      addBlockPlatforms(1064, 264, 16);
-      addSpecialBlocks();
-      addCoins();
-      addDragonCoins();
-      addFlyingKoopas();
-      addTubes(); 
-      addTriggers();
-    }
+    addBushes();
+    addCloudPlatforms();
+    addBlockPlatforms(1064, 264, 16);
+    addSpecialBlocks();
+    addCoins();
+    addDragonCoins();
+    addFlyingKoopas();
+    addTriggers();
+    addTubes(); 
   }
 
   // "ground" parts of the level
@@ -692,42 +655,6 @@ class DarkLevel extends MarioLevel
 
     // And of course some background music.
     SoundManager.load(this, "audio/bg/Bonus.mp3");
-  }
-
-  /**
-   * Now then, the draw loop: render mario in
-   * glorious canvas definition.
-   */
-  void draw() {
-    // Normal level draw
-    if (!finished) {
-
-      // draw the level content
-      super.draw();
-
-      // disallow running past the edges
-      Player p = mario;
-      LevelLayer l = p.getLevelLayer();
-      float sx = l.xScale;
-      {
-        if (p.x < p.width/2) { 
-          p.x = p.width/2;
-        }
-        if (p.x > l.width-p.width/2) { 
-          p.x = l.width-p.width/2;
-        }
-
-        // slide viewbox along with players
-        if (0 <= viewbox.x && viewbox.x <= l.width - viewbox.w/sx) {
-          viewbox.x = (int)(p.x-432/2);
-          viewbox.x = constrain(viewbox.x, 0, l.width - viewbox.w/sx);
-        }
-      }
-
-      if (javascript!=null) {
-        javascript.setCoordinate(mario.x, mario.y);
-      }
-    }
   }
 
   class DarkLevelLayer extends MarioLayer {

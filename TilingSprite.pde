@@ -26,9 +26,9 @@ class TilingSprite extends Positionable {
     //        is at this point, because it matters for
     //        determining how many sprite blocks to draw.
     float ox = sprite.x, oy = sprite.y, x, y,
-          sx = max(x1, vx - (vx-x1)%sprite.width);
-          sy = max(y1, vy - (vy-y1)%sprite.height);
-          ex = min(x2, vx+2*vw); // ideally, this is vx + vw + {something that ensures the rightmost block is drawn}
+          sx = max(x1, vx - (vx-x1)%sprite.width),
+          sy = max(y1, vy - (vy-y1)%sprite.height),
+          ex = min(x2, vx+2*vw), // ideally, this is vx + vw + {something that ensures the rightmost block is drawn}
           ey = min(y2, vy+2*vh); // ideally, this is vy + vh + {something that ensures the bottommost block is drawn}
     for(x = sx; x < ex; x += sprite.width){
       for(y = sy; y < ey; y += sprite.height){

@@ -62,7 +62,7 @@ static class Computer {
     }
   }
   
-  
+
   static boolean debug = false;
   static int _actors = 0, _states = 0, _positionables = 0, _sprites = 0, _arraylists = 0, _hashmaps = 0;
   static void actors() { if(debug) { ts("Actor"); _actors++; }}
@@ -74,14 +74,16 @@ static class Computer {
 
   // time stamping log function
   static void ts(String s) { 
-    return "["+Date.now()+"] " + s; 
+//    return "["+Date.now()+"] " + s; 
   }
   
+/*  
   static void create(String name, String type, int line) {
     if(typeof PJScreates[type] === "undefined") {
       PJScreates[type] = [];
     }
     PJScreates[type].push(ts(name + "[" + line + "]"));
   }
+*/
 }
 
