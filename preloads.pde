@@ -46,6 +46,8 @@
                  graphics/assorted/Goal-slider.gif,
                  graphics/assorted/Pipe-head.gif,
                  graphics/assorted/Pipe-body.gif,
+                 graphics/assorted/Flower.gif,
+                 graphics/assorted/Flowerpower.gif,
 
                  graphics/enemies/Dead-koopa.gif,
                  graphics/enemies/Naked-koopa-walking.gif,
@@ -65,8 +67,14 @@
                  graphics/mario/small/Spinning-mario.gif,
                  graphics/mario/small/Standing-mario.gif,
 
+                 graphics/mario/fire/Crouching-mario.gif,
+                 graphics/mario/fire/Jumping-mario.gif,
+                 graphics/mario/fire/Looking-mario.gif,
+                 graphics/mario/fire/Running-mario.gif,
+                 graphics/mario/fire/Spinning-mario.gif,
+                 graphics/mario/fire/Standing-mario.gif",
+
                  graphics/mario/big/Crouching-mario.gif,
-                 graphics/mario/big/Dead-mario.gif,
                  graphics/mario/big/Jumping-mario.gif,
                  graphics/mario/big/Looking-mario.gif,
                  graphics/mario/big/Running-mario.gif,

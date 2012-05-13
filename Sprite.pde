@@ -224,8 +224,10 @@ class Sprite extends Positionable {
         if (r != 0) { rotate(r); }
         if(hflip) { scale(-1,1); }
         if(vflip) { scale(1,-1); }
-        scale(sx,sy);
+        if(sx!=1 || sy!=1) { scale(sx,sy); }
         translate(-width/2 + ox, -height/2 - oy);
+        // FIXME: the transforms may result in smoothing.
+        //        I'm not sure how to prevent or correct for that.
         image(img, 0, 0);
       }
       popMatrix();

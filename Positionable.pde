@@ -39,6 +39,8 @@ abstract class Positionable implements Drawable {
   
   // which direction is this positionable facing,
   // based on its movement in the last frame?
+  // -1 means "not set", 0-2*PI indicates the direction
+  // in radians (0 is ->, values run clockwise) 
   float direction = -1;
 
   // administrative
@@ -306,6 +308,7 @@ abstract class Positionable implements Drawable {
     float w=width, h=height, ow=other.width, oh=other.height;
     float[] bounds = getBoundingBox();
     float[] obounds = other.getBoundingBox();
+    if(bounds==null || obounds==null) return null;
     
     if (false) { 
       drawBoundingBox(bounds);

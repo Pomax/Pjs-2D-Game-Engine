@@ -19,11 +19,14 @@ MarioLevel mainLevel, darkLevel, level;
 
 // sprites in this demo are mostly multiples of 16
 final int BLOCK = 16;
+int screenWidth, screenHeight;
 
 // boilerplate
 void setup() {
-//  size(32*BLOCK, 27*BLOCK, (P3Dmode ? P3D : P2D));
-  size(32*BLOCK, 27*BLOCK,P2D);
+  //  size(32*BLOCK, 27*BLOCK, (P3Dmode ? P3D : P2D));
+  size(32*BLOCK, 27*BLOCK, P2D);
+  screenWidth = width;
+  screenHeight = height;
   frameRate(30);
   // set up the sound manager
   SoundManager.init(this);
@@ -37,7 +40,9 @@ void setup() {
 void reset() {
   level = null;
   SoundManager.reset();
-  if (javascript!=null) { javascript.resetActorCount(); }
+  if (javascript!=null) { 
+    javascript.resetActorCount();
+  }
   // set up two "persistent" levelsz
   mainLevel = new MainLevel(width, height, 4, 1);
   darkLevel = new DarkLevel(width, height, 1, 1);
@@ -90,6 +95,10 @@ void mousePressed() {
   }
 }
 
+void mouseReleased() {
+  level.mouseReleased(mouseX, mouseY, mouseButton);
+}
+
 // shortcut method for setting up "game" views
 void setGameView() {
   level.showBackground(true);
@@ -138,7 +147,7 @@ class MarioLevel extends Level {
   Player mario;
   String wintext = "Goal!";
   int endCount = 0;
-  
+
   MarioLevel(float w, float h) { 
     super(w, h);
   }
@@ -147,7 +156,7 @@ class MarioLevel extends Level {
     updatePlayer(mario, newMario);
     mario = newMario;
   }
-  
+
   /**
    * Now then, the draw loop: render mario in
    * glorious canvas definition.
@@ -179,7 +188,6 @@ class MarioLevel extends Level {
       }
     }
   }
-
 }
 
 /**
@@ -192,12 +200,16 @@ class MainLevel extends MarioLevel {
   {
     super(w*x_repeat, h*y_repeat);
     setViewBox(0, 0, w, h);
+    LevelLayer layer;
 
-    addLevelLayer("color", new BackgroundColorLayer(this, width, height, color(0, 100, 190)));
+    layer = new BackgroundColorLayer(this, width, height, color(0, 100, 190));
+    addLevelLayer("color", layer);
+
     float scaleFactor = 0.75;
-    addLevelLayer("background 1", new BackgroundLayer(this, width + (scaleFactor*w/2) /* HACK! */ - 21, height, 0, 0, scaleFactor, scaleFactor));
+    layer = new BackgroundLayer(this, width + (scaleFactor*w/2) /* HACK! */ - 21, height, 0, 0, scaleFactor, scaleFactor);
+    addLevelLayer("background 1", layer);
 
-    LevelLayer layer = new MainLevelLayer(this, width, height);
+    layer = new MainLevelLayer(this, width, height);
     if (layer.players.size()==0 || mario == null) {
       mario = new Mario();
       mario.setPosition(32, 383);
@@ -207,6 +219,10 @@ class MainLevel extends MarioLevel {
 
     // And of course some background music.
     SoundManager.load(this, "audio/bg/Overworld.mp3");
+  }
+  
+  void draw() {
+    super.draw();
   }
 
   /**
@@ -426,18 +442,22 @@ class BackgroundLayer extends MarioLayer {
     addStaticSpriteBG(backdrop);
 
     // flat ground
-    addBottom("ground",0,height+8,width,16);
+    addBottom("ground", 0, height+8, width, 16);
 
     // teleport-in tube
     addUpsideDownTube(64, -16);
     // teleport-out tube
-    addTube(64, height, new LayerTeleportTrigger(64+8, height-24, 16, 2, 594, 335, "main"));
+    addTube(64, height, new LayerTeleportTriggerUp(64+8, height-24, 16, 2, 594, 335, "main"));
 
-    // raised goal.
-    addGroundPlatform("ground",1975,height-48,250,24);
-    addGroundPlatform("ground",2025,height-96,150,24);
-    addGroundPlatform("ground",2050,height-144,100,24);
-    addGoal(2075, height-144);
+/*
+    // coin block boos! O_O
+    for(int x = 384; x < width-176; x+=48) {
+      addBoundedInteractor(new CoinBlockBoo(x, height - 1*48));
+    }
+*/
+
+    // goal
+    addGoal(width-64, height+8);
   }
 }
 
@@ -461,7 +481,7 @@ class MainLevelLayer extends MarioLayer {
     bgsprite.align(RIGHT, TOP);
     TilingSprite backdrop = new TilingSprite(bgsprite, 0, 0, width, height);
     addStaticSpriteBG(backdrop);
-    
+
     // level components
     addGround("ground");
     addBottom("ground", 0, height-40, width, 40);    
@@ -473,7 +493,7 @@ class MainLevelLayer extends MarioLayer {
     addDragonCoins();
     addFlyingKoopas();
     addTriggers();
-    addTubes(); 
+    addTubes();
   }
 
   // "ground" parts of the level
@@ -550,9 +570,6 @@ class MainLevelLayer extends MarioLayer {
 
   // coin blocks (we only use one)
   void addSpecialBlocks() {
-    CoinBlock cb = new CoinBlockBoo(338, 248);
-    addBoundedInteractor(cb);
-
     MushroomBlock mb = new MushroomBlock(1110, 208);
     addBoundedInteractor(mb);
   }
@@ -611,23 +628,6 @@ class MainLevelLayer extends MarioLayer {
     // teleporting pipe to the bonus level
     addTube(width-32, height-48, new BonusLevelTrigger(width-24, height-66, 16, 2, 16, height-32));
   }
-
-  /**
-   * For fun, let's add some koopa troopers
-   * every time we click on the screen!
-   * (and mushrooms if we right click O_O)
-   */
-  void mousePressed(int mx, int my, int button) {
-    if (button == LEFT) {
-      Koopa koopa = new Koopa(mx + viewbox.x, my + viewbox.y);
-      koopa.addForces(-0.2, 0);
-      koopa.persistent = false;
-      addInteractor(koopa);
-    }
-    else if (button == RIGHT) {
-      addForPlayerOnly(new Mushroom(mx + viewbox.x, my + viewbox.y));
-    }
-  }
 }
 
 
@@ -666,7 +666,7 @@ class DarkLevel extends MarioLevel
       bgsprite.align(RIGHT, TOP);
       TilingSprite backdrop = new TilingSprite(bgsprite, 0, 0, width, height);
       addStaticSpriteBG(backdrop);      
-      
+
       // set up ground
       addBottom("cave", 0, h, w, 40);
       float x, y, wth;
@@ -679,6 +679,10 @@ class DarkLevel extends MarioLevel
           addCoin(x+24+(j-1)*48, y+16);
         }
       }
+
+      // bonus level reward! firepower~
+      FireFlowerBlock fb = new FireFlowerBlock(w/2, h-5.25*48);
+      addBoundedInteractor(fb);
 
       // set up two tubes
       addTube(0, height - 8, null);
@@ -709,6 +713,7 @@ class DarkLevel extends MarioLevel
 class Mario extends Player {
 
   String spriteset = "mario";
+  String marioType = "small";
 
   // every 'step' has an impulse of 1.3
   float speedStep = 1.3;
@@ -716,6 +721,19 @@ class Mario extends Player {
   // jumping uses an impulse 21 times that of a step
   float speedHeight = 21;
 
+  // The buttons that get to control Mario
+  int VK_UP=87, VK_LEFT=65, VK_DOWN=83, VK_RIGHT=68;  // WASD controls
+  int BUTTON_A=81, BUTTON_B=69;                       // Q and E for jump/shoot
+  
+  void mousePressed(int mx, int my, int button) {
+    if(button==LEFT) { keyPressed('Q',81); }
+    else if(button==RIGHT) { keyPressed('E',69); }
+  }
+  void mouseReleased(int mx, int my, int button) {
+    if(button==LEFT) { keyReleased('Q',81); }
+    else if(button==RIGHT) { keyReleased('E',69); }
+  }
+  
   /**
    * The Mario constructor
    */
@@ -724,63 +742,67 @@ class Mario extends Player {
   }
 
   Mario(String name, float xdamp, float ydamp) {
-    super(name, xdamp, ydamp);    
+    super(name, xdamp, ydamp);
     setForces(0, DOWN_FORCE);
     setAcceleration(0, ACCELERATION);
+    // by default, we're small mario
     setupStates("small");
+    // and these are the keys we will be allowed to use.
+    keyCodes = new int[] {VK_UP, VK_LEFT, VK_DOWN, VK_RIGHT, BUTTON_A, BUTTON_B};
   }
 
   /**
    * Set up a number of states for Mario to be in.
    */
-  void setupStates(String sizeSet) {
+  void setupStates(String setType) {
     states.clear();
+    marioType = setType;
 
     // when not moving
-    State standing = new State("standing", "graphics/mario/"+sizeSet+"/Standing-"+spriteset+".gif");
+    State standing = new State("standing", "graphics/mario/"+setType+"/Standing-"+spriteset+".gif");
     standing.sprite.align(CENTER, BOTTOM);
     addState(standing);
 
     // when either running right or left
-    State running = new State("running", "graphics/mario/"+sizeSet+"/Running-"+spriteset+".gif", 1, 4);
+    State running = new State("running", "graphics/mario/"+setType+"/Running-"+spriteset+".gif", 1, 4);
     running.sprite.align(CENTER, BOTTOM);
     running.sprite.setAnimationSpeed(0.75);
     addState(running);
 
     // when [down] is pressed
-    State crouching = new State("crouching", "graphics/mario/"+sizeSet+"/Crouching-"+spriteset+".gif");
+    State crouching = new State("crouching", "graphics/mario/"+setType+"/Crouching-"+spriteset+".gif");
     crouching.sprite.align(CENTER, BOTTOM);
     addState(crouching);
 
     // when [up] is pressed
-    State looking = new State("looking", "graphics/mario/"+sizeSet+"/Looking-"+spriteset+".gif");
+    State looking = new State("looking", "graphics/mario/"+setType+"/Looking-"+spriteset+".gif");
     looking.sprite.align(CENTER, BOTTOM);
     addState(looking);
 
     // when pressing the A (jump) button
-    State jumping = new State("jumping", "graphics/mario/"+sizeSet+"/Jumping-"+spriteset+".gif");
+    State jumping = new State("jumping", "graphics/mario/"+setType+"/Jumping-"+spriteset+".gif");
     jumping.sprite.align(CENTER, BOTTOM);
     jumping.sprite.addPathLine(0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 24);
     SoundManager.load(jumping, "audio/Jump.mp3");
     addState(jumping);
 
     // when pressing the A button while crouching
-    State crouchjumping = new State("crouchjumping", "graphics/mario/"+sizeSet+"/Crouching-"+spriteset+".gif");
+    State crouchjumping = new State("crouchjumping", "graphics/mario/"+setType+"/Crouching-"+spriteset+".gif");
     crouchjumping.sprite.align(CENTER, BOTTOM);
     crouchjumping.sprite.addPathLine(0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 24);
     SoundManager.load(crouchjumping, "audio/Jump.mp3");
     addState(crouchjumping);
 
     // when pressing the B (shoot) button
-    State spinning = new State("spinning", "graphics/mario/"+sizeSet+"/Spinning-"+spriteset+".gif", 1, 4);
+    State spinning = new State("spinning", "graphics/mario/"+setType+"/Spinning-"+spriteset+".gif", 1, 4);
     spinning.sprite.align(CENTER, BOTTOM);
     spinning.sprite.addPathLine(0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 24);
     SoundManager.load(spinning, "audio/Spin jump.mp3");
     addState(spinning);
 
     // if we mess up, and we're small, we lose...
-    if (sizeSet=="small") {
-      State dead = new State("dead", "graphics/mario/"+sizeSet+"/Dead-"+spriteset+".gif", 1, 2);
+    if (setType=="small") {
+      State dead = new State("dead", "graphics/mario/"+setType+"/Dead-"+spriteset+".gif", 1, 2);
       dead.sprite.align(CENTER, BOTTOM);
       dead.sprite.setAnimationSpeed(0.5);
       dead.sprite.setNoRotation(true);
@@ -807,14 +829,14 @@ class Mario extends Player {
     // should run. Unless we're stuck in a state
     // that locks us in our place:
     if (active.name != "crouching" && active.name != "looking") {
-      if (keyDown[LEFT]) {
+      if (keyDown[VK_LEFT]) {
         // when we walk left, we need to flip the sprite
         setHorizontalFlip(true);
         // walking left means we get a negative impulse along the x-axis:
         addImpulse(-speedStep, 0);
         setViewDirection(-1, 0);
       }
-      if (keyDown[RIGHT]) {
+      if (keyDown[VK_RIGHT]) {
         // when we walk right, we need to NOT flip the sprite =)
         setHorizontalFlip(false);
         // walking right means we get a positive impulse along the x-axis:
@@ -852,9 +874,12 @@ class Mario extends Player {
       // The shoot button is pressed! When we don't have a shooty power-up,
       // this makes Mario spin-jump. But should we? And How?
       else if (keyDown[BUTTON_B] && boundaries.size()>0) {
-        if (active.name != "jumping" && active.name != "crouchjumping" && active.name != "spinning") {
-          // first off, shooting and spin jumping may not auto-repeat, so we lock the shoot button
-          ignore(BUTTON_B);
+        // first off, shooting and spin jumping may not auto-repeat, so we lock the shoot button
+        ignore(BUTTON_B);
+        if (marioType=="fire" && active.name != "crouching") {
+          shoot();
+        }
+        else if (marioType!="fire" && active.name != "jumping" && active.name != "crouchjumping" && active.name != "spinning") {
           // make sure we unglue ourselves from the platform we're standing on:
           detachAll();
           // then generate a massive impulse upward:
@@ -865,18 +890,18 @@ class Mario extends Player {
         }
       }
       // The down button is pressed: crouch
-      else if (keyDown[DOWN]) {
+      else if (keyDown[VK_DOWN]) {
         if (boundaries.size()==1 && boundaries.get(0) instanceof PipeBoundary) {
           ((PipeBoundary)boundaries.get(0)).teleport();
         }
         setCurrentState("crouching");
       }
       // The up button is pressed: look up
-      else if (keyDown[UP]) {
+      else if (keyDown[VK_UP]) {
         setCurrentState("looking");
       }
       // The left and/or right buttons are pressed: run!
-      else if (keyDown[LEFT] || keyDown[RIGHT]) {
+      else if (keyDown[VK_LEFT] || keyDown[VK_RIGHT]) {
         setCurrentState("running");
       }
       // okay, nothing's being pressed. Let's just stand there.
@@ -972,13 +997,47 @@ class Mario extends Player {
       // become big!
       powerUp();
     }
+    else if (pickup.name=="Flower") {
+      // obtain fire flower powers!
+      flowerPowerUp();
+    }
   }
 
   /**
-   * This is where we must schedule an actor replacement
+   * Big mario has different sprites
    */
   void powerUp() {
     setupStates("big");
+  }
+
+  /**
+   * Fire flower mario has different sprites, too
+   */
+  void flowerPowerUp() {
+    setupStates("fire");
+  }
+
+  /**
+   * Shoot a fire blob... at the mouse pointer!
+   */
+  void shoot() {
+    // get the unified coordinate values for mario, and the mouse cursor...
+    float[] mapped = layer.mapCoordinateToScreen(getX(), getY()-height/2);
+    float ax = mapped[0], ay = mapped[1];
+    mapped = layer.mapCoordinateFromScreen(mouseX, mouseY);
+    float mx = mapped[0], my = mapped[1];
+    // because the fire blob gets fired in the direction of the mouse!
+    float dx = mx-ax, dy = my-ay,
+          len = sqrt(dx*dx + dy*dy),
+          speed = 10;
+    dx = speed*dx/len;
+    dy = speed*dy/len;
+    // oh my god, precision aiming fire Mario O_O!
+    FireBlob fireblob = new FireBlob(x, y-height/2, dx, dy);
+    layer.addForInteractorsOnly(fireblob);
+    // also, make a pew pew sound.
+    SoundManager.load(fireblob, "audio/Squish.mp3");
+    SoundManager.play(fireblob);
   }
 }
 
@@ -1093,6 +1152,10 @@ class Koopa extends Interactor {
       fx = -fx;
       active.sprite.flipHorizontal();
     }
+  }
+
+  void pickedUp(Pickup p) {
+    squish();
   }
 }
 
@@ -1258,7 +1321,7 @@ abstract class SpecialBlock extends BoundedInteractor {
     setAcceleration(0, 0);
     setupStates();
     // make the top of this block a platform
-    addBoundary(new Boundary(x-width/2, y-height/2-1, x+width/2, y-height/2-1));
+    addBoundary(new Boundary(x-width/2, y-height/2, x+width/2, y-height/2));
   }
 
   /**
@@ -1529,6 +1592,7 @@ class CoinBlockBoo extends CoinBlock implements Tracker {
   }
 }
 
+
 /***************************************
  *                                     *
  *   INTERACTORS: THE MUSHROOM BLOCK   *
@@ -1556,6 +1620,38 @@ class MushroomBlock extends SpecialBlock {
     mushroom.setForces((overlap[0]<0 ? 1 : -1) * 2, DOWN_FORCE);
     mushroom.persistent = false;
     layer.addForPlayerOnly(mushroom);
+  }
+}
+
+
+/***************************************
+ *                                     *
+ * INTERACTORS: THE FIRE FLOWER BLOCK  *
+ *                                     *
+ ***************************************/
+
+
+/**
+ * A fire flower block generates a flower when hit
+ */
+class FireFlowerBlock extends SpecialBlock {
+
+  /**
+   * Passthrough constructor
+   */
+  FireFlowerBlock(float x, float y) {
+    super("Fire flower block", x, y);
+  }
+
+  /**
+   * Generate a mushroom
+   */
+  void generate(float[] overlap) {
+    Flower flower = new Flower(x, y);
+    flower.setImpulse(0, -8);
+    flower.setForces(0, 2*DOWN_FORCE);
+    flower.persistent = false;
+    layer.addForPlayerOnly(flower);
   }
 }
 
@@ -1734,6 +1830,43 @@ class Mushroom extends MarioPickup {
 }
 
 /**
+ * The sought-after fire flower
+ */
+class Flower extends MarioPickup {
+  Flower(float x, float y) {
+    super("Flower", "graphics/assorted/Flower.gif", 1, 1, x, y, false);
+    getState("Flower").sprite.align(CENTER, BOTTOM);
+    SoundManager.load(this, "audio/Powerup.mp3");
+    persistent = false;
+  }
+  void pickedUp() { 
+    SoundManager.play(this);
+  }
+  // most pickups bounce around. Fire flowers don't
+  void gotBlocked(Boundary b, float[] intersection) {}
+}
+
+/**
+ * A fire blob from fire mario.
+ * This pickup is interesting because
+ * it's a pickup for "not the player".
+ */
+class FireBlob extends MarioPickup {
+  FireBlob(float x, float y, float ix, float iy) {
+    super("Fire blob", "graphics/assorted/Flowerpower.gif", 1, 4, x, y, true);
+    setImpulse(ix, iy);
+    setImpulseCoefficients(1, 1);
+    persistent = false;
+    // note: no audio when picked up
+  }
+
+  // fire blobs disappear when they hit the ground
+  void gotBlocked(Boundary b, float[] intersection) {
+    removeActor();
+  }
+}
+
+/**
  * The finish line is also a pickup,
  * and will trigger the "clear" state
  * for the level when picked up.
@@ -1905,6 +2038,24 @@ class LayerTeleportTrigger extends TeleportTrigger {
     level.getLevelLayer(target).addPlayer((Player)actor);
     actor.setPosition(tx, ty);
     actor.setImpulse(0, 0);
+    lid.enable();
+  }
+}
+
+/**
+ * Tube trigger, with the target tube pointing upward
+ */
+class LayerTeleportTriggerUp extends TeleportTrigger {
+  String target;
+  LayerTeleportTriggerUp(float x, float y, float w, float h, float tx, float ty, String target) {
+    super(x, y, w, h, tx, ty);
+    this.target = target;
+  }
+  void run(LevelLayer layer, Actor actor, float[] intersection) {
+    layer.removePlayer((Player)actor);
+    level.getLevelLayer(target).addPlayer((Player)actor);
+    actor.setPosition(tx, ty+24);
+    actor.setImpulse(0, -20);
     lid.enable();
   }
 }

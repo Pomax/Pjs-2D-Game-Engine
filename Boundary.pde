@@ -107,7 +107,8 @@ class Boundary extends Positionable {
    * detach all actors from this boundary
    */
   void detachAll() {
-    for(Positionable a: attached) {
+    while(attached.size() > 0) {
+      Positionable a = attached.remove(0);
       a.detach(this);
     }
     attached.clear();
@@ -163,6 +164,7 @@ class Boundary extends Positionable {
 
     // continue: get the current and previous bounding boxes
     float[] prev = a.getBoundingBox();
+    if(prev==null) return null;
     prev[0] -= dx;  prev[1] -= dy;
     prev[2] -= dx;  prev[3] -= dy;
     prev[4] -= dx;  prev[5] -= dy;

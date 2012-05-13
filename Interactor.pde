@@ -20,8 +20,8 @@ abstract class Interactor extends Actor {
     return persistent || (vx-vw <= x && x <= vx+2*vw && vy-vh <= y && y <=vy+2*vh);
   }
 
-  // Interactors don't get pickups
-  final void pickedUp(Pickup pickup) {}
+  // Interactors don't do anything with pickups by default
+  void pickedUp(Pickup pickup) {}
   
   // Interactors are not playable
   final void handleInput() {}

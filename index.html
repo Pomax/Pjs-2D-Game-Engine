@@ -9,6 +9,67 @@
     <script type="text/javascript" src="processing.js"></script>
     <script type="text/javascript" src="minim.js"></script>
     <script type="text/javascript" src="keytrap.js"></script>
+    <!--
+      Sketch interfacing javascript
+    -->
+    <script type="text/javascript"> 
+      function setCoordinate(x,y) {
+        document.getElementById("x").innerHTML = x|0;
+        document.getElementById("y").innerHTML = y|0;
+      }
+      
+      function gameView() {
+        pjs.setGameView();
+        pjs.externals.canvas.focus();
+      }
+      
+      function designView() {
+        pjs.setDesignView();
+        pjs.externals.canvas.focus();
+      }
+
+      var pjs;
+      var monitor;
+      function bindSketch() {
+        var tmp;
+        if(!pjs) {
+          tmp = Processing.getInstanceById("mario");
+          if(tmp && tmp.bindJavaScript) {
+            pjs = tmp;
+            pjs.bindJavaScript(this);
+          } else { setTimeout(bindSketch, 250); }
+        }
+        if(pjs && !monitor) {
+          tmp = Processing.getInstanceById("monitor");
+          if(tmp) {
+            monitor = tmp;         
+            monitor.setActorCount(pjs.getActorCount());
+          } else { setTimeout(bindSketch, 250); }
+        }
+      }
+      
+      // monitor framerate
+      function recordFramerate(frameRate) { if(monitor) { monitor.addPoint(frameRate); }}
+      function addActor() { if(monitor) { monitor.addActor(); }}
+      function removeActor() { if(monitor) { monitor.removeActor(); }}
+      function resetActorCount() { if(monitor) { monitor.resetActorCount(); }}
+   
+      
+      function toggleMonitor() {
+        var mon = monitor.externals.canvas;
+        if(mon.style.display !== "block") {
+          mon.style.display = "block";
+        } else { mon.style.display = "none"; }
+      }
+
+
+      document.addEventListener("DOMContentLoaded",function(){
+        var mario = document.getElementById("mario");
+        mario.focus();
+        bindSketch();
+      },false);
+    </script>
+  
   </head>
   <body>
     <div class="content shaded">
@@ -98,7 +159,7 @@
       </td></tr></table>
 
       <table id="controls"><tr><td>
-        <p><strong>Mario controls:</strong> cursor keys, and [z] and [x] for the jump/spin jump (left click to spawn Koopa troopers, right click to drop mushrooms!)</p>
+        <p><strong>Mario controls:</strong> 'W', 'A', 'S' and 'D' keys, and keys/mouse buttons for jump ('Q' / left click) and spin jump or shoot ('E' / right click). Can you find the flower?</p>
       </td><td>
         <p class="smaller"><strong>debug controls:</strong> [1] toggles background, [2] toggles boundaries, [3] toggles pickups, [4] toggles NPCs, [5] toggles Mario, [6] toggles the foreground, [7] toggle trigger regions, [8] toggles actor bounding boxes.</p>
       </td></tr></table>
@@ -122,7 +183,6 @@
          although of course you can also just leave a comment in the comment section!
       </p>
 
-      <!--
       <hr>
        
       <h1>Leave a comment, I love comments!</h1>
@@ -143,7 +203,6 @@
 
         document.addEventListener("DOMContentLoaded", addEasyPageComments, false)
       </script>
-      -->
     </div>
   </body>
 
@@ -190,85 +249,5 @@
     var debugPJS = (window.location.toString().indexOf("debug=true") > -1);
     
     var P3Dmode = (window.location.toString().indexOf("3d=true") > -1);
-  </script>
-
-  <!--
-    Sketch interfacing javascript
-  -->
-  <script type="text/javascript"> 
-    function setCoordinate(x,y) {
-      document.getElementById("x").innerHTML = x|0;
-      document.getElementById("y").innerHTML = y|0;
-    }
-    
-    function gameView() {
-      pjs.setGameView();
-      pjs.externals.canvas.focus();
-    }
-    
-    function designView() {
-      pjs.setDesignView();
-      pjs.externals.canvas.focus();
-    }
-
-    var pjs;
-    var monitor;
-    var touchinput;
-    function bindSketch() {
-      var tmp;
-      if(!pjs) {
-        tmp = Processing.getInstanceById("mario");
-        if(tmp && tmp.bindJavaScript) {
-          pjs = tmp;
-          pjs.bindJavaScript(this);
-        } else { setTimeout(bindSketch, 250); }
-      }
-      if(pjs && !monitor) {
-        tmp = Processing.getInstanceById("monitor");
-        if(tmp) {
-          monitor = tmp;         
-          monitor.setActorCount(pjs.getActorCount());
-        } else { setTimeout(bindSketch, 250); }
-      }
-      if(pjs && monitor && !touchinput) {
-        tmp = Processing.getInstanceById("touchinput");
-        if(tmp) {
-          touchinput = tmp;         
-          touchinput.bindJavaScript(this);
-        } else { setTimeout(bindSketch, 250); }
-      }
-    }
-    
-    // monitor framerate
-    function recordFramerate(frameRate) {
-      monitor.addPoint(frameRate);
-    }
-    
-    function toggleMonitor() {
-      var mon = monitor.externals.canvas;
-      if(mon.style.display !== "block") {
-        mon.style.display = "block";
-      } else { mon.style.display = "none"; }
-    }
-    
-    function addActor() { monitor.addActor(); }
-    function removeActor() { monitor.removeActor(); }
-    function resetActorCount() { monitor.resetActorCount(); }
-    
-    function toggleInputs() {
-      var tch = touchinput.externals.canvas;
-      if(tch.style.display !== "block") {
-        tch.style.display = "block";
-      } else { tch.style.display = "none"; }
-    }
-
-    function pressKey(keyCode) { pjs.keyPressFromPage(keyCode); }
-    function releaseKey(keyCode) { pjs.keyReleaseFromPage(keyCode); }
-
-    document.addEventListener("DOMContentLoaded",function(){
-      var mario = document.getElementById("mario");
-      mario.focus();
-      bindSketch();
-    },false);
   </script>
 </html>
