@@ -279,18 +279,6 @@ abstract class Positionable implements Drawable {
   float getY() { return y + oy; }
 
   /**
-   * get the midpoint
-   */
-  // FIXME: this doesn't look like a sprite center?
-//  float getMidX() { return x + ox; }
-
-  /**
-   * get the midpoint
-   */
-  // FIXME: this doesn't look like a sprite center?
-//  float getMidY() { return y + oy; }
-
-  /**
    * Get this positionable's bounding box
    */
   float[] getBoundingBox() {
@@ -391,7 +379,7 @@ abstract class Positionable implements Drawable {
       aFrameCount++;
     }
     
-    // FIXME: hot? not?
+    // FIXME: hot? not? can we catch the bounding box somehow?
     float[] bounds = getBoundingBox();
 
     // for each boundary we check if we should detach
@@ -444,7 +432,11 @@ abstract class Positionable implements Drawable {
 
     // dampen (or boost) our impulse, based on the impulse coefficients
     ix *= ixF;
-    iy *= iyF;   
+    iy *= iyF;
+    
+    // round impulse to two decimals
+    ix = int(100*ix)/100;
+    iy = int(100*iy)/100;
  }
   
   /**

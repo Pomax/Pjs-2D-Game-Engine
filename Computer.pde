@@ -23,7 +23,7 @@ static class Computer {
     
     if(intersection!=null) {
       float ix=a.ix, iy=a.iy;
-      a.stop(intersection[0], intersection[1]);
+      a.stop(a.prevx, a.prevy);
       a.attachTo(b);
 
       float[] rdf = b.redirectForce(ix, iy);

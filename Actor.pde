@@ -10,7 +10,7 @@
  * can make use of it.
  */
 abstract class Actor extends Positionable {
-  boolean debug = false;
+  boolean debug = true;
   
   // debug bounding box alignment
   float halign=0, valign=0;
@@ -135,10 +135,29 @@ abstract class Actor extends Positionable {
   float[] getBoundingBox() {
     if(active==null) return null;
     float[] bounds = active.sprite.getBoundingBox();
+    
+    // transform the bounds, based on local translation/scale/rotation
+    if(r!=0) {
+      float x1=bounds[0], y1=bounds[1],
+            x2=bounds[2], y2=bounds[3],
+            x3=bounds[4], y3=bounds[5],
+            x4=bounds[6], y4=bounds[7];
+      // rotate
+      bounds[0] = x1*cos(r) - y1*sin(r);
+      bounds[1] = x1*sin(r) + y1*cos(r);
+      bounds[2] = x2*cos(r) - y2*sin(r);
+      bounds[3] = x2*sin(r) + y2*cos(r);
+      bounds[4] = x3*cos(r) - y3*sin(r);
+      bounds[5] = x3*sin(r) + y3*cos(r);
+      bounds[6] = x4*cos(r) - y4*sin(r);
+      bounds[7] = x4*sin(r) + y4*cos(r);
+    }
+    // translate
     bounds[0] += x+ox; bounds[1] += y+oy;  // top left
     bounds[2] += x+ox; bounds[3] += y+oy;  // top right
     bounds[4] += x+ox; bounds[5] += y+oy;  // bottom right
     bounds[6] += x+ox; bounds[7] += y+oy;  // bottom left
+    // done
     return bounds;
   }
 
@@ -258,17 +277,21 @@ abstract class Actor extends Positionable {
       active.draw();
       /*
       if(debug) {
+        pushMatrix();
+        resetMatrix();
         noFill();
         stroke(255,0,0);
         float[] bounds = getBoundingBox();
         beginShape();
-        vertex(bounds[0]-x-ox,bounds[1]-y-oy);
-        vertex(bounds[2]-x-ox,bounds[3]-y-oy);
-        vertex(bounds[4]-x-ox,bounds[5]-y-oy);
-        vertex(bounds[6]-x-ox,bounds[7]-y-oy);
+        vertex(bounds[0],bounds[1]);
+        vertex(bounds[2],bounds[3]);
+        vertex(bounds[4],bounds[5]);
+        vertex(bounds[6],bounds[7]);
         endShape(CLOSE); 
         fill(255,0,0);
-        ellipse(0,0,5,5);
+        ellipse(bounds[0],bounds[1],5,5);
+        ellipse((bounds[0]+bounds[2]+bounds[4]+bounds[6])/4,(bounds[1]+bounds[3]+bounds[5]+bounds[7])/4,5,5);
+        popMatrix();
       }
       */
     }

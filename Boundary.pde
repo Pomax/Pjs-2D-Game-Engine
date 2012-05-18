@@ -162,36 +162,36 @@ class Boundary extends Positionable {
     // since the last time we checked blocking.
     if(dx==0 && dy==0) { return null; }
 
-    // continue: get the current and previous bounding boxes
-    float[] prev = a.getBoundingBox();
-    if(prev==null) return null;
+    // continue: get the current bounding box
+    float[] current = a.getBoundingBox();
+    if(current==null) return null;
+
+    // continue: form the previous bounding box
+    float[] prev = new float[current.length];
+    arrayCopy(current,0, prev,0, current.length);
     prev[0] -= dx;  prev[1] -= dy;
     prev[2] -= dx;  prev[3] -= dy;
     prev[4] -= dx;  prev[5] -= dy;
     prev[6] -= dx;  prev[7] -= dy;
-    float[] current = a.getBoundingBox();
+    
+    // FIXME: This algorithm only checks corner points,
+    //        instead of checking box edges. This needs
+    //        to be rewritten so that we check sensibly,
+    //        rather than for four points only.
 
-    // check if any of the corners is blocked. If so, signal a block.
-    float[] alignment = { a.width/2, a.height,
-                         -a.width/2, a.height,
-                         -a.width/2, 0,
-                          a.width/2, 0};
-
-    // check if any of the corners is blocked
+    // check if any of the trajectory corners are blocked. If so, signal a block.
     for(int i=0; i<8; i+=2) {
       float[] overlap = blocks(prev[i], prev[i+1], current[i], current[i+1]);
       if(overlap!=null) {
         // FIXME: add in a 'but not actually blocked if: ...' criterium
         //        so that we don't get "glued" to boundaries that we're
         //        just passing through.
-        if(!above(prev)) { continue; }
-
-        // correct the intersection point for the corner's
-        // offset with respect to the sprite's anchor:
-        overlap[0] += alignment[i];
-        overlap[1] += alignment[i+1];
+        if(!above(prev)) {
+          continue; 
+        }
         return overlap; }}
 
+    // no overlap occurred
     return null;
   }
   

@@ -2,6 +2,7 @@
 
 Level level;
 final float DAMPEN = 0.5;
+final float GRAVITY = 0.5;
 
 void setup() {
   size(400,400);
@@ -58,6 +59,7 @@ class TestPlayer extends Player {
   void mousePressed(int mx, int my, int button) {
     if(button==LEFT) { keyPressed('Q',81); }
     else if(button==RIGHT) { keyPressed('E',69); }}
+
   void mouseReleased(int mx, int my, int button) {
     if(button==LEFT) { keyReleased('Q',81); }
     else if(button==RIGHT) { keyReleased('E',69); }}
