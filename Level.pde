@@ -28,7 +28,7 @@ abstract class Level {
     Computer.arraylists("LevelLayer");
     layerids = new HashMap<String, Integer>();
     Computer.hashmaps("String","Integer");
-    viewbox = new ViewBox();
+    viewbox = new ViewBox(_width, _height);
   }
 
   /**

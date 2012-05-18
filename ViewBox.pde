@@ -10,10 +10,11 @@ class ViewBox {
 
   // viewbox values
   float x=0, y=0, w=0, h=0;
-
-  String toString() {
-    return x+"/"+y+" - "+w+"/"+h;
-  }
+  
+  ViewBox() {}
+  ViewBox(float _w, float _h) { w = _w; h = _h; }
+  ViewBox(float _x, float _y, float _w, float _h) { x = _x; y = _y; w = _w; h = _h; }
+  String toString() { return x+"/"+y+" - "+w+"/"+h; }
 
   // current layer transform values
   float llox=0, lloy=0, llsx=1, llsy=1;

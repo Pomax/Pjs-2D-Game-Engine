@@ -19743,7 +19743,12 @@
         xhr.overrideMimeType("application/json");
       }
       xhr.setRequestHeader("If-Modified-Since", "Fri, 01 Jan 1960 00:00:00 GMT"); // no cache
-      xhr.send(null);
+      try { 
+        xhr.send(null);
+      } catch (e) {
+        window.console.log("error: could not get " + url);
+        window.console.log(e);
+      }
     }
 
     function loadBlock(index, filename) {
@@ -19758,7 +19763,7 @@
             try {
 
               // DEBUGGING HACK PATCH TEST TEST TEST
-              if(debugPJS) {
+              if(typeof debugPJS !== "undefined" && debugPJS) {
                 code = preProcessProcessingCode(code.join("\n"));
               }
               // DEBUGGING HACK PATCH TEST TEST TEST

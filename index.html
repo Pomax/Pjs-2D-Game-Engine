@@ -86,37 +86,59 @@
             extends Drawable. Just so you get a better idea
             of how all the code links up.
         -->
-        <canvas id="mario" data-processing-sources="preloads.pde
-                                                    spriteengine.pde
-                                                    drawbackground.pde
+        <canvas id="mario" data-processing-sources="JavaScript.pde
 
-                                                    Computer.pde
-                                                    ViewBox.pde
-                                                    Level.pde
-                                                    LevelLayer.pde
+          MarioGame_preloads.pde 
+          MarioGame.pde
+          drawbackground.pde
 
-                                                    Drawable.pde
-                                                      Positionable.pde
-                                                        Actor.pde
-                                                          Player.pde
-                                                          Interactor.pde
-                                                            BoundedInteractor.pde
-                                                          Pickup.pde
-                                                        Boundary.pde
-                                                        Trigger.pde
-                                                        Sprite.pde
-                                                          Decal.pde
-                                                        TilingSprite.pde
+          Computer.pde
+          ViewBox.pde
+          Level.pde
+            MarioGame_MarioLevel.pde
+              MarioGame_MainLevel.pde
+              MarioGame_DarkLevel.pde
+          LevelLayer.pde
+            MarioGame_MarioLayer.pde
+              MarioGame_BackgroundColorLayer.pde
+              MarioGame_BackgroundLayer.pde
+              MarioGame_MainLevelLayer.pde
+              MarioGame_DarkLevelLayer.pde
 
-                                                    ShapePrimitives.pde
-                                                    SpriteMapHandler.pde
-                                                    SpritePath.pde
-                                                    SpritePathChunker.pde
-                                                    SoundManager.pde
-                                                    State.pde
-                                                    Tracking.pde
+          Drawable.pde
+            Positionable.pde
+              Actor.pde
+                Player.pde
+                  MarioGame_Mario.pde
+                Interactor.pde
+                  MarioGame_Koopa.pde
+                    MarioGame_KoopaFlying.pde
+                  MarioGame_BanzaiBill.pde
+                  BoundedInteractor.pde
+                    MarioGame_SpecialBlock.pde
+                      MarioGame_CoinBlock.pde
+                        MarioGame_CoinBlockBoo.pde
+                      MarioGame_MushroomBlock.pde
+                      MarioGame_FireFlowerBlock.pde
+                    MarioGame_PassThroughBlock.pde
+                Pickup.pde
+                  MarioGame_Pickups.pde
+              Boundary.pde
+                MarioGame_PipeBoundary.pde
+              Trigger.pde
+                MarioGame_Triggers.pde
+              Sprite.pde
+                Decal.pde
+                  MarioGame_Decals.pde
+              TilingSprite.pde
 
-                                                    JavaScript.pde" style="border: 1px solid black;" tabindex="1"></canvas>
+          ShapePrimitives.pde
+          SpriteMapHandler.pde
+          SpritePath.pde
+          SpritePathChunker.pde
+          SoundManager.pde
+          State.pde
+          Tracking.pde" style="border: 1px solid black;" tabindex="1"></canvas>
         <p class="smaller center">Current Mario coordinates: <span id="x"></span>/<span id="y"></span>
            - 
            <span> [<a href="javascript:gameView()">game view</a>] </span>
@@ -189,6 +211,7 @@
       <div id="pagecomments"></div>
       <div id="pagecommentform"></div>
        
+      <!-- -->
       <script type="text/javascript" src="EasyPageComments.js"></script>
       <script type="text/javascript">
         function showEasyPageComments(data) {
@@ -203,6 +226,7 @@
 
         document.addEventListener("DOMContentLoaded", addEasyPageComments, false)
       </script>
+      <!-- -->
     </div>
   </body>
 

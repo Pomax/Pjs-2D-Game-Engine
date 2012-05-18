@@ -80,6 +80,7 @@ abstract class LevelLayer {
     pickups.add(pickup);
     bind(pickup);
     if(javascript!=null) { javascript.addActor(); }}
+
   void removeForPlayerOnly(Pickup pickup) {
     pickups.remove(pickup);
     if(javascript!=null) { javascript.removeActor(); }}
@@ -89,6 +90,7 @@ abstract class LevelLayer {
     npcpickups.add(pickup);
     bind(pickup);
     if(javascript!=null) { javascript.addActor(); }}
+
   void removeForInteractorsOnly(Pickup pickup) {
     npcpickups.remove(pickup);
     if(javascript!=null) { javascript.removeActor(); }}
@@ -98,6 +100,7 @@ abstract class LevelLayer {
     interactors.add(interactor);
     bind(interactor);
     if(javascript!=null) { javascript.addActor(); }}
+
   void removeInteractor(Interactor interactor) {
     interactors.remove(interactor);
     if(javascript!=null) { javascript.removeActor(); }}
@@ -107,6 +110,7 @@ abstract class LevelLayer {
     bounded_interactors.add(bounded_interactor);
     bind(bounded_interactor);
     if(javascript!=null) { javascript.addActor(); }}
+
   void removeBoundedInteractor(BoundedInteractor bounded_interactor) {
     bounded_interactors.remove(bounded_interactor);
     if(javascript!=null) { javascript.removeActor(); }}
@@ -116,9 +120,11 @@ abstract class LevelLayer {
     players.add(player);
     bind(player);
     if(javascript!=null) { javascript.addActor(); }}
+
   void removePlayer(Player player) {
     players.remove(player);
     if(javascript!=null) { javascript.removeActor(); }}
+
   void updatePlayer(Player oldPlayer, Player newPlayer) {
     int pos = players.indexOf(oldPlayer);
     if (pos > -1) { 
@@ -461,30 +467,12 @@ abstract class LevelLayer {
   }
 
   /**
-   * passthrough event
+   * passthrough events
    */
   void keyPressed(char key, int keyCode) {
-    if(debug) {
-      if(key=='1') { showBackground = !showBackground; }
-      if(key=='2') { showBoundaries = !showBoundaries; }
-      if(key=='3') { showPickups = !showPickups; }
-      if(key=='4') { showInteractors = !showInteractors; }
-      if(key=='5') { showActors = !showActors; }
-      if(key=='6') { showForeground = !showForeground; }
-      if(key=='7') { showTriggers = !showTriggers; }
-      if(key=='8') {
-        for(Pickup p: pickups) { p.debug = !p.debug; }
-        for(Interactor i: interactors) { i.debug = !i.debug; }
-        for(Interactor i: bounded_interactors) { i.debug = !i.debug; }
-        for(Player p: players) { p.debug = !p.debug; }
-      }
-    }
     for(Player a: players) {
       a.keyPressed(key,keyCode); }}
 
-  /**
-   * passthrough event
-   */
   void keyReleased(char key, int keyCode) {
     for(Player a: players) {
       a.keyReleased(key,keyCode); }}
