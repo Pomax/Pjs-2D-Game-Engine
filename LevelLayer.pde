@@ -30,6 +30,7 @@ abstract class LevelLayer {
   ArrayList<Boundary> boundaries;
   ArrayList<Drawable> fixed_background, fixed_foreground;
   ArrayList<Pickup> pickups;
+  ArrayList<Pickup> npcpickups;
   ArrayList<Decal> decals;
   ArrayList<Interactor> interactors;
   ArrayList<BoundedInteractor> bounded_interactors;
@@ -79,8 +80,19 @@ abstract class LevelLayer {
     pickups.add(pickup);
     bind(pickup);
     if(javascript!=null) { javascript.addActor(); }}
+
   void removeForPlayerOnly(Pickup pickup) {
     pickups.remove(pickup);
+    if(javascript!=null) { javascript.removeActor(); }}
+
+  // The list of sprites that may only interact with non-players(s) (and boundaries)
+  void addForInteractorsOnly(Pickup pickup) {
+    npcpickups.add(pickup);
+    bind(pickup);
+    if(javascript!=null) { javascript.addActor(); }}
+
+  void removeForInteractorsOnly(Pickup pickup) {
+    npcpickups.remove(pickup);
     if(javascript!=null) { javascript.removeActor(); }}
 
   // The list of fully interacting non-player sprites
@@ -88,6 +100,7 @@ abstract class LevelLayer {
     interactors.add(interactor);
     bind(interactor);
     if(javascript!=null) { javascript.addActor(); }}
+
   void removeInteractor(Interactor interactor) {
     interactors.remove(interactor);
     if(javascript!=null) { javascript.removeActor(); }}
@@ -97,6 +110,7 @@ abstract class LevelLayer {
     bounded_interactors.add(bounded_interactor);
     bind(bounded_interactor);
     if(javascript!=null) { javascript.addActor(); }}
+
   void removeBoundedInteractor(BoundedInteractor bounded_interactor) {
     bounded_interactors.remove(bounded_interactor);
     if(javascript!=null) { javascript.removeActor(); }}
@@ -106,9 +120,11 @@ abstract class LevelLayer {
     players.add(player);
     bind(player);
     if(javascript!=null) { javascript.addActor(); }}
+
   void removePlayer(Player player) {
     players.remove(player);
     if(javascript!=null) { javascript.removeActor(); }}
+
   void updatePlayer(Player oldPlayer, Player newPlayer) {
     int pos = players.indexOf(oldPlayer);
     if (pos > -1) { 
@@ -149,6 +165,8 @@ abstract class LevelLayer {
     Computer.arraylists("Drawable");
     pickups = new ArrayList<Pickup>();
     Computer.arraylists("Pickup");
+    npcpickups = new ArrayList<Pickup>();
+    Computer.arraylists("Pickup");
     decals = new ArrayList<Decal>();
     Computer.arraylists("Decal");
     interactors = new ArrayList<Interactor>();
@@ -170,6 +188,7 @@ abstract class LevelLayer {
     yTranslate = oy;
     xScale = sx;
     yScale = sy;
+    nonstandard = (xScale!=1 || yScale!=1 || xTranslate!=0 || yTranslate!=0);
   }
 
   // used for statistics
@@ -188,6 +207,26 @@ abstract class LevelLayer {
   }
   
   /**
+   * map a layer coordinate to "normal"
+   */
+  float[] mapCoordinateFromScreen(float x, float y) {
+    float mx = map(x/xScale,  0,viewbox.w,  viewbox.x,viewbox.x + viewbox.w);
+    float my = map(y/yScale,  0,viewbox.h,  viewbox.y,viewbox.y + viewbox.h);    
+    return new float[]{mx, my};
+  }
+
+  /**
+   * map a layer coordinate to "normal"
+   */
+  float[] mapCoordinateToScreen(float x, float y) {
+    float mx = (x/xScale - xTranslate);
+    float my = (y/yScale - yTranslate);
+    mx *= xScale;
+    my *= yScale;
+    return new float[]{mx, my};
+  }
+
+  /**
    *
    */
   void draw() {
@@ -197,12 +236,10 @@ abstract class LevelLayer {
     float[] mapped = mapCoordinate(viewbox.x,viewbox.y);
     x = mapped[0];
     y = mapped[1];
-    w = viewbox.w/xScale;
-    h = viewbox.h/yScale;
-
-    // cache the global coordinate transforms
-    nonstandard = (xScale!=1 || yScale!=1 || xTranslate!=0 || yTranslate!=0);
-    if(nonstandard) { pushMatrix(); }
+    w = viewbox.w / xScale;
+    h = viewbox.h / yScale;
+    
+    pushMatrix();
 
     // remember to transform the layer coordinates accordingly
     translate(viewbox.x-x, viewbox.y-y);
@@ -256,6 +293,38 @@ abstract class LevelLayer {
 
         // player interaction?
         for(Player a: players) {
+          if(!a.interacting) continue;
+          float[] overlap = a.overlap(p);
+          if(overlap!=null) {
+            p.overlapOccurredWith(a);
+            break; }}
+
+        // draw pickup
+        p.draw(x,y,w,h);
+      }
+    }
+
+
+// ---- npc pickups
+    if(showPickups) {
+      for(int i = npcpickups.size()-1; i>=0; i--) {
+        Pickup p = npcpickups.get(i);
+        if(p.remove) {
+          npcpickups.remove(i);
+          if(javascript!=null) { javascript.removeActor(); }
+          continue; }
+
+        // boundary interference?
+        if(p.interacting && !p.onlyplayerinteraction) {
+          for(Boundary b: boundaries) {
+            Computer.interact(b,p); }
+          for(BoundedInteractor o: bounded_interactors) {
+            if(o.bounding) {
+              for(Boundary b: o.boundaries) {
+                  Computer.interact(b,p); }}}}
+
+        // npc interaction?
+        for(Interactor a: interactors) {
           if(!a.interacting) continue;
           float[] overlap = a.overlap(p);
           if(overlap!=null) {
@@ -394,41 +463,37 @@ abstract class LevelLayer {
       }
     }
 
-    if(nonstandard) { popMatrix(); }
+    popMatrix();
   }
 
   /**
-   * passthrough event
+   * passthrough events
    */
   void keyPressed(char key, int keyCode) {
-    if(debug) {
-      if(key=='1') { showBackground = !showBackground; }
-      if(key=='2') { showBoundaries = !showBoundaries; }
-      if(key=='3') { showPickups = !showPickups; }
-      if(key=='4') { showInteractors = !showInteractors; }
-      if(key=='5') { showActors = !showActors; }
-      if(key=='6') { showForeground = !showForeground; }
-      if(key=='7') { showTriggers = !showTriggers; }
-      if(key=='8') {
-        for(Pickup p: pickups) { p.debug = !p.debug; }
-        for(Interactor i: interactors) { i.debug = !i.debug; }
-        for(Interactor i: bounded_interactors) { i.debug = !i.debug; }
-        for(Player p: players) { p.debug = !p.debug; }
-      }
-    }
     for(Player a: players) {
       a.keyPressed(key,keyCode); }}
 
-  /**
-   * passthrough event
-   */
   void keyReleased(char key, int keyCode) {
     for(Player a: players) {
       a.keyReleased(key,keyCode); }}
 
-  void mouseMoved(int mx, int my) {}
-  void mousePressed(int mx, int my, int button) {}
-  void mouseDragged(int mx, int my, int button) {}
-  void mouseReleased(int mx, int my, int button) {}
-  void mouseClicked(int mx, int my, int button) {}
+  void mouseMoved(int mx, int my) {
+    for(Player a: players) {
+      a.mouseMoved(mx,my); }}
+
+  void mousePressed(int mx, int my, int button) {
+    for(Player a: players) {
+      a.mousePressed(mx,my,button); }}
+
+  void mouseDragged(int mx, int my, int button) {
+    for(Player a: players) {
+      a.mouseDragged(mx,my,button); }}
+
+  void mouseReleased(int mx, int my, int button) {
+    for(Player a: players) {
+      a.mouseReleased(mx,my,button); }}
+
+  void mouseClicked(int mx, int my, int button) {
+    for(Player a: players) {
+      a.mouseClicked(mx,my,button); }}
 }

@@ -133,6 +133,7 @@ abstract class Actor extends Positionable {
    * Get the bounding box for this actor
    */
   float[] getBoundingBox() {
+    if(active==null) return null;
     float[] bounds = active.sprite.getBoundingBox();
     bounds[0] += x+ox; bounds[1] += y+oy;  // top left
     bounds[2] += x+ox; bounds[3] += y+oy;  // top right
@@ -255,6 +256,7 @@ abstract class Actor extends Positionable {
   void drawObject() {
     if(active!=null) {
       active.draw();
+      /*
       if(debug) {
         noFill();
         stroke(255,0,0);
@@ -268,6 +270,7 @@ abstract class Actor extends Positionable {
         fill(255,0,0);
         ellipse(0,0,5,5);
       }
+      */
     }
   }
 
@@ -275,10 +278,7 @@ abstract class Actor extends Positionable {
 
   protected final boolean[] locked = new boolean[256];
   protected final boolean[] keyDown = new boolean[256];
-  protected final int UP=38, LEFT=37, DOWN=40, RIGHT=39, // cursor keys
-                      BUTTON_A=90, BUTTON_B=88;      // jump + shoot
-
-  protected final int[] keyCodes = {UP, LEFT, DOWN, RIGHT, BUTTON_A, BUTTON_B};
+  protected int[] keyCodes = {};
 
   // if pressed, and part of our known keyset, mark key as "down"
   private void setIfTrue(int mark, int target) {
@@ -295,8 +295,7 @@ abstract class Actor extends Positionable {
   // lock a key so that it cannot be triggered repeatedly
   protected void ignore(int keyCode) {
     locked[keyCode] = true;
-    keyDown[keyCode] = false;
-  }
+    keyDown[keyCode] = false; }
 
   // handle key presses
   void keyPressed(char key, int keyCode) {
@@ -307,6 +306,12 @@ abstract class Actor extends Positionable {
   void keyReleased(char key, int keyCode) {
     for(int i: keyCodes) {
       unsetIfTrue(keyCode, i); }}
+
+  void mouseMoved(int mx, int my) {}
+  void mousePressed(int mx, int my, int button) {}
+  void mouseDragged(int mx, int my, int button) {}
+  void mouseReleased(int mx, int my, int button) {}
+  void mouseClicked(int mx, int my, int button) {}
 
 // ====== ABSTRACT METHODS ======
 
