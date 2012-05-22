@@ -8269,14 +8269,9 @@
       framesSinceLastFPS = 0;
 
       looping = window.setInterval(function() {
-        try {
-          curSketch.onFrameStart();
-          p.redraw();
-          curSketch.onFrameEnd();
-        } catch(e_loop) {
-          window.clearInterval(looping);
-          throw e_loop;
-        }
+        curSketch.onFrameStart();
+        p.redraw();
+        curSketch.onFrameEnd();
       }, curMsPerFrame);
       doLoop = true;
       loopStarted = true;

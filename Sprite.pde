@@ -11,6 +11,7 @@ class Sprite extends Positionable {
   State state;
   SpritePath path;
   float halign=0, valign=0;
+  float halfwidth, halfheight;
 
   // frame data
   PImage[] frames;         // sprite frames
@@ -71,7 +72,9 @@ class Sprite extends Positionable {
   void setFrames(PImage[] _frames) {
     frames = _frames;
     width = _frames[0].width;
+    halfwidth = width/2.0;
     height = _frames[0].height;
+    halfheight = height/2.0;
     numFrames = _frames.length;
   }
 
@@ -215,17 +218,18 @@ class Sprite extends Positionable {
    * and draw the sprite's "current" frame
    * at the correct location.
    */
-  void draw() {
+  void draw() { draw(0,0); }
+  void draw(float x, float y) {
     if (visible) {
       PImage img = getFrame();
-      image(img, int(-width/2 + ox), int(-height/2 - oy));
+      image(img, x + ox - halfwidth, y + oy - halfheight);
     }
   }
  
   // pass-through/unused
-  void draw(float _a, float _b, float _c, float _d) { this.draw(); }
-  void drawObject() {}
   boolean drawableFor(float _a, float _b, float _c, float _d) { return true; }
+  void draw(float _a, float _b, float _c, float _d) { this.draw(); }
+  void drawObject() { println("ERROR: something called Sprite.drawObject instead of Sprite.draw."); }
   
 // -- pathing informmation
 

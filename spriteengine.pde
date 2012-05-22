@@ -1,31 +1,38 @@
-/* @pjs preload="static.gif"; */
+/***********************************
+ *                                 *
+ *     This file does nothing,     *
+ *    but allows Processing to     *
+ *     actually load the code      *
+ *    if located in a directory    *
+ *     of the same name. Feel      *
+ *       free to rename it.        * 
+ *                                 *
+ ***********************************/
+ 
+ 
+ 
+ /* @pjs preload="static.gif"; */
 
 Level level;
 final float DAMPEN = 0.7;
-final float GRAVITY = 3;
+final float GRAVITY = 1;
 
 void setup() {
   size(400,400);
   SpriteMapHandler.setSketch(this);
   level = new TestLevel(width, height);
-  frameRate(8);
+  //frameRate(4);
 }
 
 void draw() {
   level.draw();
+  //if(frameCount>10) noLoop();
 }
 
-void keyPressed() { level.keyPressed(key,keyCode); }
-void keyReleased() { level.keyReleased(key,keyCode); }
+void keyPressed() { level.keyPressed(key,keyCode); redraw(); }
+void keyReleased() { level.keyReleased(key,keyCode); redraw(); }
 
-void mousePressed() { 
-  if(mouseButton == LEFT) {
-    noLoop();
-    redraw();
-  } else {
-    loop();
-  }
-} //level.mousePressed(mouseX,mouseY,mouseButton); }
+void mousePressed() { redraw(); } //level.mousePressed(mouseX,mouseY,mouseButton); }
 //void mouseReleased() { level.mouseReleased(mouseX,mouseY,mouseButton); }
 
 
@@ -64,7 +71,7 @@ class TestPlayer extends Player {
   }
   
   void handleInput() {
-    if(keyDown[VK_UP])    { addImpulse(0,-5); }
+    if(keyDown[VK_UP])    { addImpulse(0,-2); }
     if(keyDown[VK_DOWN])  { addImpulse(0, 1); }
     if(keyDown[VK_LEFT])  { addImpulse(-1,0); }
     if(keyDown[VK_RIGHT]) { addImpulse( 1,0); }
@@ -73,8 +80,8 @@ class TestPlayer extends Player {
     //setRotation(direction);
   }
   
-  void draw() {
-    super.draw();
+  void draw(float vx, float vy, float vw, float vh) {
+    super.draw(vx,vy,vw,vh);
     stroke(255,0,0);
 //    println("draw: "+ix+","+iy);
     line(getX(),getY(),getX()+10*ix, getY()+10*iy);
@@ -113,11 +120,11 @@ class TestLevelLayer extends LevelLayer {
     addPlayer(new TestPlayer("test", w/2, h/2));
 
     showBoundaries = true;
-    int p = 20, wp = width-p, hp = height-p;
+    float p = 20, wp = width-p, hp = height-p;
 //    addBoundary(new Boundary(wp, p, p, p));
 //    addBoundary(new Boundary(p, p, p, hp));
+    addBoundary(new Boundary(p, hp, wp, hp-100));
     addBoundary(new Boundary(p, hp-100, wp, hp));
-    addBoundary(new Boundary(p, hp+50, wp, hp-100));
 //    addBoundary(new Boundary(wp, hp, wp, p));    
 
 //    addBoundary(new Boundary(p+20, hp-40, p+20+20, hp-40));

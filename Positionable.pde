@@ -1,51 +1,18 @@
 /**
  * Manipulable object: translate, rotate, scale, flip h/v
  */
-abstract class Positionable implements Drawable {
+abstract class Positionable extends Position implements Drawable {
 
-  // Positionable objects can be bound to
-  // boundaries, which will then be responsible
-  // for guiding the impulse vector along their
-  // surface, rather than allowing free movement.
+  /**
+   * We track two frames for computational purposes,
+   * such as performing boundary collision detection.
+   */
+  Position previous = new Position();
+
+  /**
+   * Boundaries this positionable is attached to.
+   */
   ArrayList<Boundary> boundaries;
-
-  // dimensions and positioning
-  float x=0, y=0, width=0, height=0;
-
-  // mirroring
-  boolean hflip = false;   // draw horizontall flipped?
-  boolean vflip = false;   // draw vertically flipped?
-
-  // transforms
-  float ox=0, oy=0;        // offset in world coordinates
-  float sx=1, sy=1;        // scale factor
-  float r=0;               // rotation (in radians)
-
-  // impulse "vector"
-  float ix=0, iy=0;
-
-  // impulse factor per frame (acts as accelator/dampener)
-  float ixF=1, iyF=1;
-
-  // external force "vector"
-  float fx=0, fy=0;
-
-  // external acceleration "vector"
-  float ixA=0, iyA=0;
-  int aFrameCount=0;
-
-  // previous x/y coordinate, for trajectory checks
-  float prevx=0, prevy=0;
-  
-  // which direction is this positionable facing,
-  // based on its movement in the last frame?
-  // -1 means "not set", 0-2*PI indicates the direction
-  // in radians (0 is ->, values run clockwise) 
-  float direction = -1;
-
-  // administrative
-  boolean animated = true;  // does this object move?
-  boolean visible = true;   // do we draw this object?
 
   /**
    * Cheap constructor
@@ -53,7 +20,7 @@ abstract class Positionable implements Drawable {
   Positionable() {
     Computer.positionables();
     boundaries = new ArrayList<Boundary>();
-    Computer.arraylists("boundary");
+    Computer.arraylists("Boundary");
   }
 
   /**
@@ -75,10 +42,27 @@ abstract class Positionable implements Drawable {
   void setPosition(float _x, float _y) {
     x = _x;
     y = _y;
-    prevx = x;
-    prevy = y;
+    previous.x = x;
+    previous.y = y;
     aFrameCount = 0;
     direction = -1;
+  }
+
+  void attachTo(Boundary b) {
+    boundaries.add(b);
+  }
+  
+  boolean isAttachedTo(Boundary b) {
+    println("attached to b? " + boundaries.size() + " attachments found.");
+    return boundaries.contains(b);
+  }
+
+  void detachFrom(Boundary b) {
+    boundaries.remove(b);
+  }
+
+  void detachFromAll() {
+    boundaries.clear();
   }
 
   /**
@@ -86,9 +70,9 @@ abstract class Positionable implements Drawable {
    */
   void moveBy(float _x, float _y) {
     x += _x;
-    y += _y;
-    prevx = x;
-    prevy = y;
+    y += _y;   
+    previous.x = x;
+    previous.y = y;
     aFrameCount = 0;
   }
 
@@ -169,35 +153,6 @@ abstract class Positionable implements Drawable {
   }
 
   /**
-   * Attach this positionable to a boundary.
-   */
-  void attachTo(Boundary b) {
-    boundaries.add(b);
-    b.attach(this);
-    aFrameCount = 0;
-  }
-
-  /**
-   * Detach from whichever boundary we're attached to.
-   */
-  void detach(Boundary b) {
-    boundaries.remove(b);
-    b.detach(this);
-    aFrameCount = 0;
-  }
-  
-  /**
-   * Detach from all platforms
-   */
-  void detachAll() {
-    for(Boundary boundary: boundaries) {
-      boundary.detach(this);
-    }
-    boundaries.clear();
-    aFrameCount = 0;
-  }
-
-  /**
    * set the translation to be the specified x/y values.
    */
   void setTranslation(float x, float y) {
@@ -261,12 +216,12 @@ abstract class Positionable implements Drawable {
   /**
    * get the previous x coordinate.
    */
-  float getPrevX() { return prevx + ox; }
+  float getPrevX() { return previous.x + previous.ox; }
 
   /**
    * get the previous y coordinate.
    */
-  float getPrevY() { return prevy + oy; }
+  float getPrevY() { return previous.y + previous.oy; }
 
   /**
    * get the current x coordinate.
@@ -279,58 +234,6 @@ abstract class Positionable implements Drawable {
   float getY() { return y + oy; }
 
   /**
-   * Get this positionable's bounding box
-   */
-  float[] getBoundingBox() {
-    return new float[]{x+ox-width/2, y-oy-height/2,  // top-left
-                       x+ox+width/2, y-oy-height/2,  // top-right
-                       x+ox+width/2, y-oy+height/2,  // bottom-right
-                       x+ox-width/2, y-oy+height/2}; // bottom-left
-  }
-
-  /**
-   * Primitive sprite overlap test: bounding box
-   * overlap using midpoint distance.
-   */
-  float[] overlap(Positionable other) {
-    float w=width, h=height, ow=other.width, oh=other.height;
-    float[] bounds = getBoundingBox();
-    float[] obounds = other.getBoundingBox();
-    if(bounds==null || obounds==null) return null;
-    
-    if (false) { 
-      drawBoundingBox(bounds);
-      drawBoundingBox(obounds);
-    }
-
-    float xmid1 = (bounds[0] + bounds[2])/2;
-    float ymid1 = (bounds[1] + bounds[5])/2;
-    float xmid2 = (obounds[0] + obounds[2])/2;
-    float ymid2 = (obounds[1] + obounds[5])/2;
-
-/*
-    float xmid1 = getMidX();
-    float ymid1 = getMidY();
-    float xmid2 = other.getMidX();
-    float ymid2 = other.getMidY();
-*/
-
-    float dx = xmid2 - xmid1;
-    float dy = ymid2 - ymid1;
-    float dw = (w + ow)/2;
-    float dh = (h + oh)/2;
-    // no overlap if the midpoint distance is greater
-    // than the dimension half-distances put together.
-    if(abs(dx) > dw || abs(dy) > dh) {
-      return null;
-    }
-    // overlap
-    float angle = atan2(dy,dx);
-    if(angle<0) { angle += 2*PI; }
-    return new float[]{dx, dy, angle};
-  }
-
-  /**
    * Set up the coordinate transformations
    * and then call whatever implementation
    * of "drawObject" exists.
@@ -339,16 +242,8 @@ abstract class Positionable implements Drawable {
     // Draw, if visible
     if (visible && drawableFor(vx,vy,vw,vh)) {
       pushMatrix();
-      {
-        translate(x,y);
-        if (r != 0) { rotate(r); }
-        if(hflip) { scale(-1,1); }
-        if(vflip) { scale(1,-1); }
-        scale(sx,sy);
-        //translate(-width/2 - ox, -height/2 - oy);
-        translate(ox, oy);
-        drawObject();
-      }
+      applyTransforms();
+      drawObject();
       popMatrix();
     }
 
@@ -368,92 +263,48 @@ abstract class Positionable implements Drawable {
    * Update all the position parameters
    */
   void update() {
-    prevx = x;
-    prevy = y;
+    // cache frame information
+    previous.copyFrom(this);
+
+    // work external forces into our current impulse
     addImpulse(fx,fy);
+
+    float _dx = ix + (aFrameCount * ixA),
+          _dy = iy + (aFrameCount * iyA);
 
     // not on a boundary: unrestricted motion.
     if(boundaries.size()==0) {
-      x += ix + (aFrameCount * ixA);
-      y += iy + (aFrameCount * iyA);
       aFrameCount++;
-    }
-    
-    // FIXME: hot? not? can we catch the bounding box somehow?
-    float[] bounds = getBoundingBox();
-
-    // for each boundary we check if we should detach
-    for(int b=boundaries.size()-1; b>=0; b--) {
-      Boundary boundary = boundaries.get(b);
-      
-      boolean outOfBounds = boundary.outOfBounds(x,y);
-
-      // check for all four corners
-      float tx, ty;
-      for(int i=0; i<8; i+=2) {
-        tx = bounds[i];
-        ty = bounds[i+1];
-        outOfBounds = outOfBounds && boundary.outOfBounds(tx,ty); }
-      
-      if(outOfBounds) {
-        detach(boundary);
-        if(boundary.prev!=null && !boundary.prev.outOfBounds(x,y)) {
-          attachTo(boundary.prev);
-        }
-        else if(boundary.next!=null && !boundary.next.outOfBounds(x,y)) {
-          attachTo(boundary.next);
-        }
-      }
+      x += _dx;
+      y += _dy;
     }
 
     // we're attached to one or more boundaries, so we
     // are subject to (compound) impulse redirection.
     if(boundaries.size()>0) {
-      float[] redirected = new float[]{ix + (aFrameCount * ixA), iy + (aFrameCount * iyA)};
+      println("redirecting impulse {"+_dx+","+_dy+"} over boundary surfaces...");
+      float[] redirected = new float[]{_dx, _dy};
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
-        redirected = boundary.redirectForce(x, y, redirected[0], redirected[1]);
-        // if impulse takes us off the boundary, detach
-        if(redirected[2]==0) {
-          // FIXME: This is at the heart of incorrect boundary behaviour,
-          //        because redirected[2] IN NO WAY says whether or not 
-          //        we're on this boundary. All it says is that the forced
-          //        were not transformed. This ocurs when we move off a
-          //        boundary, but ALSO when we move parallel or colinear
-          //        to it, so a lot of the time redirected[2]==0 should in
-          //        facto NOT lead to us detaching. This is currently
-          //        hack-fixed in Level.interact but really needs a real fix.
-          detach(boundary); 
+        if(!boundary.supports(this)) {
+          detachFrom(boundary);
+          continue;
         }
+        redirected = boundary.redirectForce(redirected[0], redirected[1]);
+        println("redirected to {"+redirected[0]+","+redirected[1]+"}.");
       }
       x += redirected[0];
       y += redirected[1];
     }
 
-    // dampen (or boost) our impulse, based on the impulse coefficients
     ix *= ixF;
     iy *= iyF;
-    
-    // round impulse to two decimals
-    ix = int(100*ix)/100;
-    iy = int(100*iy)/100;
- }
-  
-  /**
-   * Partial rewind
-   */
-  // FIXME: this smells very much like a hack
-  void rewindPartial() {
-    x = prevx + (x-prevx)*0.5;
-    y = prevy + (y-prevy)*0.5;
-  }
 
-  /**
-   * Full rewind.
-   */  
-  void rewind() {
-    x = prevx;
-    y = prevy;
+    // Not unimportant: round the impulse to two significant decimals,
+    // or these values don't stabilise for about 100 frames even though
+    // on-screem it looks like we're standing still.
+    ix = round(100*ix)/100;
+    iy = round(100*iy)/100;
   }
 
   // implemented by subclasses
@@ -461,6 +312,7 @@ abstract class Positionable implements Drawable {
 
   // mostly for debugging purposes 
   String toString() {
-    return x+"/"+y+" im{"+ix+"/"+iy+"} (prev: "+prevx+"/"+prevy+")" ;
+    return "current: " + toString() + "\n" +
+            "previous: " + previous.toString() + "\n";
   }
 }

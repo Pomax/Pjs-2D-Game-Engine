@@ -44,7 +44,7 @@ abstract class Actor extends Positionable {
 
   // actor name
   String name = "";
-
+  
   // simple constructor
   Actor(String _name) {
     Computer.actors();
@@ -185,6 +185,29 @@ abstract class Actor extends Positionable {
   void overlapOccurredWith(Actor other, float[] direction) {
     colliding = true;
   }
+
+  /**
+   * attach an actor to a boundary, so that
+   * impulse is redirected along boundary
+   * surfaces.
+   */  
+  void attachTo(Boundary boundary, float[] correction) {
+    println("attaching to boundary "+boundary);
+    // record attachment
+    boundaries.add(boundary);
+
+    // first, stop the actor
+    float ix = this.ix - (fx*ixF),
+          iy = this.iy - (fy*iyF);
+    stop(correction[0], correction[1]);
+
+    // then impart a new impulse as redirected by the boundary.
+    float[] rdf = boundary.redirectForce(ix, iy);
+    addImpulse(rdf[0], rdf[1]);
+
+    // finally, notify call the blocked handler
+    gotBlocked(boundary, correction);
+  }
   
   /**
    * This boundary blocked our path.
@@ -197,9 +220,9 @@ abstract class Actor extends Positionable {
    * collisions may force us to stop this
    * actor's movement.
    */
-  void stop(float _x, float _y) {
-    x = _x;
-    y = _y;
+  void stop(float dx, float dy) {
+    x += dx;
+    y += dy;
     ix = 0;
     iy = 0;
   }
@@ -339,11 +362,11 @@ abstract class Actor extends Positionable {
 // ====== ABSTRACT METHODS ======
 
   // token implementation
-  abstract void handleInput();
+  void handleInput() { }
 
   // token implementation
-  abstract void handleStateFinished(State which);
+  void handleStateFinished(State which) { }
 
   // token implementation
-  abstract void pickedUp(Pickup pickup);
+  void pickedUp(Pickup pickup) { }
 }

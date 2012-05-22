@@ -11,6 +11,8 @@ class Boundary extends Positionable {
   float xw, yh;
   float minx, maxx, miny, maxy;
   float angle, cosa, sina, cosma, sinma;
+  // <1 means friction, =1 means frictionless, >1 means speed boost!
+  float glide;
 
   // boundaries can be linked
   Boundary prev, next;
@@ -18,9 +20,6 @@ class Boundary extends Positionable {
   float boundingThreshold = 1.5;
   
   boolean disabled = false;
-
-  // attached actors
-  ArrayList<Positionable> attached;
 
   /**
    * When we build a boundary, we record a
@@ -38,8 +37,7 @@ class Boundary extends Positionable {
     dy = y2-y1;
     updateBounds();
     updateAngle();
-    attached = new ArrayList<Positionable>();
-    Computer.arraylists("Positionable");
+    glide = 1.0;
   }
   
   /**
@@ -66,17 +64,7 @@ class Boundary extends Positionable {
     sina = sin(angle);
   }
 
-  /**
-   * When we reposition a boundary,
-   * anything that is attached to it
-   * must be repositioned, too.
-   */
   void setPosition(float _x, float _y) {
-    // move all actors attached to this boundary
-    for(Positionable a: attached) {
-      a.moveBy(x-_x,y-_y);
-    }
-    // and of course move the boundary itself.
     super.setPosition(_x,_y);
     updateBounds();
   }
@@ -84,34 +72,6 @@ class Boundary extends Positionable {
   void moveBy(float dx, float dy) {
     super.moveBy(dx,dy);
     updateBounds();
-  }
-
-  /**
-   * attach an actor to this boundary. Attached
-   * actors do not test for additional boundary
-   * collisions, and get their impulse from the
-   * boundary, rather than directly.
-   */
-  void attach(Positionable a) {
-    attached.add(a);
-  }
-
-  /**
-   * detach an actor from this boundary
-   */
-  void detach(Positionable a) {
-    attached.remove(a);
-  }
-
-  /**
-   * detach all actors from this boundary
-   */
-  void detachAll() {
-    while(attached.size() > 0) {
-      Positionable a = attached.remove(0);
-      a.detach(this);
-    }
-    attached.clear();
   }
 
   /**
@@ -137,185 +97,66 @@ class Boundary extends Positionable {
   void disable() { disabled = true; }
 
   /**
-   * Point outside the bounding box for this boundary?
+   * Is this positionable actually
+   * supported by this boundary?
    */
-  boolean outOfBounds(float x, float y) {
-    if(disabled) return true;
-    return (x<minx-boundingThreshold || x>maxx+boundingThreshold || y<miny-boundingThreshold || y>maxy+boundingThreshold);
-  }
+  boolean supports(Positionable thing) {
+    // are all corner dot products above "just above 0"?
+    float dotx = xw-x,
+          doty = yh-y,
+          otlen = sqrt(dotx*dotx + doty*doty),
+          tx, ty, dx, dy, len, dotproduct=-2;
 
-  /**
-   * Is this boundary blocking the specified actor?
-   */
-  float[] blocks(Actor a) {
-    if(disabled) return null;
+    float[] current = thing.getBoundingBox();
 
-    // get the basic positioning information
-    float px = a.getPrevX(),
-          py = a.getPrevY(),
-          cx = a.getX(),
-          cy = a.getY(),
-          dx = cx-px,
-          dy = cy-py;
+    // normalised boundary vector
+    dotx /= otlen;
+    doty /= otlen;
 
-    // no trajectory means nothing has changed
-    // since the last time we checked blocking.
-    if(dx==0 && dy==0) { return null; }
+    // note: we want the dot product with the
+    // vector that is perpendicular to the boundary!
+    float p = PI/2, cosp = cos(p), sinp = sin(p),
+          pdx = dotx*cosp - doty*sinp,
+          pdy = dotx*sinp + doty*cosp;
 
-    // continue: get the current bounding box
-    float[] current = a.getBoundingBox();
-    if(current==null) return null;
-
-    // continue: form the previous bounding box
-    float[] prev = new float[current.length];
-    arrayCopy(current,0, prev,0, current.length);
-    prev[0] -= dx;  prev[1] -= dy;
-    prev[2] -= dx;  prev[3] -= dy;
-    prev[4] -= dx;  prev[5] -= dy;
-    prev[6] -= dx;  prev[7] -= dy;
-    
-    // FIXME: This algorithm only checks corner points,
-    //        instead of checking box edges. This needs
-    //        to be rewritten so that we check sensibly,
-    //        rather than for four points only.
-
-    // check if any of the trajectory corners are blocked. If so, signal a block.
+    // how many corners are blocked in [current]?
+    float proximity = -2;
     for(int i=0; i<8; i+=2) {
-      float[] overlap = blocks(prev[i], prev[i+1], current[i], current[i+1]);
-      if(overlap!=null) {
-        // FIXME: add in a 'but not actually blocked if: ...' criterium
-        //        so that we don't get "glued" to boundaries that we're
-        //        just passing through.
-        if(!above(prev)) {
-          continue; 
-        }
-        return overlap; }}
-
-    // no overlap occurred
-    return null;
-  }
-  
-  /**
-   * Is the bounding box entirely above this boundary?
-   */
-  boolean above(float[] bounds) {
-    boolean failed = false;
-    for(int i=0; i<8; i+=2) {
-      if(!onPassThroughSide(x, y, bounds[i], bounds[i+1])) {
-        // we allow one of the four corners to be below
-        // the boundary. This means slants don't break.
-        if(!failed) { failed = true; }
-        else { return false; }}}
-    return true;
+      tx = current[i];
+      ty = current[i+1];
+      dx = tx-x;
+      dy = ty-y;
+      len = sqrt(dx*dx+dy*dy);
+      dx /= len;
+      dy /= len;
+      dotproduct = dx*pdx + dy*pdy;
+      if (dotproduct > proximity) {
+        proximity = dotproduct;
+      }
+    }
+    println("dot-proximity to boundary: "+proximity);
+    return abs(proximity) < 0.01;
   }
 
   /**
-   * May something on a path from (x1,y1) to (x2,y2) pass through this platform?
+   * If our direction of travel goes through the boundary in
+   * the "allowed" direction, don't bother collision detection.
    */
-  protected float[] blocks(float x1, float y1, float x2, float y2) {
-    // perform a translation-rotation about (x3,y3)
-    float[] tr = translateRotateXY3(x1, y1, x2, y2, x, y, xw, yh);
-
-    // Is our line segment in range? Because our
-    // reference line is now flat, we can simply
-    // check the x-coordinates.
-    if(tr[0] < 0     && tr[2] < 0)     { return null; } // x1<0 and x2<0
-    if(tr[0] > tr[6] && tr[2] > tr[6]) { return null; } // x1>x3 and x2>x3
-    
-    // let's rule out colinear paths, too.
-    // Those will never block.
-    if(tr[1]==0 && tr[3]==0) { return null; }
-    
-
-    // Let's find out where these two lines meet.
-    float dx = tr[2] - tr[0];       // x2n - x1n;
-    float dy = tr[3] - tr[1];       // y2n - y1n;
-    float factor = -tr[1] / dy;     // -y1n / dy
-    float ix = tr[0] + factor * dx; // x1n + factor*dx
-
-    // is this a real intersection (i.e. lying on both line
-    // segments) or virtual intersection?
-    if(factor<=0 || factor>=1) { return null; }
-
-    // At this point we know the boundary and path intersect,
-    // but we only want this to happen if the actor's on the
-    // 'wrong' side of the unidirectionally passable boundary.
-    if (onPassThroughSide(x1, y1, x2, y2)) return null;
-
-    // Okay, this actor cannot pass. compute the halting point.
-    return new float[]{x + ix*cos(angle), y + ix*sin(angle)};
-  }
-
-  /**
-   * Perform a coordinate tranlation/rotation so that
-   * the boundary starts at 0,0 and runs to [...],0
-   * with the trajectory (x1,y1)-(x2,y2) transformed
-   * accordingly.
-   *
-   * returns float[9], with four coordinate pairs and
-   *                   the angle used for the rotation.
-   */
-  float[] translateRotateXY3(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)
-  {
-    // Translate so that x3/y3 lie on 0/0
-    x1 -= x3;    y1 -= y3;
-    x2 -= x3;    y2 -= y3;
-    x4 -= x3;    y4 -= y3;
-
-    // rotate x1/y1
-    float x1n = x1 * cosma - y1 * sinma,
-          y1n = x1 * sinma + y1 * cosma;
-
-    // rotate x2/y2
-    float x2n = x2 * cosma - y2 * sinma,
-          y2n = x2 * sinma + y2 * cosma;
-
-    // rotate x4/y4
-    float x4n = x4 * cosma - y4 * sinma,
-          y4n = 0; // by definition
-
-    return new float[]{x1n, y1n, x2n, y2n, 0, 0, x4n, 0, angle};
-  }
-
-  /**
-   * Determine which side and incoming path
-   * is actually incoming from.
-   */
-  // FIXME: this can be done more efficiently, rather than readably.
-  // FIXME: this seems to still cause pass-through problems when x1/y1
-  //        is located on the boundary line.
-  boolean onPassThroughSide(float x1, float y1, float x2, float y2) {
-    float local = atan2(dy, dx);
-    local = (local<0? PI2 + local : local);
-    float path = atan2(y2-y1, x2-x1);
-    path = (path<0? PI2+path : path);
-    float diff = (PI2 + path - local)%PI2;
-    return (diff>PI);
+  boolean allowPassThrough(float ix, float iy) {
+    float[] aligned = CollisionDetection.translateRotate(0,0,ix,iy, 0,0,dx,dy, angle,cosma,sinma);
+    return (aligned[3] < 0);
   }
 
   /**
    * redirect a force along this boundary's surface.
    */
   float[] redirectForce(float fx, float fy) {
-    float[] tr = translateRotateXY3(x,y,x+fx,y+fy, x,y,xw,yh);
-    return new float[]{round(tr[2] * cosa), round(tr[2] * sina), 1};
-  }
-
-  /**
-   * redirect force-based trajectory along this boundary's surface.
-   */
-  float[] redirectForce(float x, float y, float fx, float fy) {
-    float x1 = x, y1 = y, x2 = x+fx, y2 = y+fy;
-    // Will this force illegally push the actor through the boundary?
-    if (!onPassThroughSide(x1,y1,x2,y2)) {
-      float[] tr = translateRotateXY3(x1,y1,x2,y2, x,y,xw,yh);
-      float nx2 = tr[2];
-      float ix = nx2 * cosa;
-      float iy = nx2 * sina;
-      return new float[]{ix, iy, 1};
-    }
-    // No it won't, pass-through the impulse unmodified.
-    return new float[]{fx, fy, 0};
+    float[] redirected = {fx,fy};
+    if(allowPassThrough(fx,fy)) { return redirected; }
+    float[] tr = CollisionDetection.translateRotate(0,0,fx,fy, 0,0,dx,dy, angle,cosma,sinma);
+    redirected[0] = glide * tr[2] * cosa;
+    redirected[1] = glide * tr[2] * sina;
+    return redirected;
   }
 
   /**

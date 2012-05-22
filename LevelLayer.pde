@@ -285,11 +285,11 @@ abstract class LevelLayer {
         // boundary interference?
         if(p.interacting && !p.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-            Computer.interact(b,p); }
+            CollisionDetection.interact(b,p); }
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                  Computer.interact(b,p); }}}}
+                  CollisionDetection.interact(b,p); }}}}
 
         // player interaction?
         for(Player a: players) {
@@ -317,11 +317,11 @@ abstract class LevelLayer {
         // boundary interference?
         if(p.interacting && !p.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-            Computer.interact(b,p); }
+            CollisionDetection.interact(b,p); }
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                  Computer.interact(b,p); }}}}
+                  CollisionDetection.interact(b,p); }}}}
 
         // npc interaction?
         for(Interactor a: interactors) {
@@ -348,12 +348,12 @@ abstract class LevelLayer {
         // boundary interference?
         if(a.interacting && !a.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-              Computer.interact(b,a); }
+              CollisionDetection.interact(b,a); }
           // boundary interference from bounded interactors?
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                  Computer.interact(b,a); }}}}
+                  CollisionDetection.interact(b,a); }}}}
 
         // draw interactor
         a.draw(x,y,w,h);
@@ -369,7 +369,7 @@ abstract class LevelLayer {
         // boundary interference?
         if(a.interacting && !a.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-              Computer.interact(b,a); }}
+              CollisionDetection.interact(b,a); }}
         // draw interactor
         a.draw(x,y,w,h);
       }
@@ -387,13 +387,13 @@ abstract class LevelLayer {
 
           // boundary interference?
           for(Boundary b: boundaries) {
-            Computer.interact(b,a); }
+            CollisionDetection.interact(b,a); }
 
           // boundary interference from bounded interactors?
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                Computer.interact(b,a); }}}
+                CollisionDetection.interact(b,a); }}}
 
           // collisions with other sprites?
           if(!a.isDisabled()) {

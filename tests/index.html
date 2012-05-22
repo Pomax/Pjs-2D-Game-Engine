@@ -5,18 +5,29 @@
     <meta charset="utf-8">
     <script type="text/javascript" src="../processing.js"></script>
     <script type="text/javascript" src="../minim.js"></script>
+    <script type="text/javascript">
+      function init() {
+        document.removeEventListener("DOMContentLoaded",init,false);
+        var canvas = document.getElementById("testcanvas");
+        canvas.focus();
+      }
+      document.addEventListener("DOMContentLoaded",init,false);
+    </script>
   </head>
   <body>
-    <canvas id="test" data-processing-sources="test.pde
+    <canvas id="testcanvas" data-processing-sources="test.pde
       ../JavaScript.pde
       ../drawbackground.pde
+      ../debugfunctions.pde
 
       ../Computer.pde
+      ../CollisionDetection.pde
       ../ViewBox.pde
       ../Level.pde
       ../LevelLayer.pde
 
       ../Drawable.pde
+      ../Position.pde
         ../Positionable.pde
           ../Actor.pde
             ../Player.pde
@@ -36,5 +47,44 @@
       ../SoundManager.pde
       ../State.pde
       ../Tracking.pde" style="border: 1px solid black;" tabindex="1"></canvas>
+      
+    <textarea style="vertical-align: top; height: 397px; width: 800px;">
+  /**
+   * Line-through-box intersection algorithm.
+   *
+   * There are a few possibilities, with B() meaning
+   * "on blocking side", I() meaning "intersecting"
+   * and P() meaning "on pass-through side":
+   *
+   *               |
+   * (1)  []  []  <|    =  B(prev), B(current)
+   *               |
+   *
+   *              |
+   * (2)  []    [<|]   =  B(prev), B(current) and I(current) and P(current)
+   *              |
+   *
+   *           |
+   * (3)  []  <|  []   =  B(prev), P(current)
+   *           |
+   *
+   *        |
+   * (4)  [<|]    []   =  B(prev) and I(prev) and P(prev), P(current)
+   *        |
+   *
+   *
+   *       |
+   * (5)  <|  []  []   =  P(prev), P(current)
+   *       |
+   *
+   * By computing the dot product for the eight corners of the two bounding
+   * boxes, we can determine which of these situations we are in. Only in
+   * (2) and (3) should we signal an intersection occuring. While (4) might
+   * look like another case in which this should happen, we assume that
+   * because the "previous" state is boundary overlapping, it was permitted
+   * earlier (for instance, it moved through the boundary in the allowed
+   * direction, but then moved back before having fully passed the boundary).
+   */
+    <textarea>
   </body>
 </html>

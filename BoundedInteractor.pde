@@ -1,8 +1,6 @@
 /**
- * A bounded interactor is a normal Interacto with
- * one or more boundaries associated with it. This
- * can be something like a Mario coin block, or a
- * walking platform.
+ * A bounded interactor is a normal Interactor with
+ * one or more boundaries associated with it.
  */
 abstract class BoundedInteractor extends Interactor {
   // the list of associated boundaries
@@ -23,7 +21,6 @@ abstract class BoundedInteractor extends Interactor {
 
   // add a boundary
   void addBoundary(Boundary boundary) { 
-    // TODO: check where else we need to tie values together
     boundary.setImpulseCoefficients(ixF,iyF);
     boundaries.add(boundary); 
   }
@@ -57,7 +54,6 @@ abstract class BoundedInteractor extends Interactor {
     bounding = false;
     for(int b=boundaries.size()-1; b>=0; b--) {
       Boundary boundary = boundaries.get(b);
-      boundary.detachAll();
       boundary.disable();
     }
   }
@@ -83,11 +79,6 @@ abstract class BoundedInteractor extends Interactor {
    * Is something attached to one of our boundaries?
    */
   boolean havePassenger() {
-    for(Boundary b: boundaries) {
-      if(b.attached.size()>0) {
-        return true;
-      }
-    }
     // no passengers
     return false;
   }
@@ -98,8 +89,8 @@ abstract class BoundedInteractor extends Interactor {
     super.update();
 
     // how much did we actually move?
-    float dx = x-prevx;
-    float dy = y-prevy;
+    float dx = x-previous.x;
+    float dy = y-previous.y;
     // if it's not 0, move the boundaries
     if(dx!=0 && dy!=0) {
       for(Boundary b: boundaries) {
