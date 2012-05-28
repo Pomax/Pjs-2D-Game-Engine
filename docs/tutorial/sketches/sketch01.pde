@@ -17,7 +17,7 @@ void initialize() {
  * level, doing absolutely nothing.
  */
 class MyLevel extends Level {
-  MyLevel(float levelWidth, float levelWidth) {
-    super(levelWidth, levelWidth);
+  MyLevel(float levelWidth, float levelHeight) {
+    super(levelWidth, levelHeight);
   }
 }

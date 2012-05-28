@@ -107,7 +107,7 @@ void initialize() {}</textarea>
 
       ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
       ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
-      ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
+      ../../Drawable.pde ../../Tracker.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
       ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
       ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
       ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
@@ -227,15 +227,7 @@ class MyLevel extends Level {
     want to talk about "Level" rather than "MyLevel" by using <code>super</code>.</p>
 
     <figure>
-      <canvas data-processing-sources="sketches/sketch01.pde
-
-      ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
-      ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
-      ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
-      ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
-      ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
-      ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
-      ../../SoundManager.pde"></canvas>
+      <canvas data-processing-sources="codebase.pde sketches/sketch01.pde"></canvas>
       <figcaption>Our first level</figcaption>
     </figure>
 
@@ -313,15 +305,7 @@ class MyLevel extends Level {
 }</textarea>
 
     <figure>
-      <canvas data-processing-sources="sketches/sketch02.pde
-
-      ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
-      ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
-      ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
-      ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
-      ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
-      ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
-      ../../SoundManager.pde"></canvas>
+      <canvas data-processing-sources="codebase.pde sketches/sketch02.pde"></canvas>
       <figcaption>Now we have a level layer!</figcaption>
     </figure>
 
@@ -441,15 +425,7 @@ class MyLevelLayer extends LevelLayer {
     <p>Finally! Everything is in place! Let's have a look at that:</p>
 
     <figure>
-      <canvas data-processing-sources="sketches/sketch03.pde
-
-       ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
-       ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
-       ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
-       ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
-       ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
-       ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
-       ../../SoundManager.pde"></canvas>
+      <canvas data-processing-sources="codebase.pde sketches/sketch03.pde"></canvas>
        <figcaption>Our first "game"!</figcaption>
     </figure>
 
@@ -495,15 +471,7 @@ class MyLevelLayer extends LevelLayer {
     <p>For now, let's see if that does what we wanted:</p>
     
     <figure>
-      <canvas data-processing-sources="sketches/sketch04.pde
-
-       ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
-       ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
-       ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
-       ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
-       ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
-       ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
-       ../../SoundManager.pde"></canvas>
+      <canvas data-processing-sources="codebase.pde sketches/sketch04.pde"></canvas>
        <figcaption>Now with a visible player</figcaption>
     </figure> 
     
@@ -570,15 +538,7 @@ class MyLevelLayer extends LevelLayer {
     <p>Great! now we have a movable character! Let's play with it!</p>
     
     <figure>
-      <canvas data-processing-sources="sketches/sketch05.pde
-
-       ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
-       ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
-       ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
-       ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
-       ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
-       ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
-       ../../SoundManager.pde"></canvas>
+      <canvas data-processing-sources="codebase.pde sketches/sketch05.pde"></canvas>
        <figcaption>A controllable player!</figcaption>
     </figure>
 
@@ -621,15 +581,7 @@ class MyLevelLayer extends LevelLayer {
     (0, 0) and the left is from (0, 0) to (0, height). Now our player can't escape anymore!</p>
 
     <figure>
-      <canvas data-processing-sources="sketches/sketch06.pde
-
-       ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
-       ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
-       ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
-       ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
-       ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
-       ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
-       ../../SoundManager.pde"></canvas>
+      <canvas data-processing-sources="codebase.pde sketches/sketch06.pde"></canvas>
        <figcaption>Now it's always visible...</figcaption>
     </figure>
 
@@ -670,26 +622,179 @@ class MyLevelLayer extends LevelLayer {
     pressing keys... what does it look like??</p>
 
     <figure>
-      <canvas data-processing-sources="sketches/sketch07.pde
-
-       ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
-       ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
-       ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
-       ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
-       ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
-       ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
-       ../../SoundManager.pde"></canvas>
+      <canvas data-processing-sources="codebase.pde sketches/sketch07.pde"></canvas>
        <figcaption>A super-simple "game"</figcaption>
     </figure>
 
-    <p>Success! Sure, it looks simple, but we know how much work it really is. And
-    we made this! Yes!</p>
+    <h1>Okay just a little bit more...</h1>
     
-    <h1>In the next tutorial...</h1>
+    <p>So now we can move around, but there's not really much of a "game" going on,
+    because there's no real reason to do anything. Moving around is pretty cool,
+    but what if we had a reason for moving around? What if... we were being
+    chased by anothing thingy that is intent on catching us?</p>
     
-    <p>In the next tutorial we're going to make our game a little more challenging by
-    introducing gravity, and enemy that will try to catch us, and platforms that we
-    can jump on and off of in order to escape our enemy!</p>
+    <p>Alright, now we're talking. Let's make a chasing thingy!</p>
+    
+     <textarea readonly style="width: 40em; height: 13em;">
+class MyEnemy extends Interactor {
+  MyEnemy() {
+    super("enemy");
+    setStates();
+  }
+  
+  void setStates() {
+    addState(new State("idle", "idle_enemy.gif"));
+  }
+}</textarea>
+
+    <p>Enemies are very similar to players, except they aren't of the type <code>Player</code>,
+    but they're of the type <code>Interactor</code>. An "interactor" is something that moves
+    around and interacts with things in the level, but isn't the player.</p>
+    
+    <p>Just like players, we need to tell the game library which states the enemy can have,
+    and just like for our <code>MyThingy</code>, we'll give it one state: idle. However,
+    we'll give it a different picture, so we can tell where it is:</p>
+
+    <figure>
+      <img src="idle_enemy.gif" alt="enemy idle state image" title="the enemy's idle image">
+      <figcaption>The enemy's idle state image</figcaption>
+    </figure>
+
+    <p>Nice and red, nice and visible.</p>
+    
+    <p>So, let's add our enemy to this level! And by level, we of course mean level layer.</p>
+
+     <textarea readonly style="width: 40em; height: 17em;">
+  MyLevelLayer(Level owner) {
+    super(owner);
+    setBackgroundColor(color(0,130,255));
+    MyThingy mt = new MyThingy();
+    mt.setPosition(width/2, height/2);
+    addPlayer(mt);
+    MyEnemy me = new MyEnemy();
+    addInteractor(me);
+    addBoundary(new Boundary(0,height, width,height));
+    addBoundary(new Boundary(width,height, width,0));
+    addBoundary(new Boundary(width,0,0,0));
+    addBoundary(new Boundary(0,0,0,height));
+  }</textarea>
+
+    <p>So, can you guess what this looks like?</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde sketches/sketch08.pde"></canvas>
+       <figcaption>A super-simple "game"</figcaption>
+    </figure>
+
+    <p>Yup. It's in the level alright, but it's not doing a great deal. That's because
+    we haven't set up any instructions on how the enemy should behave. Normally it's
+    a lot of work to set up enemy behaviour, but the game library that we're using
+    has a nifty little helper instruction that lets us quickly set up an enemy.</p>
+    
+    <p>We want our enemy to catch us (or, no wait, we don't! but we want it to try
+    so we can avoid it =) and the game library calls this "tracking" behaviour, in the
+    same way that a hunter will track its prey. So let's make our enemy a hunter:</p>
+
+     <textarea readonly style="width: 40em; height: 16em;">
+class MyEnemy extends Interactor implements Tracker {
+  MyEnemy() {
+    super("enemy");
+    setStates();
+  }
+  
+  void setStates() {
+    addState(new State("idle", "idle_enemy.gif"));
+  }
+  
+  void track(Actor actor, float x, float y, float w, float h) {
+    GenericTracker.track(this, actor, 0.05);
+  }
+}</textarea>
+
+    <p>There's some new things here, so first let's look at that <code>implements Tracker</code>
+    bit at the top. Rememeber when we talked about what <code>extends</code> means? This is similar.
+    We talked about "mammal" being a super class of "cat", implying that everything that applies
+    to mammal applies to cats too. If a mammal has fur, then so does a cat, and if a mammal
+    has babies, then so do cats. This is what we call "property inheritance". The "Cat" class
+    inherits all the properties of the "Mammal" class. However, this game library also lets
+    you talk about what some things should be able to do, without saying what they are.</P.
+    
+    <p>That sounds weird, so let's look at an example. Humans and car engines are definitely
+    not related, they're not super or sub classes of each other! But, they can both run. Now,
+    I hear you say "but they're not the same for humans and engines" and you'd be right!
+    A running human is, well, running, whereas a running engine is simply turned on. But
+    we call both things "running", so it would be handy if we could tell our game library
+    "I am giving you this thing. It could be a human, or a car engine, or even something
+    else, but you shouldn't have to worry about that. The thing I'm giving you can run. Just
+    take my word for it. I'll make sure it can do that".</p>
+    
+    <p>Well, as a programming instruction we can do exactly that, and we do so by using
+    the <code>implements ...</code> instruction. In this case, our enemy implements something
+    called <code>Tracker</code>. In programming terms, "Tracker" is an interface (this
+    means that it only describes the name of functions that we can call without saying
+    what they should actually do, like "run") and if we look at the programming
+    instructions for it in the game library, we see this:</p>
+
+     <textarea readonly style="width: 50em; height: 4em;">
+interface Tracker {
+  void track(Actor actor, float vx, float vy, float vw, float vh);
+}</textarea> 
+    
+    <p>So, Trackers can do one thing, <code>track</code>, and the function for it will
+    not create new objects or calculate numbers etc., and if we want to make use of it
+    it will need five things. That looks like a lot, but the game library already knows
+    how to put all the values in there, so we don't need to worry about what they mean.
+    (Although if you're curious, the first thing is the "thing" that a Tracker should
+    track, like a player or another enemy, and the next four things are 'viewbox' 
+    values: the x/y position of the upper left corner of the viewbox, typically your
+    screen, and the width/height size of the viewbox relative to that x/y coordinate).</p>
+    
+    <p>So now we know that things that can be considered Trackers need to have a 
+    <code>track</code> function, and if you look at the code we're using for MyEnemy,
+    there it is!</p>
+    
+     <textarea readonly style="width: 50em; height: 4em;">
+  void track(Actor actor, float vx, float vy, float vw, float vh) {
+    GenericTracker.track(this, actor, 0.05);
+  }</textarea> 
+  
+    <p>Now, remember I said there was a convenient function in the game library that lets
+    us do tracking without having to write lots of instructions ourselves? There it is:
+    <code>GenericTracker.track(this, actor, 0.05)</code>. This also uses something new:
+    in the same way that we've been making MyLevel, MyLevelLayer, MyThingy and MyEnemy,
+    the game library already knows about some things, and one of these is the GenericTracker
+    thing. It has a function called <code>track</code> that doesn't need all those coordinate
+    values, but just requires you to say who the hunter is, who the prey is, and how fast
+    the hunter should be able to chase the prey. In this case, the hunter is our MyEnemy
+    thing, and as you may remember from a little bit up, when we talk about "ourselves",
+    we can use the word <code>this</code>. It should chase our player thingy, so the
+    prey should be <code>actor</code></p>
+    
+    <p>Why? Well, look at the <code>track</code> function in the <code>Tracker</code>
+    interface. I told you that the <code>actor</code> there was thing that the Tracker
+    will track. So that's the prey. We simply refer to that same <code>actor</code>
+    when we tell the GenericTracker what to do, and done!</p>
+    
+    <p>Finally, we tell it to be a relatively slow hunter. Instead of moving at normal
+    speed, we tell it to move at one twentieth normal speed (1 divided by 20 is 0.05) so
+    that it won't catch us immediately. We want to make it fun, rather than letting the
+    enemy always catch us!</P>
+    
+    <p>So, with all that explained, let's pus all these instructions in place and see
+    what it does:</p>
+    
+    <figure>
+      <canvas data-processing-sources="codebase.pde sketches/sketch09.pde"></canvas>
+       <figcaption>A super-simple "game"</figcaption>
+    </figure>    
+
+    <p>Alright! NOW we have a game! Next time we're going to look at making making
+    things a bit more fun by introducing things like gravity (so we always "stick"
+    to the ground unless we're jumping), platforms to jump on and off of, and even
+    some items that we can pick up for special powers.</p>
+    
+    <p>It's going to be awesome.</p>
+
 
   </body>
 </html> 

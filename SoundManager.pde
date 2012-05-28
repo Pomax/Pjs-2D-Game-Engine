@@ -20,12 +20,6 @@ static class SoundManager {
   public static PImage unmute_overlay;
   public static PImage volume_overlay;
 
-
-  static void init(PApplet sketch, String resourceLocation) { 
-    DIR = resourceLocation;
-    init(sketch);
-  }
-
   static void init(PApplet sketch) { 
     owners = new HashMap<Object,AudioPlayer>();
     audioplayers = new HashMap<String,AudioPlayer>();

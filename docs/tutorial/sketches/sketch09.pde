@@ -1,4 +1,4 @@
-/* @pjs preload="idle.gif"; */
+/* @pjs preload="idle.gif, idle_enemy.gif"; */
 
 /**
  * We must set the screen dimensions to something
@@ -36,6 +36,12 @@ class MyLevelLayer extends LevelLayer {
     MyThingy mt = new MyThingy();
     mt.setPosition(width/2, height/2);
     addPlayer(mt);
+    MyEnemy me = new MyEnemy();
+    addInteractor(me);
+    addBoundary(new Boundary(0,height, width,height));
+    addBoundary(new Boundary(width,height, width,0));
+    addBoundary(new Boundary(width,0,0,0));
+    addBoundary(new Boundary(0,0,0,height));
   }
 }
 
@@ -52,6 +58,7 @@ class MyThingy extends Player {
     handleKey('A');
     handleKey('S');
     handleKey('D');
+    setImpulseCoefficients(0.75,0.75);
   }
   
   void setStates() {
@@ -63,5 +70,23 @@ class MyThingy extends Player {
     if(isKeyDown('A')) { addImpulse(-1,0); }
     if(isKeyDown('D')) { addImpulse(1,0); }
     if(isKeyDown('S')) { addImpulse(0,1); }
+  }
+}
+
+/**
+ * Our non-controllable enemy!
+ */
+class MyEnemy extends Interactor implements Tracker {
+  MyEnemy() {
+    super("enemy");
+    setStates();
+  }
+  
+  void setStates() {
+    addState(new State("idle", "idle_enemy.gif"));
+  }
+  
+  void track(Actor actor, float vx, float vy, float vw, float vh) {
+    GenericTracker.track(this, actor, 0.05);
   }
 }

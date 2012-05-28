@@ -79,10 +79,9 @@
    * @param {HTMLElement} element The HTML element for which the height on the page is being checked
    */
   var getElementPosition = function(obj) {
-    var curleft = curtop = 0;
+    var curtop = 0;
     if (obj.offsetParent) {
       do {
-        curleft += obj.offsetLeft;
         curtop += obj.offsetTop;    
       } while (obj = obj.offsetParent);
     }
