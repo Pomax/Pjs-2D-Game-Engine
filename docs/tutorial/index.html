@@ -103,15 +103,7 @@ void initialize() {}</textarea>
     tell it to do anything, the result is going to be this:</p>
 
     <figure>
-      <canvas data-processing-sources="sketches/sketch00.pde
-
-      ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
-      ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
-      ../../Drawable.pde ../../Tracker.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
-      ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
-      ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
-      ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
-      ../../SoundManager.pde"></canvas>
+      <canvas data-processing-sources="codebase.pde sketches/sketch00.pde"></canvas>
       <figcaption>This doesn't do very much...</figcaption>
     </figure>
     
@@ -119,7 +111,7 @@ void initialize() {}</textarea>
     This is boring, and not very much like a game. So let's add some instructions for the game library
     to perform when it looks at <code>initialize</code>.</p>
     
-    <h3>Adding a level</h3>
+    <h2>(2) Add at least one level</h2>
     
     <p>Let's start by adding some instructions so that we actually have a level:</p>
 
@@ -317,7 +309,7 @@ class MyLevel extends Level {
     to refer to "ourselves", we use the word <code>this</code>. So we're very close to having
     something that we can play with... we just need a playable character!</p>
     
-    <h3>Adding a playable character</h3>
+    <h2>(3) Add some player controllable thingy</h3>
     
     <p>Playable characters are a bit more elaborate than levels or level layers. The starting point
     should be pretty recognisable by now:</p>
