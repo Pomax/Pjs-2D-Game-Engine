@@ -149,6 +149,13 @@ abstract class LevelLayer {
   ViewBox viewbox;
   
   /**
+   * fallthrough constructor
+   */
+  LevelLayer(Level p) {
+    this(p, p.width, p.height);
+  }
+
+  /**
    * Constructor
    */
   LevelLayer(Level p, float w, float h) {

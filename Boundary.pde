@@ -134,7 +134,7 @@ class Boundary extends Positionable {
         proximity = dotproduct;
       }
     }
-    println("dot-proximity to boundary: "+proximity);
+//    println("dot-proximity to boundary: "+proximity);
     return abs(proximity) < 0.01;
   }
 

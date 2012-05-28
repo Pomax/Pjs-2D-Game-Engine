@@ -13,7 +13,7 @@ static class SpriteMapHandler {
    * This method must be called before cutTiledSpriteSheet can be used.
    * Typically this involves calling setSketch(this) in setup().
    */
-  static void setSketch(PApplet s) {
+  static void init(PApplet s) {
     globalSketch = s;
   }
 

@@ -1,0 +1,694 @@
+<!doctype html>
+<html>
+  <head>
+    <title>2D gaming using Processing.js</title>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="../../processing.js"></script>
+    <script type="text/javascript" src="../../minim.js"></script>
+    <style>
+      textarea { display: block; outline: none; overflow: hidden; margin-left: 2em;}
+
+      figure { clear: both; display: inline-block; border: 1px solid grey; padding: 5px; text-align: center; }
+      figure canvas { display: block; border: 1px solid black; }
+      figure figcaption { display: block; font-size: 90%; font-style: italic; }
+      figure:after { clear: both; }
+      
+      code { font-family: monospace; color: #004; }
+      
+      .colorblock { display: inline-block; width: 30px; height: 0.8em;}
+    </style>
+  </head>
+  <body>
+
+    <h1>Let's make some games</h1>
+    
+    <p>Making great games is hard. You need to get all the art made, you need good music, you
+    need engaging game play and a story that players want to believe and follow through, you
+    need to do a lot of programming and on top of all that, it needs to be so original that
+    people don't go "that's just like ... only nowhere near as good". That said...</p>
+    
+    <p>Making games is actually not as hard as you might think, if you're trying to make the
+    next big game that everyone's going to want to play forever! In fact, at the end of this
+    tutorial, I'm fairly confident we'll have made a simple game with the potential for
+    making much more elaborate while being fun to play.</p>
+    
+    <p>So, do you want to learn to make games? Then let's go!</p>
+    
+    <h2>Making a very, very simple game</h2>
+    
+    <p>For our game, we're going to use a library for writing 2D sprite-based games, using
+    <a href="http://processingjs.org">Processing.js</a>. If you don't know what that means,
+    don't worry: it means we'll be making a 2D game that uses images for everything (like
+    enemies, backgrounds, etc) and relies on a fairly simple programming language. Yes,
+    we'll be programming, but we'll be able to see what we're doing so it's okay =)</p>
+    
+    <p>Let's start with the basics: a game is a word we use to describe a collection of
+    screens that do differen things. It may have a menu, it may have multiple levels,
+    bonus areas, loading screens, etc. etc. — So, when we're talking about making
+    a game, we need to make a few things before we have something we can "play":</p>
+    
+    <ul>
+      <li>something that wraps everything in our game as "part of the game",</li>
+      <li>at least one level,</li>
+      <li>at least some player-controllable thingy, and</li>
+      <li>... actually, that's all we need.</li>
+    </ul>
+    
+    <p>So let's look at making this all happen!</p>
+    
+    <h2>(1) Something that wraps everything in our game as "part of the game"</h2>
+    
+    <p>In the game-making library that we're using, setting up the thing that wraps everything
+    that is "part of our game" is relatively simple, requiring us to say a few things. We need to:</p>
+    
+    <ul>
+      <li>say what the <code>screenWidth</code> is,</li>
+      <li>say what the <code>screenHeight</code> is, and</li>
+      <li>add one or more levels.</li>
+    </ul>
+    
+    <p>So let's start programming. And when I say "let's" I really mean "let me show you 
+    how we're going to do all these things" =D</p>
+    
+    <textarea readonly style="width: 40em; height: 5em;">
+final int screenWidth = 200;
+final int screenHeight = 200;
+
+void initialize() {}</textarea>
+
+    <p>This code isn't very exciting, and it doesn't do anything yet, but it shows those things
+    that we need to set up. The <code>screenWidth</code> and <code>screenHeight</code> values
+    say "this is how big our game is going to be". In this case, 200 by 200 pixels on the screen.
+    Since computer screens all have different sizes, at least for now we're simply going to pick
+    a fixed size so that things always look the same on different screens (in case you were curious,
+    the "final" means that we cannot change these values once our game is running, and the "int"
+    means they are "integer" numbers, which are whole numbers like 0, 4, or 100, rather than numbers
+    with a fraction, like 0.5 or 3.1415)</p>
+    
+    <p>That <code>void initiaze() {}</code> code is the more important part. The <code>void</code>
+    part isn't very important right now, but it technically means "this is a function that can
+    be called, but it just 'does things', it doesn't try to make things or calculate values
+    or anything". The <code>initialize()</code> gives the name of the function ("initialize") and
+    says that it doesn't require any input (if it does, there will be something between the "()",
+    also called 'parentheses'). We'll look at those a little later. Finally, the "{}" part is 
+    the most important bit: this is part that contains any programming code that is run when we
+    call this function.</p>
+    
+    <p><code>initialize</code> is a function that is automatically called by our game library
+    when we start up a game. It first makes sure the screen size is set to the width and height
+    that we indicated, then it does some things that aren't very important for us, but need to
+    be done, and then it calls our <code>initialize</code> function to find out what it's actually
+    supposed to do in order to run our game. Because, in the code above, we didn't actually
+    tell it to do anything, the result is going to be this:</p>
+
+    <figure>
+      <canvas data-processing-sources="sketches/sketch00.pde
+
+      ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
+      ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
+      ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
+      ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
+      ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
+      ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
+      ../../SoundManager.pde"></canvas>
+      <figcaption>This doesn't do very much...</figcaption>
+    </figure>
+    
+    <p>So... that doesn't do very much! It's a grey screen, 200 pixels wide, and 200 pixels high.
+    This is boring, and not very much like a game. So let's add some instructions for the game library
+    to perform when it looks at <code>initialize</code>.</p>
+    
+    <h3>Adding a level</h3>
+    
+    <p>Let's start by adding some instructions so that we actually have a level:</p>
+
+    <textarea readonly style="width: 40em; height: 15em;">
+final int screenWidth = 200;
+final int screenHeight = 200;
+
+void initialize() {
+  addLevel("mylevel", new MyLevel(screenWidth, screenHeight));  
+}
+
+class MyLevel extends Level {
+  MyLevel(float levelWidth, float levelHeight) {
+    super(levelWidth, levelHeight);
+  }
+}</textarea>
+
+    <p>There are two new things in this updated code. First, we see the line <code>addLevel("mylevel",
+    new MyLevel(screenWidth, screenHeight));</code> which we should read as:</p>
+    
+    <ul>
+      <li><code>addLevel("the name of this level", &lt;some level&gt;)</code>, and </li>
+      <li>&lt;some level&gt; being the code <code>new MyLevel(screenWidth, screenHeight)</code>.</li>
+    </ul>
+    
+    <p>The <code>addLevel(name, level)</code> function is another function that is provided by the
+    game library. We can call it to add levels to our game, and we can add as many as we like,
+    as long as we give them all their own name. The <code>new MyLevel(...)</code> bit says "make
+    a new level, of the "MyLevel" kind, and when you make it, tell it two things: the first thing
+    is the <code>screenWidth</code> value, and the second thing is the <code>screenHeight</code> value.
+    
+    <p>So why do we have to do that? Even though our game shows only 200 by 200 pixels, levels can be much
+    bigger than that. If you've ever played a platforming game, you usually don't stay on just one screen,
+    you can move around, and as you do, you see parts of the level you didn't see from where you started.
+    So right now we're making a new level that is exactly the size of the screen. There's "nothing" outside
+    of it, and for now that's fine, and then we'll make a bigger level once we've got something simple we
+    can actually play with!</p>
+    
+    <p>So that leaves that other thing</p>
+    
+    <textarea readonly style="width: 40em; height: 6em;">
+class MyLevel extends Level {
+  MyLevel(float levelWidth, float levelHeight) {
+    super(levelWidth, levelHeight);
+  }
+}</textarea>
+
+    <p>What the heck is this? Well, remember that we told the game library that we wanted to build a
+    new "MyLevel". However, it has no idea what that is, so in this bit of code we teach it what a 
+    "Mylevel" is. Rather than defining just a single "MyLevel", and telling the library "this is what you
+    should use", we give it the description of a "MyLevel" instead, so that the library can make as 
+    many as we tell it to. A bit like the difference between giving someone who's never seen a pet
+    before a picture of your pet, or describing what a pet is. If you show them a picture, they'll now
+    think of your pet every time someone talks about pets. That's a bit silly, so instead you teach them
+    what pets are, in general, and they'll thing of the right thing when people talk about pets.</p>
+    
+    <p>The way we do this here is by using the word <code>class</code>, which tells the library "pay
+    attention! I'm going to describe a ... to you now!" In this case, we're describing a "MyLevel",
+    so that's the next word. The next two words, <code>extends Level</code>, tell the game library
+    that you're going to describe it as something that's like something it already knows, namely
+    a Level. Just like before, everything between the "{}" is the important part: in this case,
+    we tell it to construct a new MyLevel!</p>
+    
+    <p>If we remove the parts that tell the library that we're describing MyLevel, we are left
+    with this:</p>
+
+    <textarea readonly style="width: 40em; height: 4em;">
+  MyLevel(float levelWidth, float levelHeight) {
+    super(levelWidth, levelHeight);
+  }</textarea>
+  
+    <p>This is a special function. When we're describing things, we need what is known as a "constructor"
+    function. This is the function that we use when we say "make me a new ...", in this case a new MyLevel.
+    It says that it can only be called with two things, a number that respents the level's width, and
+    a number that represents the level's height. They are "float" numbers, which means they have a "floating
+    decimal point": we can use fractions! If we wanted to make a level that is only half a pixel wide, and
+    one and a half pixel height, we could do that by using <code>new MyLevel(0.5, 1.5)</code> and the game
+    library would go "okay! I will make this for you." Of course that's a little small, but if we wanted
+    to, we could!</p>
+    
+    <p>Then inside the "{}" is the set of instructions that should be run through when "new MyLevel" is
+    called anywhere. In this case we're doing something special: we're telling the game library "You know
+    what, I already told you that this MyLevel thing is a kind of Level, and you already know about levels.
+    Instead of doing anything new, when you make a new MyLevel, just do whatever you do when you make a new
+    Level. I don't need you to do anything more than that."</p>
+    
+    <p>This uses the word <code>super</code>, which doesn't mean that everything's fantastic, but is a special
+    word that refers to a thing's "super-description". "Super" comes from the Latin, where it doesn't mean
+    "fantastic" or "awesome", but actually means "higher" or "above". In programming (specifically, object
+    oriented program, which is secretly what we're doing here!) we tend to talk about descriptions, which
+    we call "classes" as being either "super" classes, or "sub" classes. A quick example: house cats are
+    a kind of cat (like cheetas or lions), which are mammals (like cows and dogs), which are in turn animals
+    (like chickens and spiders). So we can say:</p>
+    
+    <ul>
+      <li>"cat" is the superclass for "house cat",
+          and "house cat" is a subclass of "cat"</li>
+      <li>"mammal" is the superclass for "cat",
+          and "cat" is a subclass of "mammal"</li>
+      <li>"animal" is the superclass for "mammal",
+          and "mammal" is a subclass of "animal"</li>
+    </ul>
+    
+    <p>In our case, "Level" is the superclass for "MyLevel", and we can tell the game library that we
+    want to talk about "Level" rather than "MyLevel" by using <code>super</code>.</p>
+
+    <figure>
+      <canvas data-processing-sources="sketches/sketch01.pde
+
+      ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
+      ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
+      ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
+      ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
+      ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
+      ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
+      ../../SoundManager.pde"></canvas>
+      <figcaption>Our first level</figcaption>
+    </figure>
+
+    <p>So we have a level now! Except it doesn't do very much yet because there's nothing in it!
+    So what do we put in levels? The answer is "level layers". When you're playing games, it usually
+    looks like the level is one thing that you're running, walking or flying through, but it's 
+    actually more detailed than that. Although, luckily, not by a lot (which is good, or we'd be here
+    all day setting up endless bits of code before we even get to seeing something interesting!).</p>
+    
+    <h3>Adding a level layer</h3>
+    
+    <p>So a game consists of levels, and a level consists of level layers. Each level layer in turn
+    contains various things, but that's where it ends, because layers contain the things we actually draw!
+    This is what you can put in a layer:</p>
+    
+    <ol>
+      <li>background things</li>
+      <li>invisible boundaries</li>
+      <li>enemies</li>
+      <li>enemy pickups</li>
+      <li>player characters</li>
+      <li>player pickups</li>
+      <li>foregrounds things</li>
+    </ol>
+    
+    <p>All these things are what you expect to find in a game, and at the end of this tutorial, we'll
+    have added all of these to our game! However, let's keep it simple for now. Here's what we're going
+    to add to make our first attempt at a very simple game:</p>
+    
+    <ul>
+      <li>a background color, and</li>
+      <li>a playable character.</li>
+    </ul>
+    
+    <p>So first things first: let's make a level layer. The game library already knows about level layers
+    in general, but we want to use our own, so we're going to describe how to make one in the same way that
+    we made a level, earlier:</p>
+    
+     <textarea readonly style="width: 40em; height: 9em;">
+class MyLevelLayer extends LevelLayer {
+  MyLevelLayer(Level owner) {
+    super(owner);
+    color bueishColor = color(0,130,255);
+    setBackgroundColor(blueishColor);
+  }
+}</textarea>   
+    
+    <p>Can you identify what the different parts here do?</p>
+    
+    <p>Like before, <code>class MyLevelLayer extends LevelLayer</code> says "pay attention! What follows
+    is a desciption of a MyLevelLayer. And it's like the LeveLayer thing that you already know". Then,
+    the <code>MyLevelLayer(Level parent, float w, float h)</code> bit tells the game library how we should
+    phrase our "make me a new MyLevelLayer" code: we need to say is which level this is a level layer for.
+    That's pretty important! We don't want it to show up in other levels we make, obviously. If we only tell
+    the game library about the owning level, the layer will have the same size as the level. That's pretty
+    handy, because normally that's what you want. However, if you want a differently sized level layer (and
+    later on we will!) we could also have added a width and height value to tell the game library what size
+    it should be using instead.</p>
+    
+    <p>After the <code>super</code> instruction, we want to make sure our level layer is not a boring grey,
+    so we do two things: first, we come up with a better color. In this case a slightly greenish blue, using
+    the Red/Green/Blue combination 0, 130, 255. Each of the three colors can range between zero and 255, so
+    0, 130, 255 says "no red, medium intensity green, full blast blue". The resulting color is this: <span
+    class="colorblock" style="background-color: rgb(0,130,255);"></span></p>
+    
+    <p>To add a MyLevelLayer to the level we already made, we have to update the instructions for making
+    a MyLevel:</p>
+
+    <textarea readonly style="width: 40em; height: 7em;">
+class MyLevel extends Level {
+  MyLevel(float levelWidth, float levelWidth) {
+    super(levelWidth, levelWidth);
+    addLevelLayer("my level layer", new MyLevelLayer(this));
+  }
+}</textarea>
+
+    <figure>
+      <canvas data-processing-sources="sketches/sketch02.pde
+
+      ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
+      ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
+      ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
+      ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
+      ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
+      ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
+      ../../SoundManager.pde"></canvas>
+      <figcaption>Now we have a level layer!</figcaption>
+    </figure>
+
+    <p>The <code>addLevelLayer</code> function is something that game library provides, which we can
+    conveniently call to add level layers to the set of known layers for a level. So, we give it a 
+    new level layer: <code>new MyLevelLayer(this)</code>. The <code>this</code> word refers to 
+    "this MyLevel". Which makes sense, because if we pretend that we're a MyLevel ourselves, 
+    we would want any MyLevelLayer that we make to treat us as their owner. Whenever we want
+    to refer to "ourselves", we use the word <code>this</code>. So we're very close to having
+    something that we can play with... we just need a playable character!</p>
+    
+    <h3>Adding a playable character</h3>
+    
+    <p>Playable characters are a bit more elaborate than levels or level layers. The starting point
+    should be pretty recognisable by now:</p>
+    
+    <textarea readonly style="width: 40em; height: 4em;">
+class MyThingy extends Player {
+  ...
+}</textarea>
+
+    <p>We're going to call our playable character "MyThingy" (mostly just because I like that name =)
+    but we'll need a few things in it:</p>
+    
+    <ol>
+      <li>We'll need a "constructor" just like for MyLevel and MyLevelLayer,</li>
+      <li>we'll need a setStates() function, to tell the game library what our
+          thingy looks like in all its different states, and</li>
+      <li>we'll need a handleInput() function, so that we can make our thingy do
+          things based on keyboard and mouse input.</li>
+    </ol>
+
+    <p>You probably already guessed how to do the first part: we rely on the <code>super</code>
+    class again:</p>
+
+    <textarea readonly style="width: 40em; height: 5em;">
+  MyThingy() {
+    super("thingy");
+    setStates();
+  }</textarea>
+    
+    <p>Every player character needs to have a name, so that we can pick them out of the collection
+    of characters we may end up having (bigger games usually have more than one!), so we tell the
+    game library that our MyThingy character is like the "Player" thing it already knows, but with
+    the name "thingy". After that, we tell the game library to then run the code that we'll describe
+    in a function called setStates:</p>
+    
+    <textarea readonly style="width: 40em; height: 4em;">
+  void setStates() {
+    addState(new State("idle", "idle.gif"));
+  }</textarea>
+  
+    <p>If you remember all the way at the top, there was an <code>initialize()</code> function.
+    This is kind of like that, too. First, we describe what it does: <code>void</code> says it
+    just "does things" without creating new things or calculating values that we want to get back
+    from it, and the part inside the "{}" is run by the game library. In this case, we're going
+    to add an idling state to our playable character.</p>
+    
+    <p>Now, the game library already knows what "State" things are, and unlike Level or LeverLayer,
+    we don't have to define our own because the game library already knows everthing it'll need to
+    know to make things work the way we want them to. The instruction we give it consists of
+    two things: one is the convenient <code>addState(...)</code> function, that the game library
+    has ready for us to add states for individual characters, and the other is a <code>new State(...)</code>
+    instruction. What does that do?</p>
+    
+    <p>When we want to make new states, we have to say two things. First, we have to say what the
+    name of the state is. In this case, it's our character's idling state, so we call it "idle". So
+    far, so good. The second thing tells the game engine what the picture for this should be. 
+    I've chosen this picture, which is stored as a "gif" image called "idle.gif":</p>
+    
+    <figure>
+      <img src="idle.gif" alt="idle state image" title="our idle character image">
+      <figcaption>Our idle state image</figcaption>
+    </figure>
+    
+    <p>Okay so it doesn't really look like a person at all, but that's okay. We'll replace it with
+    something much more fun later. First, let's see if we can even use this image in our very simple
+    game!</p>
+
+    <p>We also add a <code>handleInput</code> function, although because we don't know what we
+    want our character to do yet, we don't actually make it do anything:</p>
+    
+    <textarea readonly style="width: 40em; height: 1em;">
+    void handleInput() {}
+</textarea>
+
+    <p>So our full "MyThingy" class description looks like this:</p>
+
+    <textarea readonly style="width: 40em; height: 15em;">
+class MyThingy extends Player {
+  MyThingy() {
+    super("thingy");
+    setStates();
+  }
+  
+  void setStates() {
+    addState(new State("idle", "idle.gif"));
+  }
+  
+  void handleInput() {}
+}
+</textarea>
+
+    <p>And we add it to our level layer by using the convenient <code>addPlayer</code> function,
+    which requires us to give it a player, which a <code>new MyThingy()</code> would certainly be!</p>
+  
+     <textarea readonly style="width: 40em; height: 10em;">
+class MyLevelLayer extends LevelLayer {
+  MyLevelLayer(Level owner) {
+    super(owner);
+    color bueishColor = color(0,130,255);
+    setBackgroundColor(blueishColor);
+    addPlayer(new MyThingy());
+  }
+}</textarea>
+
+    <p>Finally! Everything is in place! Let's have a look at that:</p>
+
+    <figure>
+      <canvas data-processing-sources="sketches/sketch03.pde
+
+       ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
+       ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
+       ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
+       ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
+       ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
+       ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
+       ../../SoundManager.pde"></canvas>
+       <figcaption>Our first "game"!</figcaption>
+    </figure>
+
+    <p>Wait... where's our playable character? Well, right there, in the upper-left corner.
+    If we don't tell the game engine where to put things it will simply always put them in the
+    upper left corner. That's not particularly useful, so let's put our playable character in
+    the middle of the screen, instead, which means putting it in the middle of the level layer
+    we add it to:</p>
+
+     <textarea readonly style="width: 40em; height: 11em;">
+class MyLevelLayer extends LevelLayer {
+  MyLevelLayer(Level owner) {
+    super(owner);
+    setBackgroundColor(color(0,130,255));
+    MyThingy mt = new MyThingy();
+    mt.setPosition(width/2, height/2);
+    addPlayer(mt);
+  }
+}</textarea>
+
+    <p>Because we want to tinker with our MyThingy before we add it to the level layer,
+    we take it out of the <code>addPlayer(...)</code> function, and make it something
+    that we can tinker with first: <code>MyThingy mt = new MyThingy()</code> says
+    that we want to make a MyThingy, that we'll refer to in the instructions as "mt",
+    and which should be a new MyThingy. Excellent!</p>
+    
+    <p>Now, to change its position, we can use the <code>setPosition</code> function
+    that the game library already knows about (because Player things have a <code>setPosition</code>
+    function), and we can give it the position it needs to place our MyThingy:
+    if we want it in the center of the screen, it should at half the screen's width
+    from the left, and half the screen's height from the top, so that's what we do
+    by using <code>width/2</code> for "width divided by two" and <code>height/2</code>
+    for "height divided by two". But hold up! where did <code>width</code> and
+    <code>height</code> come from?</p>
+    
+    <p>The game library gives most things a <code>width</code> and <code>height</code>
+    value that corresponds with (surprise!) its own width and height. So if we use
+    these inside MyLevelLayer, they will have values that correspond to the level layer's
+    width and height, and if we use them in MyThingy they'll refer to our thingy's
+    width and height. The game library has some useful things like that in it, and we'll
+    cover more of them as we use them, later on in this tutorial.</p>
+    
+    <p>For now, let's see if that does what we wanted:</p>
+    
+    <figure>
+      <canvas data-processing-sources="sketches/sketch04.pde
+
+       ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
+       ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
+       ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
+       ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
+       ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
+       ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
+       ../../SoundManager.pde"></canvas>
+       <figcaption>Now with a visible player</figcaption>
+    </figure> 
+    
+    <p>Hurray! That's better. Although it's more of a "picture" than a game right now =(</p>
+    
+    <p>Before we'll consider ourselves done, let's make our playable character actually
+    playable. Let's make the 'w', 'a', 's', and 'd' keys on your keyboard move our
+    playable character around!</p>
+    
+    <h3>Making our character move</h3>
+    
+    <p>If you'll remember, there was a function called <code>handleInput</code> that we left
+    blank. I think it's time we actually put some instructions in there so we can handle
+    keyboard (and later, mouse) input!</p>
+
+    <p>But, first things first. Because we can handle input, we have to tell the game library
+    which keys our MyThingy character wants to listen to. This is a little bit technical, but
+    I'm sure you'll be able to follow along. First, we change our constructor for MyThingy:</p>
+    
+     <textarea readonly style="width: 40em; height: 10em;">
+  MyThingy() {
+    super("thingy");
+    setStates();
+    handleKey('W');
+    handleKey('A');
+    handleKey('S');
+    handleKey('D');
+  }</textarea>
+  
+    <p>This tells the game engine that we want to listen for the keys with the W, A, S and D
+    symbol on it. One tricky thing is that it doesn't really care about upper or lower case,
+    so it wants letters in upper case form. If we used 'w' instead of 'W', it wouldn't work!
+    So it's a good thing we're using upper case letters.</p>
+    
+    <p>Next, we add instructions to the <code>handleInput</code> function:</p>
+
+     <textarea readonly style="width: 40em; height: 7em;">
+  void handleInput() {
+    if(isKeyDown('W')) { addImpulse(0,-1); }
+    if(isKeyDown('A')) { addImpulse(-1,0); }
+    if(isKeyDown('D')) { addImpulse(1,0); }
+    if(isKeyDown('S')) { addImpulse(0,1); }
+  }</textarea>
+  
+    <p>You can probably guess what this does, although the <code>addImpulse</code> instruction
+    make be a bit confusing. Let's look at what it means: <code>if(...) { }</code> tells the
+    game library "if ... is the case, then follow the instructions between {}". In this case,
+    we're using the test <code>isKeyDown(...)</code> which is a function that the game library
+    has that lets us test whether or not someone is pressing a specific key. Since we told
+    the library that we wanted to listen for W, A, S and D keys, we have four lines, one for
+    of such "if ..." lines: each letter.</p>
+    
+    <p>Then, the bit that goes inside those {}: the <code>addImpulse</code> function gives
+    our character an "impulse", which means it gets some speed in a particular direction.
+    Each time the game library redraws the screen, our character will have moved a little
+    bit, horizontal and/or vertically, and how much it has moved depends on what we tell
+    <code>addImpulse</code>. The first thing we tell it indicates how much we want to move
+    horizontally: negative numbers move us left, and positive numbers move us right,
+    so for 'A' we want to move left by one step (-1) and 'D' we want to move right by one step
+    (1). The second thing tells it how much to move vertically: negative numbers move us up,
+    and position numbers move us down, so for 'W' we want to move up (-1) and for 'S' we
+    want o move down (1).</p>
+    
+    <p>Great! now we have a movable character! Let's play with it!</p>
+    
+    <figure>
+      <canvas data-processing-sources="sketches/sketch05.pde
+
+       ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
+       ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
+       ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
+       ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
+       ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
+       ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
+       ../../SoundManager.pde"></canvas>
+       <figcaption>A controllable player!</figcaption>
+    </figure>
+
+    <p>Wait... why does it just shoot off the screen??</p>
+    
+    <p>Well, remember when we said the level has "nothing" around it? That's where our character goes
+    once it moves beyond the screen edges. It's still there, it's just moving around in nothingness.
+    There are a few things we can do to not make this a problem, some of them simple, some of them hard.
+    So let's pick the simple one: let's make sure that the edges of the screen are actually "boundaries",
+    that is to say, lines that characters cannot pass.</p>
+    
+    <p>In order to make that happen, we'll need to add four boundaries to our level's MyLevelLayer:
+    one for the bottom, one for the left, one for the top, and one for the right:</p>
+
+     <textarea readonly style="width: 40em; height: 16em;">
+class MyLevelLayer extends LevelLayer {
+  MyLevelLayer(Level owner) {
+    super(owner);
+    setBackgroundColor(color(0,130,255));
+    MyThingy mt = new MyThingy();
+    mt.setPosition(width/2, height/2);
+    addPlayer(mt);
+    addBoundary(new Boundary(0,height, width,height));
+    addBoundary(new Boundary(width,height, width,0));
+    addBoundary(new Boundary(width,0,0,0));
+    addBoundary(new Boundary(0,0,0,height));
+  }
+}</textarea>
+
+    <p>We've seen all of this already, except for the <code>addBoundary(...)</code> lines. There's
+    four of them, because there are four edges, and each line adds a particular boundary to the screen.
+    Remember that the game engine puts everything in the upper left corner when they don't have
+    specific position, and that is what it considers the point zero: horizontally 0, and vertically 0.
+    To place the bottom border, we need to draw a line the bottom-left to the bottom-right, so in
+    game library values: a line with two points, the first point being 0 horizontally, and "height"
+    vertically, the second point being "width" horizontally and "height" vertically.</p>
+    
+    <p>We do the same for the other three edges, so that the right edge is from ("width" horizontally,
+    "height" vertically) to ("width" horizontally, 0 vertically), the top edge is from ("width", 0) to
+    (0, 0) and the left is from (0, 0) to (0, height). Now our player can't escape anymore!</p>
+
+    <figure>
+      <canvas data-processing-sources="sketches/sketch06.pde
+
+       ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
+       ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
+       ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
+       ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
+       ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
+       ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
+       ../../SoundManager.pde"></canvas>
+       <figcaption>Now it's always visible...</figcaption>
+    </figure>
+
+    <p>But there's one thing left to do - right now if we keep our keys pressed,
+    we'll just keep making our playable character go faster and faster until it hits
+    a wall, and if we let go of the key, it'll keep flying. It would be nice if we could
+    make it slow down to a stop when we let go of our keys. As it turns out, that's
+    really easy: all we have to do is add one instruction to our MyThingy contructor:</p>
+
+     <textarea readonly style="width: 40em; height: 11em;">
+  MyThingy() {
+    super("thingy");
+    setStates();
+    handleKey('W');
+    handleKey('A');
+    handleKey('S');
+    handleKey('D');
+    setImpulseCoefficients(0.75,0.75);
+  }</textarea>
+  
+    <p>That's a complicated function name! O_O</p>
+    
+    <p>But what it does and how we use it is actually pretty simple. "Impulse" is the 
+    scientific name for "the speed of things", and a coefficient is a rather long scientific
+    word for "how much something changes", so an impulse coefficient is just a really
+    fancy name for saying "by how much the speed changes". If we don't change the
+    impulse every time the game library redraws the screen (which it does around 40
+    times per second!) then our playable character will never slow down unless it hits
+    a wall. So to make it slow down, we tell the game library that we want its speed on
+    the next redraw to be only 3/4th of what it is now. So if we started with a speed
+    of 100, then the next redraw will be 75, and the redraw after that will be 56.25,
+    and the one after that 42.1875, and so forth, until we get to a speed that is so close
+    to zero that the game library just sets it to zero instead of trying to use really,
+    really small numbers.</p>
+    
+    <p>So, we have a playable character, it can bump into walls so it doesn't escape
+    the screen, there's a nice blue background, and our thingy slows down if we stop
+    pressing keys... what does it look like??</p>
+
+    <figure>
+      <canvas data-processing-sources="sketches/sketch07.pde
+
+       ../../debugfunctions.pde ../../drawbackground.pde ../../JavaScript.pde ../../GameLoader.pde
+       ../../ViewBox.pde ../../Level.pde ../../LevelLayer.pde ../../Computer.pde ../../CollisionDetection.pde
+       ../../Drawable.pde ../../Tracking.pde ../../Position.pde ../../Positionable.pde ../../Actor.pde
+       ../../Player.pde ../../Interactor.pde ../../BoundedInteractor.pde ../../Pickup.pde ../../Boundary.pde
+       ../../Trigger.pde ../../Sprite.pde ../../Decal.pde ../../TilingSprite.pde ../../State.pde
+       ../../SpriteMapHandler.pde ../../SpritePath.pde ../../SpritePathChunker.pde ../../ShapePrimitives.pde
+       ../../SoundManager.pde"></canvas>
+       <figcaption>A super-simple "game"</figcaption>
+    </figure>
+
+    <p>Success! Sure, it looks simple, but we know how much work it really is. And
+    we made this! Yes!</p>
+    
+    <h1>In the next tutorial...</h1>
+    
+    <p>In the next tutorial we're going to make our game a little more challenging by
+    introducing gravity, and enemy that will try to catch us, and platforms that we
+    can jump on and off of in order to escape our enemy!</p>
+
+  </body>
+</html> 

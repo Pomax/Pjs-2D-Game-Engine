@@ -19755,7 +19755,7 @@
         }
         if (loaded === sourcesCount) {
           if (errors.length === 0) {
-            try {
+//            try {
 
               // DEBUGGING HACK PATCH TEST TEST TEST
               if(typeof debugPJS !== "undefined" && debugPJS) {
@@ -19764,9 +19764,9 @@
               // DEBUGGING HACK PATCH TEST TEST TEST
             
               return new Processing(canvas, code.join("\n"));
-            } catch(e) {
-              throw "Processing.js: Unable to execute pjs sketch: " + e;
-            }
+//            } catch(e) {
+//              throw "Processing.js: Unable to execute pjs sketch: " + e;
+//            }
           } else {
             throw "Processing.js: Unable to load pjs sketch files: " + errors.join("\n");
           }

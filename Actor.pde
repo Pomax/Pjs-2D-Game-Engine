@@ -192,7 +192,7 @@ abstract class Actor extends Positionable {
    * surfaces.
    */  
   void attachTo(Boundary boundary, float[] correction) {
-    println("attaching to boundary "+boundary);
+//    println("attaching to boundary "+boundary);
     // record attachment
     boundaries.add(boundary);
 
@@ -342,6 +342,22 @@ abstract class Actor extends Positionable {
   protected void ignore(int keyCode) {
     locked[keyCode] = true;
     keyDown[keyCode] = false; }
+
+  // add a key listener
+  protected void handleKey(char key) {
+    int keyCode = int(key),
+        len = keyCodes.length;
+    int[] _tmp = new int[len+1];
+    arrayCopy(keyCodes,0,_tmp,0,len);
+    _tmp[len] = keyCode;
+    keyCodes = _tmp;
+  }
+
+  // check whether a key is pressed or not
+  protected boolean isKeyDown(char key) {
+    int keyCode = int(key);
+    return keyDown[keyCode];
+  }
 
   // handle key presses
   void keyPressed(char key, int keyCode) {

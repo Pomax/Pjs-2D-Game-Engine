@@ -53,7 +53,7 @@ abstract class Positionable extends Position implements Drawable {
   }
   
   boolean isAttachedTo(Boundary b) {
-    println("attached to b? " + boundaries.size() + " attachments found.");
+//    println("attached to b? " + boundaries.size() + " attachments found.");
     return boundaries.contains(b);
   }
 
@@ -282,7 +282,7 @@ abstract class Positionable extends Position implements Drawable {
     // we're attached to one or more boundaries, so we
     // are subject to (compound) impulse redirection.
     if(boundaries.size()>0) {
-      println("redirecting impulse {"+_dx+","+_dy+"} over boundary surfaces...");
+//      println("redirecting impulse {"+_dx+","+_dy+"} over boundary surfaces...");
       float[] redirected = new float[]{_dx, _dy};
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
@@ -291,7 +291,7 @@ abstract class Positionable extends Position implements Drawable {
           continue;
         }
         redirected = boundary.redirectForce(redirected[0], redirected[1]);
-        println("redirected to {"+redirected[0]+","+redirected[1]+"}.");
+//        println("redirected to {"+redirected[0]+","+redirected[1]+"}.");
       }
       x += redirected[0];
       y += redirected[1];
@@ -299,12 +299,10 @@ abstract class Positionable extends Position implements Drawable {
 
     ix *= ixF;
     iy *= iyF;
-
-    // Not unimportant: round the impulse to two significant decimals,
-    // or these values don't stabilise for about 100 frames even though
-    // on-screem it looks like we're standing still.
-    ix = round(100*ix)/100;
-    iy = round(100*iy)/100;
+    
+    // Not unimportant: cutoff resolution.
+    if(abs(ix) < 0.01) { ix = 0; }
+    if(abs(iy) < 0.01) { iy = 0; }
   }
 
   // implemented by subclasses

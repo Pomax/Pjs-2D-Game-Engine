@@ -21,9 +21,7 @@ static class CollisionDetection {
    */
   static void interact(Boundary b, Actor a)
   {
-    if (a.isAttachedTo(b)) {
-      println("we don't check our own boundary");
-      return; }
+    if (a.isAttachedTo(b)) { return; }
 
     float[] correction = blocks(b,a);
     if(correction != null) { a.attachTo(b, correction); }
@@ -130,13 +128,13 @@ static class CollisionDetection {
     // cases (1) or (5)?
     B_sum = B_current + B_previous;
     if (B_sum == 0 || B_sum == 8) {
-      println("case " + (B_sum==8? "1" : "5"));
+//      println("case " + (B_sum==8? "1" : "5"));
       return null;
     }
 
     // case (4)?
     if (B_previous < 4 && B_current == 0) {
-      println("case 4");
+//      println("case 4");
       return null;
     }
 
@@ -165,7 +163,7 @@ static class CollisionDetection {
 
       // if we're seeing case (3), set up bbox correctly.
       if (B_current == 0) {
-        println("case 3");
+//        println("case 3");
         // two of these edges are guaranteed to not have intersections,
         // since otherwise the intersection would be inside either
         // [previous] or [current], which is case (2) instead.
@@ -173,7 +171,9 @@ static class CollisionDetection {
                             previous[(corner+6)%8],previous[(corner+7)%8],
                              current[(corner+6)%8], current[(corner+7)%8],
                              current[(corner+2)%8], current[(corner+3)%8]}; }
-      else { println("case 2"); }
+      else { 
+//        println("case 2"); 
+      }
 
       // Now that we have the correct box, perform line/line
       // intersection detection for each edge on the box.
@@ -206,7 +206,7 @@ static class CollisionDetection {
         float[] i1 = intersections.get(0),
                  i2 = intersections.get(1);
 
-        println("***");
+//        println("***");
         float[] ideal = getLineLineIntersection(px,py,cx,cy, i1[0],i1[1],i2[0],i2[1], false);
         if (ideal == null) { 
 /*
@@ -225,7 +225,7 @@ static class CollisionDetection {
           println("translated: "+tr[0]+","+tr[1]+","+tr[2]+","+tr[3]+","+tr[4]+","+tr[5]+","+tr[6]+","+tr[7]+","+tr[8]);
           exit();
 */
-          println("error could not find the ideal point");
+//          println("error could not find the ideal point");
           return new float[]{px-cx, py-cy}; 
         }
         return new float[]{ideal[0]-cx, ideal[1]-cy};
@@ -239,7 +239,7 @@ static class CollisionDetection {
     }
 
     // Uncaught cases get a pass - with a warning.
-    println("unknown case! (B_current: "+B_current+", B_previous: "+B_previous+")");
+//    println("unknown case! (B_current: "+B_current+", B_previous: "+B_previous+")");
     return null;
   }
 

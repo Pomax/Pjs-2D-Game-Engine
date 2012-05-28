@@ -21,11 +21,16 @@ static class SoundManager {
   public static PImage volume_overlay;
 
 
+  static void init(PApplet sketch, String resourceLocation) { 
+    DIR = resourceLocation;
+    init(sketch);
+  }
+
   static void init(PApplet sketch) { 
     owners = new HashMap<Object,AudioPlayer>();
     audioplayers = new HashMap<String,AudioPlayer>();
-    mute_overlay = sketch.loadImage("graphics/mute.gif");
-    unmute_overlay = sketch.loadImage("graphics/unmute.gif");
+    mute_overlay = sketch.loadImage("mute.gif");
+    unmute_overlay = sketch.loadImage("unmute.gif");
     volume_overlay = (muted ? unmute_overlay : mute_overlay);
     minim = new Minim(sketch); 
     reset();
