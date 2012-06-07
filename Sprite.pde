@@ -109,14 +109,14 @@ class Sprite extends Positionable {
    * center point.
    */
   void align(int _halign, int _valign) {
-    if(_halign==LEFT) { halign=-width/2; }
+    if(_halign==LEFT)        { halign=width/2; }
     else if(_halign==CENTER) { halign=0; }
-    else if(_halign==RIGHT)  { halign=width/2; }
+    else if(_halign==RIGHT)  { halign=-width/2; }
     ox = halign;
 
-    if(_valign==TOP) { valign=-height/2; }
+    if(_valign==TOP)         { valign=height/2; }
     else if(_valign==CENTER) { valign=0; }
-    else if(_valign==BOTTOM)  { valign=height/2; }
+    else if(_valign==BOTTOM) { valign=-height/2; }
     oy = valign;
   }
 
@@ -203,7 +203,7 @@ class Sprite extends Positionable {
    * number for the last frame in the set.
    */
   int getCurrentFrameNumber() {
-    if(!path.looping && framesServed == path.size()) {
+    if(path.size() > 0 && !path.looping && framesServed == path.size()) {
       if(state!=null) { state.finished(); }
       animated = false;
       return numFrames-1;

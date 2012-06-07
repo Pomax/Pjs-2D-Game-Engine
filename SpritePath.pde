@@ -14,7 +14,7 @@ class SpritePath {
   int servedFrame = 0;
 
   // is this path cyclical?
-  boolean looping = true;
+  boolean looping = false;
   boolean noRotation = false;
 
   // private class for frame information

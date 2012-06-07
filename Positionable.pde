@@ -310,7 +310,8 @@ abstract class Positionable extends Position implements Drawable {
 
   // mostly for debugging purposes 
   String toString() {
-    return "current: " + toString() + "\n" +
+    return width+"/"+height + "\n" +
+            "current: " + super.toString() + "\n" +
             "previous: " + previous.toString() + "\n";
   }
 }

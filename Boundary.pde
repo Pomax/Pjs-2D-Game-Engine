@@ -101,41 +101,13 @@ class Boundary extends Positionable {
    * supported by this boundary?
    */
   boolean supports(Positionable thing) {
-    // are all corner dot products above "just above 0"?
-    float dotx = xw-x,
-          doty = yh-y,
-          otlen = sqrt(dotx*dotx + doty*doty),
-          tx, ty, dx, dy, len, dotproduct=-2;
-
-    float[] current = thing.getBoundingBox();
-
-    // normalised boundary vector
-    dotx /= otlen;
-    doty /= otlen;
-
-    // note: we want the dot product with the
-    // vector that is perpendicular to the boundary!
-    float p = PI/2, cosp = cos(p), sinp = sin(p),
-          pdx = dotx*cosp - doty*sinp,
-          pdy = dotx*sinp + doty*cosp;
-
-    // how many corners are blocked in [current]?
-    float proximity = -2;
-    for(int i=0; i<8; i+=2) {
-      tx = current[i];
-      ty = current[i+1];
-      dx = tx-x;
-      dy = ty-y;
-      len = sqrt(dx*dx+dy*dy);
-      dx /= len;
-      dy /= len;
-      dotproduct = dx*pdx + dy*pdy;
-      if (dotproduct > proximity) {
-        proximity = dotproduct;
-      }
-    }
-//    println("dot-proximity to boundary: "+proximity);
-    return abs(proximity) < 0.01;
+    float epsilon = 1;
+    float[] bbox = thing.getBoundingBox();
+    if (minx - epsilon > bbox[2]) return false;
+    if (miny - epsilon > bbox[5]) return false;
+    if (maxx + epsilon < bbox[0]) return false;
+    if (maxy + epsilon < bbox[1]) return false;
+    return true;
   }
 
   /**

@@ -19,6 +19,7 @@ void setup() {
   levelSet = new HashMap<String, Level>();
   SpriteMapHandler.init(this);
   SoundManager.init(this);
+  CollisionDetection.init(this);
   initialize();
 }
 

@@ -192,20 +192,19 @@ abstract class Actor extends Positionable {
    * surfaces.
    */  
   void attachTo(Boundary boundary, float[] correction) {
-//    println("attaching to boundary "+boundary);
     // record attachment
     boundaries.add(boundary);
 
-    // first, stop the actor
+    // stop the actor
     float ix = this.ix - (fx*ixF),
           iy = this.iy - (fy*iyF);
     stop(correction[0], correction[1]);
 
-    // then impart a new impulse as redirected by the boundary.
+    // then impart a new impulse, as redirected by the boundary.
     float[] rdf = boundary.redirectForce(ix, iy);
     addImpulse(rdf[0], rdf[1]);
 
-    // finally, notify call the blocked handler
+    // finally, call the blocked handler
     gotBlocked(boundary, correction);
   }
   
@@ -218,11 +217,12 @@ abstract class Actor extends Positionable {
 
   /**
    * collisions may force us to stop this
-   * actor's movement.
+   * actor's movement. the actor is also
+   * moved back by dx/dy
    */
   void stop(float dx, float dy) {
-    x += dx;
-    y += dy;
+    x = round(x+dx);
+    y = round(y+dy);
     ix = 0;
     iy = 0;
   }

@@ -263,7 +263,7 @@ abstract class LevelLayer {
         s.draw(x,y,w,h);
       }
     } else {
-      drawBackground((int)width, (int)height);
+      debugfunctions_drawBackground((int)width, (int)height);
     }
 
 // ---- boundaries

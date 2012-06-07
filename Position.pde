@@ -99,11 +99,6 @@ class Position {
     float[] obounds = other.getBoundingBox();
     if(bounds==null || obounds==null) return null;
     
-    if (false) { 
-      debugfunctions_drawBoundingBox(bounds);
-      debugfunctions_drawBoundingBox(obounds);
-    }
-
     float xmid1 = (bounds[0] + bounds[2])/2;
     float ymid1 = (bounds[1] + bounds[5])/2;
     float xmid2 = (obounds[0] + obounds[2])/2;

@@ -4,17 +4,12 @@
  * it's handled by this static computing class.
  */
 static class CollisionDetection {
-  // recycled in getLineRectIntersection()
-  private static float[] current_dots = {0,0,0,0,0,0,0,0};
-  private static float[] previous_dots = {0,0,0,0,0,0,0,0};
-  private static ArrayList<float[]> intersections = new ArrayList<float[]>();
-  private static float[] bbox = {0,0,0,0,0,0,0,0};
-  private static float[] ZERO_DIFFERENCE = {0,0};
 
-  // constant for indicating a coordinate is an intersection
-  final static int INTERSECTION = 0;
-  // constant for indicating a coordinate is a full contained coordinate
-  final static int CONTAINED = 1;
+  /**
+   * Static classes need global sketch binding
+   */
+  private static PApplet sketch;
+  public static void init(PApplet s) { sketch = s; } 
 
   /**
    * Perform actor/boundary collision detection
@@ -24,7 +19,16 @@ static class CollisionDetection {
     if (a.isAttachedTo(b)) { return; }
 
     float[] correction = blocks(b,a);
-    if(correction != null) { a.attachTo(b, correction); }
+    if(correction != null) {
+      /*
+      sketch.stroke(0);
+      sketch.line(a.getX()-10, a.getY()-10, a.getX()+10, a.getY()+10);
+      sketch.line(a.getX()-10, a.getY()+10, a.getX()+10, a.getY()-10);
+
+      sketch.stroke(255,0,0);
+      sketch.line(a.getX(), a.getY(), a.getX()+correction[0], a.getY()+correction[1]);
+      */
+      a.attachTo(b, correction); }
   }
 
   /**
@@ -41,6 +45,20 @@ static class CollisionDetection {
 
     return CollisionDetection.getLineRectIntersection(line, current, previous);
   }
+
+// =================================================================
+
+  private static float[] current_dots = {0,0,0,0,0,0,0,0};
+  private static float[] previous_dots = {0,0,0,0,0,0,0,0};
+  private static ArrayList<float[]> intersections = new ArrayList<float[]>();
+  private static float[] checkLines = {0,0,0,0,0,0,0,0};
+  private static float[] ZERO_DIFFERENCE = {0,0};
+
+  // constant for indicating a coordinate is an intersection
+  final static int INTERSECTION = 0;
+
+  // constant for indicating a coordinate is a full contained coordinate
+  final static int CONTAINED = 1;
 
 
   /**
@@ -152,6 +170,7 @@ static class CollisionDetection {
 
     // Right then. Case (2) or (3)?
     if (B_previous == 4) {
+      int currentCase = 2;
       // for (2) and (3) the approach is essentially
       // the same, except that we need different bounding
       // boxes to determine the intersection. For (2) we
@@ -159,29 +178,33 @@ static class CollisionDetection {
       // we need to construct a new box that is spanned by
       // the two points next to the "hot" corner in both
       // [previous] and [current].
-      arrayCopy(current,0,bbox,0,8);
+      checkLines = new float[8];
+      arrayCopy(current,0,checkLines,0,8);
 
       // if we're seeing case (3), set up bbox correctly.
-      if (B_current == 0) {
+      if (B_current < 4) {
 //        println("case 3");
+        currentCase = 3;
         // two of these edges are guaranteed to not have intersections,
         // since otherwise the intersection would be inside either
         // [previous] or [current], which is case (2) instead.
-        bbox = new float[]{previous[(corner+2)%8],previous[(corner+3)%8],
-                            previous[(corner+6)%8],previous[(corner+7)%8],
-                             current[(corner+6)%8], current[(corner+7)%8],
-                             current[(corner+2)%8], current[(corner+3)%8]}; }
-      else { 
+        checkLines = new float[]{previous[(corner)%8], previous[(corner+1)%8],
+                                 previous[(corner+2)%8], previous[(corner+3)%8],
+                                 current[(corner+2)%8],  current[(corner+3)%8],
+                                 current[(corner)%8],  current[(corner+1)%8]};
+      }
+      else
+      { 
 //        println("case 2"); 
       }
 
       // Now that we have the correct box, perform line/line
       // intersection detection for each edge on the box.
       intersections.clear();
-      float x1=bbox[0], y1=bbox[1], x2=x1, y2=y1;
-      for (int i=0; i<8; i+=2) {
-        x2 = bbox[(i+2)%8];
-        y2 = bbox[(i+3)%8];
+      float x1=checkLines[0], y1=checkLines[1], x2=x1, y2=y1;
+      for (int i=0, last=checkLines.length; i<last; i+=2) {
+        x2 = checkLines[(i+2)%last];
+        y2 = checkLines[(i+3)%last];
         float[] intersection = getLineLineIntersection(ox,oy,tx,ty, x1,y1,x2,y2, false);
         if (intersection!=null) {
           intersections.add(intersection);
@@ -209,23 +232,21 @@ static class CollisionDetection {
 //        println("***");
         float[] ideal = getLineLineIntersection(px,py,cx,cy, i1[0],i1[1],i2[0],i2[1], false);
         if (ideal == null) { 
-/*
-          debugfunctions_drawBoundingBox(previous);
-          debugfunctions_drawBoundingBox(current);
-          ellipse(i1[0],i1[1],3,3);
-          ellipse(i2[0],i2[1],3,3);
-          ellipse(px,py,3,3);
-          ellipse(cx,cy,3,3);
-          println("hot line : "+px+","+py+","+cx+","+cy);
-          println("intersect: "+i1[0]+","+i1[1]+","+i2[0]+","+i2[1]);
-          float angle = atan2(i2[1]-i1[1], i2[0]-i1[0]),
-                 cosma = cos(-angle),
-                 sinma = sin(-angle);
-          float[] tr = translateRotate(px,py,cx,cy, i1[0],i1[1],i2[0],i2[1], angle,cosma,sinma);
-          println("translated: "+tr[0]+","+tr[1]+","+tr[2]+","+tr[3]+","+tr[4]+","+tr[5]+","+tr[6]+","+tr[7]+","+tr[8]);
-          exit();
-*/
-//          println("error could not find the ideal point");
+          println("error: could not find the case "+currentCase+" ideal point based on corner ["+corner+"]");
+          /*
+          println("tried to find the intersection between:");
+          println("[1] "+px+","+py+","+cx+","+cy+" (blue)");
+          println("[2] "+i1[0]+","+i1[1]+","+i2[0]+","+i2[1]+" (green)");
+          //debugfunctions_drawBoundingBox(current,sketch);
+          //debugfunctions_drawBoundingBox(previous,sketch);
+          debugfunctions_drawBoundingBox(checkLines,sketch);
+          
+          sketch.noLoop();
+          sketch.stroke(0,200,255);
+          sketch.line(px,py,cx,cy);
+          sketch.stroke(0,255,0);
+          sketch.line(i1[0],i1[1],i2[0],i2[1]);
+          */
           return new float[]{px-cx, py-cy}; 
         }
         return new float[]{ideal[0]-cx, ideal[1]-cy};
@@ -254,7 +275,7 @@ static class CollisionDetection {
    */
   static float[] getLineLineIntersection(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, boolean colinearity)
   {
-    float epsilon = 0.000000001;
+    float epsilon = 0.001;
     // convert lines to the generatised form [a * x + b + y = c]
     float a1 = -(y2 - y1), b1 = (x2 - x1), c1 = (x2 - x1) * y1 - (y2 - y1) * x1;
     float a2 = -(y4 - y3), b2 = (x4 - x3), c2 = (x4 - x3) * y3 - (y4 - y3) * x3;

@@ -8,14 +8,15 @@ class TilingSprite extends Positionable {
   float x1, y1, x2, y2;
 
   /**
-   * Set up a sprite to be tiled from x1/y1 to x2/y2
+   * Set up a sprite to be tiled from x1/y1 to x2/y2 from file
    */
-  TilingSprite(Sprite sprite, float minx, float miny, float maxx, float maxy) {
+  TilingSprite(String spritesheet, float minx, float miny, float maxx, float maxy) {
     x1 = minx;
     y1 = miny;
     x2 = maxx;
     y2 = maxy;
-    this.sprite = sprite;
+    sprite = new Sprite(spritesheet);
+    sprite.align(LEFT, TOP);
   }
   
   /**
@@ -32,11 +33,9 @@ class TilingSprite extends Positionable {
           ey = min(y2, vy+2*vh); // ideally, this is vy + vh + {something that ensures the bottommost block is drawn}
     for(x = sx; x < ex; x += sprite.width){
       for(y = sy; y < ey; y += sprite.height){
-        sprite.setPosition(x,y);
-        sprite.draw();
+        sprite.draw(x,y);
       }
     }
-    sprite.setPosition(ox,oy);
   }
 
   /**
