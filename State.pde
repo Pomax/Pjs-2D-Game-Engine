@@ -5,6 +5,8 @@ class State {
   String name;
   Sprite sprite;
   Actor actor;
+  int duration = -1,
+      served = 0;
 
   // this point is considered the "center point" when
   // swapping between states. If a state has an anchor
@@ -58,7 +60,14 @@ class State {
   void setLooping(boolean l) {
     sprite.setLooping(l);
   }
-  
+
+  /**
+   * Make this state last X frames.
+   */
+  void setDuration(float _duration) {
+    looping = false;
+    duration = (int) _duration;
+  }
 
   /**
    * bind this state to an actor
@@ -85,7 +94,10 @@ class State {
   }
 
   // reset a sprite (used when swapping states)
-  void reset() { sprite.reset();}
+  void reset() { 
+    sprite.reset();
+    served = 0;
+  }
 
   // signal to the actor that the sprite is done running its path
   void finished() {
@@ -93,8 +105,24 @@ class State {
       actor.handleStateFinished(this); }}
 
   // if the sprite has a non-looping path: is it done running that path?
-  boolean mayChange() { return sprite.mayChange(); }
+  boolean mayChange() {
+    if (duration != -1) {
+      return false;
+    }
+    return sprite.mayChange(); 
+  }
 
   // drawing the state means draw the sprite
-  void draw() { sprite.draw(); }
+  void draw() { 
+    sprite.draw();
+    served++; 
+    if(served == duration) {
+      finished();
+    }
+  }
+  
+  // set sprite's animation
+  void setAnimationSpeed(float factor) {
+    sprite.setAnimationSpeed(factor);
+  }
 }

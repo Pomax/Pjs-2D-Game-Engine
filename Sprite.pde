@@ -181,7 +181,7 @@ class Sprite extends Positionable {
   PImage getFrame() {
     // update sprite based on path frames
     currentFrame = getCurrentFrameNumber();
-    if (path != null && path.size()>0) {
+    if (path.size()>0) {
       float[] pathdata = path.getNextFrameInformation();
       setScale(pathdata[2], pathdata[3]);
       setRotation(pathdata[4]);
@@ -219,10 +219,12 @@ class Sprite extends Positionable {
    * at the correct location.
    */
   void draw() { draw(0,0); }
-  void draw(float x, float y) {
+  void draw(float px, float py) {
     if (visible) {
       PImage img = getFrame();
-      image(img, x + ox - halfwidth, y + oy - halfheight);
+      float imx = x + px + ox - halfwidth,
+             imy = y + py + oy - halfheight;
+      image(img, imx, imy);
     }
   }
  

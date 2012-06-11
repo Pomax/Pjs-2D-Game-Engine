@@ -93,8 +93,8 @@ static class SoundManager {
     ap.rewind();
   }
   
-  static void mute() {
-    muted = !muted;
+  static void mute(boolean _muted) {
+    muted = _muted;
     for(AudioPlayer ap: audioplayers.values()) {
       if(muted) { ap.mute(); }
       else { ap.unmute(); }

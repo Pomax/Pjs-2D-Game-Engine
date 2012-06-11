@@ -77,6 +77,14 @@ abstract class Actor extends Positionable {
   }
   
   /**
+   * Get the current sprite image
+   */
+  PImage getSpriteMask() {
+    if(active == null) return null;
+    return active.sprite.getFrame();
+  }
+  
+  /**
    * Tell this actor which layer it is operating in
    */
   void setLevelLayer(LevelLayer layer) {
@@ -225,6 +233,7 @@ abstract class Actor extends Positionable {
     y = round(y+dy);
     ix = 0;
     iy = 0;
+    aFrameCount = 0;
   }
 
   /**
@@ -281,7 +290,7 @@ abstract class Actor extends Positionable {
    * Draw preprocessing happens here.
    */
   void draw(float vx, float vy, float vw, float vh) {
-    handleInput();
+    if(!remove) handleInput();
     super.draw(vx,vy,vw,vh);
   }
 

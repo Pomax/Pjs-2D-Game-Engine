@@ -1,4 +1,4 @@
-/* @pjs preload="static.gif"; */
+/* @pjs preload="static.gif"; pausOnBlur="true"; */
 
 Level level;
 final float DAMPEN = 0.7;
@@ -6,7 +6,7 @@ final float GRAVITY = 3;
 
 void setup() {
   size(400,400);
-  SpriteMapHandler.setSketch(this);
+  SpriteMapHandler.init(this);
   level = new TestLevel(width, height);
   frameRate(8);
 }
@@ -97,7 +97,7 @@ class TestPlayer extends Player {
    * left mouse acts as Q, right mouse acts as E
    */
   void mousePressed(int mx, int my, int button) {
-    drawBackground(400,400);
+    debugfunctions_drawBackground(400,400);
     setPosition(200,0);
     setImpulse(0,0);
   }
@@ -125,7 +125,7 @@ class TestLevelLayer extends LevelLayer {
   }
   
   void draw() {
-    drawBackground(width, height);
+    debugfunctions_drawBackground(width, height);
     super.draw();
   }
 }

@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <title>2D gaming using Processing.js</title>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="../processing.js"></script>
+    <script type="text/javascript" src="../minim.js"></script>
+    <script type="text/javascript">
+      function init() {
+        document.removeEventListener("DOMContentLoaded",init,false);
+        var canvas = document.getElementById("testcanvas");
+        canvas.focus();
+      }
+      document.addEventListener("DOMContentLoaded",init,false);
+    </script>
+  </head>
+  <body>
+    <h2>Let's Make This game</h2>
+    
+    <canvas id="testcanvas"
+            data-processing-sources=" background.pde
+                                      banzaibill.pde
+                                      codebase.pde
+                                      hero.pde
+                                      koopa.pde
+                                      mainlayer.pde
+                                      mainlevel.pde
+                                      mario.pde
+                                      pickups.pde
+                                      preloads.pde
+                                      triggers.pde"
+            style="border: 1px solid black;"
+            tabindex="1"></canvas>
+
+  </body>
+</html>

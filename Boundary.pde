@@ -7,7 +7,7 @@ class Boundary extends Positionable {
   private float PI2 = 2*PI;
 
   // extended adminstrative values
-  float dx, dy;
+  float dx, dy, length;
   float xw, yh;
   float minx, maxx, miny, maxy;
   float angle, cosa, sina, cosma, sinma;
@@ -35,6 +35,7 @@ class Boundary extends Positionable {
     // deltas
     dx = x2-x1;
     dy = y2-y1;
+    length = sqrt(dx*dx+dy*dy);
     updateBounds();
     updateAngle();
     glide = 1.0;
@@ -101,13 +102,37 @@ class Boundary extends Positionable {
    * supported by this boundary?
    */
   boolean supports(Positionable thing) {
-    float epsilon = 1;
-    float[] bbox = thing.getBoundingBox();
-    if (minx - epsilon > bbox[2]) return false;
-    if (miny - epsilon > bbox[5]) return false;
-    if (maxx + epsilon < bbox[0]) return false;
-    if (maxy + epsilon < bbox[1]) return false;
-    return true;
+    float[] bbox = thing.getBoundingBox(), nbox = new float[8];
+
+    // First, translate all coordinates so that they're
+    // relative to the boundary's (x,y) coordinate.
+    bbox[0] -= x;   bbox[1] -= y;
+    bbox[2] -= x;   bbox[3] -= y;
+    bbox[4] -= x;   bbox[5] -= y;
+    bbox[6] -= x;   bbox[7] -= y;
+   
+    // Then, rotate the bounding box so that it's
+    // axis-aligned with the boundary line.
+    nbox[0] = bbox[0] * cosma - bbox[1] * sinma;
+    nbox[1] = bbox[0] * sinma + bbox[1] * cosma;
+    nbox[2] = bbox[2] * cosma - bbox[3] * sinma;
+    nbox[3] = bbox[2] * sinma + bbox[3] * cosma;
+    nbox[4] = bbox[4] * cosma - bbox[5] * sinma;
+    nbox[5] = bbox[4] * sinma + bbox[5] * cosma;
+    nbox[6] = bbox[6] * cosma - bbox[7] * sinma;
+    nbox[7] = bbox[6] * sinma + bbox[7] * cosma;
+    
+    // Get new bounding box minima/maxima
+    float mx = min(min(nbox[0],nbox[2]),min(nbox[4],nbox[6])),
+          MX = max(max(nbox[0],nbox[2]),max(nbox[4],nbox[6])),
+          my = min(min(nbox[1],nbox[3]),min(nbox[5],nbox[7])),
+          MY = max(max(nbox[1],nbox[3]),max(nbox[5],nbox[7]));
+
+    // Now, determine whether we're "off" the boundary...
+    boolean outOfBounds = (mx > length) || (MX < 0) || (MY<-1.99);
+    
+    // if the thing's not out of bounds, it's supported.
+    return !outOfBounds;
   }
 
   /**

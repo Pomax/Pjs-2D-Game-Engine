@@ -68,3 +68,18 @@ void removeLevel(String name) {
     levelSet.remove(name);
   }
 }
+
+/**
+ * Get a specific level (for debug purposes)
+ */
+Level getLevel(String name) {
+  return levelSet.get(name);
+}
+
+/**
+ * clear all levels
+ */
+void clearLevels() {
+  levelSet = new HashMap<String, Level>();
+  activeLevel = null;
+}

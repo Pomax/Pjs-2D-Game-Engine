@@ -11,6 +11,7 @@ static class CollisionDetection {
   private static PApplet sketch;
   public static void init(PApplet s) { sketch = s; } 
 
+
   /**
    * Perform actor/boundary collision detection
    */
@@ -18,47 +19,120 @@ static class CollisionDetection {
   {
     if (a.isAttachedTo(b)) { return; }
 
-    float[] correction = blocks(b,a);
-    if(correction != null) {
-      /*
-      sketch.stroke(0);
-      sketch.line(a.getX()-10, a.getY()-10, a.getX()+10, a.getY()+10);
-      sketch.line(a.getX()-10, a.getY()+10, a.getX()+10, a.getY()-10);
+    float[] bbox = a.getBoundingBox(),
+             correction = blocks(b,a,bbox);
 
-      sketch.stroke(255,0,0);
-      sketch.line(a.getX(), a.getY(), a.getX()+correction[0], a.getY()+correction[1]);
-      */
-      a.attachTo(b, correction); }
+    if(correction != null) {
+      //adjustForSpriteMask(b, a, bbox, correction);
+      a.attachTo(b, correction); 
+    }
   }
+
 
   /**
    * Is this boundary blocking the specified actor?
+   *
+   * @return null if no intersect, otherwise float[3]
+   *         indices: [0] = dx, [1] = dy, [2] = bbox (x) index to hit boundary first   
    */
-  static float[] blocks(Boundary b, Actor a)
+  static float[] blocks(Boundary b, Actor a, float[] bbox)
   {
     // we don't block in the pass-through direction.
     if(b.allowPassThrough(a.ix, a.iy)) { return null; }
 
-    float[] current = a.getBoundingBox(),
+    float[] current = bbox,
             previous = a.previous.getBoundingBox(),
             line = {b.x, b.y, b.xw, b.yh};
 
     return CollisionDetection.getLineRectIntersection(line, current, previous);
   }
 
+
+  /**
+   * The correction moves the bounding box to a safe location on the boundary,
+   * but this might not be the correct location given the sprite inside the
+   * bounding box. In order to make things look 'right', we examine the bounding
+   * box to see by how much we can decrease the correction so that it looks as
+   * if the sprite is anchored to the boundary.
+   *
+   * Does not return anything. The correction array is modified in-place.
+   */
+  static void adjustForSpriteMask(Boundary b, Actor a, float[] bbox, float[] correction)
+  {
+    int corner = (int)correction[2];
+    if (corner == -1) return; 
+
+    int sx = (int) bbox[corner],
+        sy = (int) bbox[corner+1],
+        ex = (int) (bbox[corner] - a.ix),
+        ey = (int) (bbox[corner+1] - a.iy),
+        minx = (int) bbox[0],  // FIXME: this will be incorrect for rotated actors
+        miny = (int) bbox[1];
+    PImage mask = a.getSpriteMask();
+    if (mask != null) {
+      int[] distance = getPermissibleSpriteMaskShift(mask, sx,sy, ex,ey, minx,miny);
+      correction[0] -= distance[0];
+      correction[1] -= distance[1];
+    }
+  }
+
+
+  /**
+   * Find the safe distance by which we can move a sprite so that 
+   * rather than having its corner touch a boundary, it will look
+   * like the sprite's image touches the boundary instead.
+   *
+   * This uses Bresenham's line algorithm, with a
+   * safety conditional to prevent infinite loops.
+   */  
+  static int[] getPermissibleSpriteMaskShift(PImage m, int x0, int y0, int x1, int y1, int minx, int miny)
+  {
+    int[] shift = {0,0};
+    int sx = x0,
+        sy = y0,
+        dx = (int) abs(x1-x0),  // distance to travel
+        dy = (int) abs(y1-y0),
+        ax = (x0<x1) ? 1 : -1,  // x and y stepping values
+        ay = (y0<y1) ? 1 : -1,
+        imx = 0,                // x and y coordinate on the image mask
+        imy = 0,
+        err = dx-dy,
+        // Conceptually you rely on "while(true)", but no one
+        // should ever do that. Safety first: add a cutoff.
+        // Verifying over a 65535 pixel line should be enough.
+        safety = 0;
+    while(safety++ < 0xFFFF) {
+      // if we find a pixel in the mask that is not
+      // transparent, we have found our safe distance.
+      imx = x0-minx;
+      imy = y0-miny;
+      if(sketch.alpha(m.get(imx,imy)) > 0) {
+        shift = new int[]{(x0-sx), (y0-sy)};
+        return shift;
+      }
+      // We must stop when we've reached the end coordinate
+      else if(x0==x1 && y0==y1) {
+        return shift;
+      }
+      // continue: move to the next pixel
+      int e2 = err<<1;
+      if(e2 > -dy) { err -= dy; x0 += ax; }
+      if(e2 < dx) { err += dx; y0 += ay; }
+    }
+    // This code is unreachable, but ONLY in theory.
+    // We could still get here if the cutoff is reached.
+    return shift;
+  }
+
+
 // =================================================================
 
+  // recycled containers
   private static float[] current_dots = {0,0,0,0,0,0,0,0};
   private static float[] previous_dots = {0,0,0,0,0,0,0,0};
   private static ArrayList<float[]> intersections = new ArrayList<float[]>();
   private static float[] checkLines = {0,0,0,0,0,0,0,0};
-  private static float[] ZERO_DIFFERENCE = {0,0};
-
-  // constant for indicating a coordinate is an intersection
-  final static int INTERSECTION = 0;
-
-  // constant for indicating a coordinate is a full contained coordinate
-  final static int CONTAINED = 1;
+  private static float[] ZERO_DIFFERENCE = {0,0,-1};
 
 
   /**
@@ -96,6 +170,16 @@ static class CollisionDetection {
    * because the "previous" state is boundary overlapping, it was permitted
    * earlier (for instance, it moved through the boundary in the allowed
    * direction, but then moved back before having fully passed the boundary).
+   *
+   * DOCUMENTATION FIX: we can actually treat 2 and 3 as the same case, with
+   *                    a more reliable result, by always constructing a 
+   *                    new intersection-validating parallelogram from the 
+   *                    "hot corner" and an adjacent corner in {previous} and
+   *                    {current}.
+   *
+   *
+   * @return null if no intersect, otherwise float[3]
+   *         indices: [0] = dx, [1] = dy, [2] = bbox (x) index to hit boundary first   
    */
   static float[] getLineRectIntersection(float[] line, float[] current, float[] previous)
   {
@@ -181,22 +265,23 @@ static class CollisionDetection {
       checkLines = new float[8];
       arrayCopy(current,0,checkLines,0,8);
 
-      // if we're seeing case (3), set up bbox correctly.
-      if (B_current < 4) {
+//      // if we're seeing case (3), set up bbox correctly.
+//      if (B_current < 4) {
 //        println("case 3");
-        currentCase = 3;
-        // two of these edges are guaranteed to not have intersections,
-        // since otherwise the intersection would be inside either
-        // [previous] or [current], which is case (2) instead.
-        checkLines = new float[]{previous[(corner)%8], previous[(corner+1)%8],
-                                 previous[(corner+2)%8], previous[(corner+3)%8],
-                                 current[(corner+2)%8],  current[(corner+3)%8],
-                                 current[(corner)%8],  current[(corner+1)%8]};
-      }
-      else
-      { 
+
+      currentCase = 3;
+      // two of these edges are guaranteed to not have intersections,
+      // since otherwise the intersection would be inside either
+      // [previous] or [current], which is case (2) instead.
+      checkLines = new float[]{previous[(corner)%8], previous[(corner+1)%8],
+                               previous[(corner+2)%8], previous[(corner+3)%8],
+                               current[(corner+2)%8],  current[(corner+3)%8],
+                               current[(corner)%8],  current[(corner+1)%8]};
+//      }
+//      else
+//      { 
 //        println("case 2"); 
-      }
+//      }
 
       // Now that we have the correct box, perform line/line
       // intersection detection for each edge on the box.
@@ -247,10 +332,11 @@ static class CollisionDetection {
           sketch.stroke(0,255,0);
           sketch.line(i1[0],i1[1],i2[0],i2[1]);
           */
-          return new float[]{px-cx, py-cy}; 
+          return new float[]{px-cx, py-cy, corner}; 
         }
-        return new float[]{ideal[0]-cx, ideal[1]-cy};
+        return new float[]{ideal[0]-cx, ideal[1]-cy, corner};
       }
+
       // if there's only one intersection,
       // additional math is required.
       else if (intersectionCount == 1) {

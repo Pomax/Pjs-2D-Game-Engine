@@ -9,7 +9,11 @@
  *                                 *
  ***********************************/
  
+
+/* @ p j s  preload="docs/tutorial/graphics/mario/small/Standing-mario.gif"; */
+
 /*
+
 final int screenWidth = 512;
 final int screenHeight = 432;
 void initialize() { 
@@ -20,6 +24,12 @@ class TestLevel extends Level {
   TestLevel(float w, float h) {
     super(w,h); 
     addLevelLayer("test", new TestLayer(this,w,h));
+  }
+  
+  void draw() {
+    fill(0,10);
+    rect(-1,-1,width+2,height+2);
+    super.draw();
   }
 }
 
@@ -84,4 +94,5 @@ class TestObject extends Player {
     setPosition(x,y);
   }
 }
+
 */

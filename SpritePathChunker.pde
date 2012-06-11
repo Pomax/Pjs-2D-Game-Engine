@@ -86,10 +86,11 @@ static class SpritePathChunker {
     }
 
     // now that we have our step value, we simply run through the curve:
-    float len[] = new float[(int)frames];
-    float trp[] = new float[(int)frames];
+    int alen = (int)frames;
+    float len[] = new float[alen];
+    float trp[] = new float[alen];
     int frame = 1;
-    for (t = 0; t < 1.0; t += increment) {
+    for (t = 0; t < 1.0 && frame<alen; t += increment) {
       // get length of curve over interval [0,t]
       curlen = computeCubicCurveLength(t,x1,y1,x2,y2,x3,y3,x4,y4);
 
@@ -103,7 +104,7 @@ static class SpritePathChunker {
     }
 
     // Make sure that any gaps left at the end of the path are filled with 1.0
-    while(frame<frames) { trp[frame++] = 1.0; }
+    while(frame<alen) { trp[frame++] = 1.0; }
     return trp;
   }
 

@@ -197,6 +197,13 @@ abstract class LevelLayer {
     yScale = sy;
     nonstandard = (xScale!=1 || yScale!=1 || xTranslate!=0 || yTranslate!=0);
   }
+  
+  /**
+   * Get the level this layer exists in
+   */
+  Level getLevel() {
+    return parent;
+  }
 
   // used for statistics
   int getActorCount() {
@@ -386,10 +393,12 @@ abstract class LevelLayer {
     if(showActors) {
       for(int i=players.size()-1; i>=0; i--) {
         Player a = players.get(i);
+
         if(a.remove) {
           players.remove(i);
           if(javascript!=null) { javascript.removeActor(); }
           continue; }
+
         if(a.interacting) {
 
           // boundary interference?

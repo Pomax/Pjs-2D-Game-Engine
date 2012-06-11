@@ -10,13 +10,21 @@ class TilingSprite extends Positionable {
   /**
    * Set up a sprite to be tiled from x1/y1 to x2/y2 from file
    */
-  TilingSprite(String spritesheet, float minx, float miny, float maxx, float maxy) {
+  // FIXME: temporarily commented off, because of a possible bug in Pjs
+//  TilingSprite(String spritesheet, float minx, float miny, float maxx, float maxy) {
+//    this(new Sprite(spritesheet),minx,miny,maxx,maxy);
+//  }
+
+  /**
+   * Set up a sprite to be tiled from x1/y1 to x2/y2 from Sprite
+   */
+  TilingSprite(Sprite _sprite, float minx, float miny, float maxx, float maxy) {
     x1 = minx;
     y1 = miny;
     x2 = maxx;
     y2 = maxy;
-    sprite = new Sprite(spritesheet);
-    sprite.align(LEFT, TOP);
+    _sprite.align(LEFT, TOP);
+    sprite = _sprite;
   }
   
   /**
