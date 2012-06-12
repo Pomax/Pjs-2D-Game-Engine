@@ -1,0 +1,831 @@
+<!doctype html>
+<html>
+  <head>
+    <title>2D gaming using Processing.js</title>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="../../processing.js"></script>
+    <script type="text/javascript" src="processing-lazyload.js"></script>
+    <script type="text/javascript" src="../../minim.js"></script>
+    <style>
+      textarea { display: block; outline: none; overflow: hidden; margin-left: 2em;}
+
+      figure { clear: both; display: inline-block; border: 1px solid grey; padding: 5px; text-align: center; }
+      figure canvas { display: block; border: 1px solid black; }
+      figure figcaption { display: block; font-size: 90%; font-style: italic; }
+      figure:after { clear: both; }
+      
+      code { font-family: monospace; color: #004; }
+      
+      .colorblock { display: inline-block; width: 30px; height: 0.8em;}
+    </style>
+  </head>
+  <body>
+
+    <h1>Let's make a Mario game.</h1>
+    
+    <p>We had a look at some of the basics of making a game using the Processing.js game
+    library, so let's kick it up a notch by just getting down and making our own Super
+    Mario game. When we're done with this part of the tutorial, we'll have a game with
+    koopa troopers, platforms that we can jump up through but not fall down through,
+    a hole with terrible muncher plants, coins, including a mysterious dragon coin,
+    a giant banzai bill bullet that comes out of nowhere, and even some advanced things
+    like not actually putting enemies in the level from the start, but only just before
+    you get to where they're supposed to be.</p>
+    
+    <p>And it's going to be pretty sweet. Let's get started!</p>
+    
+    <h2>First stop: we need a Mario</h2>
+    
+    <p>Okay, almost. Before the first stop, we'll need a game with at least
+    one level which has at least one level layer so that we can even put
+    mario somewhere. Just like we did last time. So let's get cracking:</p>
+    
+    <textarea readonly style="width: 40em; height: 26em;">
+final int screenWidth = 512;
+final int screenHeight = 432;
+
+void initialize() {
+  addLevel("level", new MarioLevel(width, height));  
+}
+
+class MarioLevel extends Level {
+  MarioLevel(float levelWidth, float levelHeight) {
+    super(levelWidth, levelHeight);
+    addLevelLayer("layer", new MarioLayer(this));
+  }
+}
+
+class MarioLayer extends LevelLayer {
+  MarioLayer(Level owner) {
+    super(owner);
+    setBackgroundColor(color(0, 100, 190));
+    addBoundary(new Boundary(0,height-48,width,height-48));
+    showBoundaries = true;
+  }
+}
+</textarea>
+
+    <p>This sets up an empty, but for all intents and purposes functional, game world
+    that we can stick Mario in:</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde sketches/mario/sketch00.pde"></canvas>
+       <figcaption>An empty game world</figcaption>
+    </figure> 
+
+    <p>So now we can make Mario. First, let's think of what we want Mario
+    to be able to do: </p>
+    
+    <ul>
+      <li>he can stand around,</li>
+      <li>sometimes he runs around,</li>
+      <li>he also likes to jump around, and</li>
+      <li>unfortunately, he can die =(</li>
+    </ul>
+    
+    <p>So, let's find some pictures for all these different things:</p>
+
+    <ul>
+      <li>Standing around: <img src="graphics/mario/small/Standing-mario.gif"></li>
+      <li>Running: <img src="graphics/mario/small/Running-mario.gif"></li>
+      <li>Jumping: <img src="graphics/mario/small/Jumping-mario.gif"></li>
+      <li>Losing: <img src="graphics/mario/small/Dead-mario.gif"></li>
+    </ul>
+    
+    <p>You'll notice that some of these states use multiple pictures. This lets us
+    create the illusion of "animation": if we loop through the images quickly enough,
+    it'll see like Mario's animated, and that's good! So let's make a Mario!</p>
+
+    <textarea readonly style="width: 60em; height: 17em;">
+class Mario extends Player {
+  Mario(float x, float y) {
+    super("Mario");
+    setupStates();
+    setPosition(x,y);
+  }
+  void setupStates() {
+    addState(new State("idle", "graphics/mario/small/Standing-mario.gif"));
+    addState(new State("running", "graphics/mario/small/Running-mario.gif",1,4));
+    addState(new State("jumping", "graphics/mario/small/Jumping-mario.gif"));
+    addState(new State("dead", "graphics/mario/small/Dead-mario.gif",1,2));
+    setCurrentState("idle");    
+  }
+}
+</textarea>
+
+    <p>And then let's add a mario to our world:</p>
+    
+    <textarea readonly style="width: 40em; height: 12em;">
+class MarioLayer extends LevelLayer {
+  MarioLayer(Level owner) {
+    super(owner);
+    setBackgroundColor(color(0, 100, 190));
+    addBoundary(new Boundary(0,height-48,width,height-48));
+    showBoundaries = true;
+    Mario mario = new Mario(width/2, height/2);
+    addPlayer(mario);
+  }
+}
+</textarea>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch01.pde"></canvas>
+       <figcaption>A world with a Mario</figcaption>
+    </figure>
+    
+    <h2>Making mario actually do things</h2>
+    
+    <p>This is pretty boring. Much like the previous tutorial, nothing's
+    happening, so let's make things a little more interesting. First, let's
+    introduce some gravity. We introduce three new global values:</p>
+    
+    <textarea readonly style="width: 40em; height: 4em;">
+float DOWN_FORCE = 2;
+float ACCELERATION = 1.3;
+float DAMPENING = 0.75;
+</textarea>
+
+    <p>The "down force" value determines how much players and NPCs etc will
+    be "pushed down" towards the ground when they're not standing on anything.
+    The "acceleration" value determines how much they will accelerate while
+    they're falling, so that the longer they fall, the faster they fall,
+    and the "dampening" value determines what happens when we give players
+    or NPCs an impulse (= some speed). With dampening set to "1", the
+    amount of speed is the same from one frame to the next. "0.5" will halve
+    the amount of speed per frame, and "0" will kill off speed complete
+    from one frame to the next.</p>
+    
+    <p>Of course, we also need to make sure those forces apply to Mario,
+    so we modify our constructor:</p>
+
+<textarea readonly style="width: 40em; height: 10em;">
+  Mario(float x, float y) {
+    super("Mario");
+    setupStates();
+    setPosition(x,y);
+    setForces(0,DOWN_FORCE);
+    setAcceleration(0,ACCELERATION);
+    setImpulseCoefficients(DAMPENING,DAMPENING);
+  }
+</textarea>
+    
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch02.pde"></canvas>
+       <figcaption>A world with a Mario. And gravity.</figcaption>
+    </figure>
+    
+    <p>Excellent! now Mario's on the ground... but.. still not doing
+    very much. So, time to hook up the controls. We will be using "WASD"
+    controls again, so that 'W' means "up", 'A' means "left", 'S' means...
+    ... well we're not actually going to use 'S', but 'D', means "right".</p>
+
+<textarea readonly style="width: 40em; height: 23em;">
+  Mario(float x, float y) {
+    super("Mario");
+    setupStates();
+    setPosition(x,y);
+    handleKey('W');
+    handleKey('A');
+    handleKey('D');
+    setForces(0,DOWN_FORCE);
+    setAcceleration(0,ACCELERATION);
+    setImpulseCoefficients(DAMPENING,DAMPENING);
+  }
+  
+  [...]
+
+  void handleInput() {
+    if (isKeyDown('A')) { addImpulse(-2, 0); }
+    if (isKeyDown('D')) { addImpulse(2, 0); }
+    if (isKeyDown('W')) { addImpulse(0,-10); }
+  }  
+</textarea>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch03.pde"></canvas>
+       <figcaption>A world with a Mario. And gravity. And controls</figcaption>
+    </figure>
+    
+    <p>At this point, Mario is still fairly boring. Sure, we can
+    control him, but none of those fancy states are being used, so
+    let's refind the input handling (you may remember binding keys to
+    motion controls in the previous tutorial) so that when we walk left or
+    right, we actually show as running, and when we jump, we actually
+    look like we're jumping.</p>
+    
+    <p>hang on to your pants, this one's a biggy:</p>
+
+<textarea readonly style="width: 60em; height: 30em;">
+  void handleInput() {
+    // handle running
+    if(isKeyDown('A') || isKeyDown('D')) {
+      if (isKeyDown('A')) {
+        setHorizontalFlip(true);
+        addImpulse(-2, 0);
+      }
+      if (isKeyDown('D')) {
+        setHorizontalFlip(false);
+        addImpulse(2, 0);
+      }
+      setCurrentState("running");
+    }
+
+    // handle jumping
+    if(isKeyDown('W') && active.name!="jumping" && boundaries.size()>0) {
+      addImpulse(0,-35);
+      setCurrentState("jumping");
+    }
+    
+    if(!isKeyDown('A') && !isKeyDown('D') && !isKeyDown('W')) {
+      setCurrentState("idle");
+    }
+  }
+</textarea>
+
+    <p>So what does this code do? Let's look at the three parts that this 
+    code can be looked at, separately. First, the first "if" statement.<p>
+    
+    <p>The first "if" statement checks for the 'A' and 'D' keys, which
+    correspond to walking left and right, respectively. The trick here is
+    that we want to be able to press both keys at the same time, without
+    one of them winning, so we check for the keys in two steps: 1) are
+    either A or D pressed? If so, 2a) is A pressed, and 2b) is D pressed.
+    If A is pressed, we will be walking left, so we give Mario an impulse
+    of -2, horizontally, and 0, vertically (because running is a horizontal-only
+    affair). However, if you scroll up to the pictures we had for running,
+    they're for running to the right. In order to make sure we run to the
+    left with the pictures oriented correctly, we need to make sure that
+    they are flipped.</p>
+    
+    <p>If D is pressed we do roughly the same thing, but in the opposite
+    direction: a horizontal impulse of 2, rather than -2, and we make
+    sure the pictures are NOT flipped, so look like they run to the right.
+    Finally, at the end of the first "if" block, we make sure that Mario's
+    state is indeed the running state, by setting the current state to "running".
+    Makes sense, really!</p>
+
+    <p>Then, the second "if" block. In this block we check for the 'W' key,
+    which is our jumping key. However, we can't "just jump", there's a few
+    conditions that need to be met. First, we can only jump if 'W' is pressed.
+    Okay, so that one is obvious. Second, we can only jump if we're not
+    already jumping right now. This prevents us from jumping while we're
+    already jumping. Because that would just be weird! Finally, we also 
+    don't want to jump unless we're actually standing on something. This last
+    one, especially, is important. We don't want to be able to jump in mid air
+    while we're falling from a platform, for instance. Or rather... for the 
+    moment, we don't, but once we're done with this game, <i>maybe</i> we
+    actually do want to change that... hmmm... anyway, on to the rest of the code:
+    All those conditions are combined with "&amp;&amp;" which is programming-code
+    for "AND". So, we have if(something AND something AND something) { [then do this] }.
+    We don't actually use the word "AND" for it, but use "&amp;&amp;" because
+    that's how programming languages have been doing things for decades, so it's
+    one of those things you quickly learn to use and expect everywhere.</p>
+    
+    <p>So with all those conditions met, what do we do? Well, we give Mario
+    a jolt of speed upwards, -35 in fact, and we make sure that his state
+    is the "jumping" state, so that it looks like he's jumping. Perfect!
+    So what's with that last block?</p>
+    
+    <p>The last block checks "are we actually pressing any key?". If we're
+    not pressing left, or up, or right, then it's a good idea to make sure
+    that Mario looks like he's just standing there, so we set his state
+    to "idle" if no relevant keys are pressed. So with all that work done,
+    what does Mario look like?</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch04.pde"></canvas>
+       <figcaption>A much nicer looking Mario</figcaption>
+    </figure>
+    
+    <p>Hmm... that's actually a bit too fast. By default, the game library
+    will run our games at 60 frames per second. That's really high, so let's
+    set that to 30 instead:</p>
+    
+    <textarea readonly style="width: 40em; height: 5em;">
+void initialize() {
+  addLevel("level", new MarioLevel(width, height));  
+  frameRate(30);
+}
+</textarea>
+
+    <p>Now what does it look like?</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch04b.pde"></canvas>
+       <figcaption>Now at 30 frames per second</figcaption>
+    </figure>
+    
+    <p>That's better. On to making this prettier!</p>
+    
+    <h2>Polishing Mario's interaction</h2>
+    
+    <p>While the input handling we have works, you might notice that it's doing funny things
+    when you jump and run left or right at the same time. So let's fix that. Instead of 
+    making jumping a normal state, let's make it special. The game library lets you add
+    specific durations to states, so that when you change to them, they last for a 
+    specific number of frames, and then give you a signal that they're done. That way,
+    we can prevent Mario from changing states or triggering behaviour while he's jumping.
+    This means we have to do two things: 1) say that jumping is a special state, with
+    a specific duration, and 2) make sure the input handling takes into account that
+    we might not be able to change states while Mario is jumping. Let's-a-di-go!</p>
+
+<textarea readonly style="width: 60em; height: 32em;">
+  void setupStates() {
+    [...]
+    
+    State jumping = new State("jumping", "graphics/mario/small/Jumping-mario.gif");
+    jumping.setDuration(15);
+    addState(jumping);
+
+    setCurrentState("idle");    
+  }
+
+  void handleInput() {
+    if(isKeyDown('A') || isKeyDown('D')) {
+      [...]
+      // we remove setCurrentState("running") here!
+    }
+
+    if(isKeyDown('W') && active.name!="jumping" && boundaries.size()>0) {
+      [...]
+    }
+    
+    if (active.mayChange()) {
+      if(isKeyDown('A') || isKeyDown('D')) {
+        setCurrentState("running");
+      }
+      else { setCurrentState("idle"); }
+    }
+  } 
+</textarea>
+
+    <p>As you can see, the only thing we have to change for the jumping
+    state is saying "this state has a duration". In this case, we've set
+    it to 15 frames (and since the game plays at 30 frames per second,
+    that means a jump lasts half a second) and that's all we have to do!
+    Then, in our input handling, we can make use of two special things.
+    First, the <code>active</code> word means "the currently active state".
+    If we've set the current state to "idle", then <code>active</code> points
+    to the idle state. If we've set it to "jumping", then <code>active</code>
+    points to the jumping state. That's pretty useful, because it lets us
+    check whether the "current state" is one of those special states that
+    we shouldn't interrupt: <code>active.mayChange()</code> gives us a "yes"/"no"
+    answer to the question "is this a special state, and if so, has it finished
+    so that we may change to another state already?".</p>
+    
+    <p>Making use of <code>active.mayChange()</code>, we can now say: "IF
+    we're allowed to change states, then check if they running keys are 
+    pressed. If so, change state to running. Otherwise, change it to just
+    standing around, being idle". So now we should be able to do strange
+    super-power jumping anymore if we jump and move to the left or right
+    at the same time:</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch05.pde"></canvas>
+       <figcaption>A much nicer jumping Mario</figcaption>
+    </figure>  
+    
+    <p>So, now that we have a reasonably well-controlled Mario, I think
+    it's time we jazzed this game up a little with some good looks.
+    What do you think?</p>
+    
+    <h2>Of course, we need a background...</h2>
+    
+    <p>Let's start with that background. It's boring, right? I mean, sure, it's
+    a pretty color but it just... a plain color. How about instead we add
+    some background in the Mario style?</p>
+
+<textarea readonly style="width: 70em; height: 18em;">
+class MarioLayer extends LevelLayer {
+  MarioLayer(Level owner) {
+    super(owner);
+
+    setBackgroundColor(color(0, 100, 190));
+    Sprite background_picture = new Sprite("graphics/backgrounds/sky.gif");
+    TilingSprite background = new TilingSprite(background_picture,0,0,width,height);
+    addStaticSpriteBG(background);
+
+    addBoundary(new Boundary(0,height-48,width,height-48));
+    showBoundaries = true;
+    Mario mario = new Mario(width/4, height/2);
+    addPlayer(mario);
+  }
+}
+</textarea>
+
+    <p>The important line is that <code>addStaticSpriteBG(...)</code> line. This says
+    "Add something, which is inside the ( and ), to the list of background sprites." with
+    the word "static" simply meaning "things that don't change". In this case we add
+    what is known as a "Tiling Sprite" - a picture that is repeated to fill a certain area
+    of the screen. Since we want the background to fill the entire level, we use a picture
+    of a typical Mario sky line, and make it repeat itself starting at (0,0), which is the
+    upper left corner of the level, all the way down to (width,height), which is the lower
+    right corner of the level.</p>
+    
+    <p>We could keep it at that, but since we're updating the background anyway, let's make
+    sure that Mario can't run out of the level:</p>
+
+<textarea readonly style="width: 70em; height: 12em;">
+class MarioLayer extends LevelLayer {
+  MarioLayer(Level owner) {
+    [...]
+    addBoundary(new Boundary(0,height-48,width,height-48));
+    addBoundary(new Boundary(-1,0, -1,height));
+    addBoundary(new Boundary(width+1,height, width+1,0));
+    showBoundaries = true;
+    [...]
+  }
+}
+</textarea>
+
+    <p>These two extra boundaries sit *just* outside the level on the left and the right,
+    like what we did in the previous tutorial to keep our "Thingy" inside the screen. 
+    Except this time our Thingy is a Mario! =D</p>
+    
+    <p>And because we can, let's make one more change: a background is nice, but it
+    would be even better if we could actually see that it repeats, by making the level
+    wider than a single screen. So... let's do that!</p>
+
+<textarea readonly style="width: 40em; height: 15em;">
+void initialize() {
+  frameRate(30);
+  addLevel("level", new MarioLevel(2*width, height));  
+}
+
+class MarioLevel extends Level {
+  MarioLevel(float levelWidth, float levelHeight) {
+    super(levelWidth, levelHeight);
+    addLevelLayer("layer", new MarioLayer(this));
+    setViewBox(0,0,screenWidth,screenHeight);
+  }
+}
+</textarea>
+
+    <p>Two things to note are that in our <code>initialize</code> method,
+    we now make a MarioLevel that is twice as wide as the screen. In order
+    to make sure that game library doesn't get confused, we then also
+    tell it that the <code>viewbox</code> for this game starts at (0,0),
+    which is the upper left of the screen, and is only <code>screenWidth</code>
+    wide, and <code>screenHeight</code> high, so it is exactly the same
+    size as our game "window". If we left it at this, we would see Mario
+    run to the right and then disappear, but the viewbox is special: it
+    can follow a player around. So we make one final change:</p>
+
+
+<textarea readonly style="width: 40em; height: 17em;">
+class MarioLayer extends LevelLayer {
+  Mario mario;
+  
+  MarioLayer(Level owner) {
+    [...]
+    mario = new Mario(width/4, height/2);
+    addPlayer(mario);
+  }
+  
+  void draw() {
+    super.draw();
+    viewbox.track(parent, mario);
+  }
+}
+</textarea>
+
+    <p>We've done two things here. First, we've made the level layer always "know" what
+    the <code>mario</code> word refers to. Now, if we refer to <code>mario</code> in any
+    of the methods of the level layer, it will know what to use. That's important, because
+    the viewbox needs to know who it should be following around when the level layer is
+    being drawn. That's the second thing we changed. Normally a level layer has a premade
+    method called "draw" that it kind of "inherits" from the game library. But, it only
+    draws the level layer, it doesn't do anything else. If we want to make the viewbox
+    follow Mario around, we'll need to set up instructions that say "do what you normally
+    do, but ALSO follow mario!". So that's what we do: <code>super.draw()</code> is the
+    line that says "do what you normally do", namely call the "draw" method that the level
+    layer already knows about, because it is part of its super class (remember super
+    classes from the previous tutorial?). Then the next instruction is to the viewbox:
+    <code>viewbox.track(parent, mario)</code> tells the viewbox to follow mario around,
+    using the visual properties of the level that the level layer is in, which the
+    level layed calls its <code>parent</code>. Whenever the level layer needs to 
+    point to its owning level, we can use the word <code>parent</code> and the game
+    library will know what to do. Especially now, that's pretty handy.</p>
+    
+    <p>Okay! That's enough! We added background. We added walls to the left and right.
+    We made the level bigger than the screen. We (hopefully!) made the screen "follow"
+    Mario... what does it look like already!??!</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch06.pde"></canvas>
+       <figcaption>So much goodness!</figcaption>
+    </figure>  
+    
+    <p>Now that's what I call pretty cool!</p>
+    
+    <p>...</p>
+
+    <p>How about we make it even cooler?</p>
+    
+    <h2>This game needs ground and stuff!</h2>
+
+    <p>We've been putting it off long enough: having Mario walk on a thin little
+    line works, but things will look a lot better if we make him walk on some
+    actual ground. Or at least, if we make it LOOK as if he is. Let's start
+    creating some ground, shall we?</p>
+    
+    <p>Ground is actually quite similar to adding background. Since the only
+    thing that determines whether Mario's "on something" or not is the (normally)
+    invisible boundaries (which we can see right now because we're cheating and
+    we're drawing them, even though normally you don't), we can actually just
+    leave the boundary where it is, and set up some more background that makes it
+    look like there's ground underneat the boundary line.</p>
+    
+    <p>In order to make ground, we're going to use a few images. Two, in fact.
+    One to look like the top soil, with grass, and one that fills in the region
+    underneath:</p>
+    
+    <figure>
+      grass: <img src="graphics/backgrounds/ground-top.gif">, filler: <img src="graphics/backgrounds/ground-filler.gif">
+      <figcaption>Mmm grassy soil</figcaption>
+    </figure>
+
+    <p>The trick is to lay down a row of top soil, and then fill in the rest
+    with filler. We've actually already seen how we are supposed to do this:
+    we use a TilingSprite. First, let's define a method for "laying" ground:</p>
+    
+<textarea readonly style="width: 40em; height: 17em;">
+class MarioLayer extends LevelLayer {
+  [...]
+  
+  void addGround(float x1, float y1, float x2, float y2) {
+    Sprite grassy = new Sprite("graphics/backgrounds/ground-top.gif");
+    TilingSprite groundline = new TilingSprite(grassy, x1,y1,x2,y1+16);
+    addStaticSpriteBG(groundline);
+
+    Sprite filler = new Sprite("graphics/backgrounds/ground-filler.gif");
+    TilingSprite groundfiller = new TilingSprite(filler, x1,y1+16,x2,y2);
+    addStaticSpriteBG(groundfiller);
+
+    addBoundary(new Boundary(x1,y1,x2,y1));
+  }  
+}
+</textarea>
+
+    <p>This method expects four values when we use it: the first two
+    are the top-left x/y coordinates for the ground we'll place,
+    and the last two are the bottom-right x/y coordinates, so we're
+    supposed to draw ground in the rectangle between those two coordinates.
+    The top-most row has to be grassy ground, so we use the grassy picture,
+    and make a TilingSprite that runs from (x1,y1), which is our indiated
+    top left corner, to (x2,y1+16).</p>
+
+    <p>What do those values mean? Well, x2 is the horizontal coordinate for the
+    right-most edge of the rectangle we want to fill. So that one's pretty
+    easy. "y1+16" means "the top coordinate value, plus 16 pixels". We add
+    16 pixels because we know the picture for the grass is 16 pixels high.
+    So we want to draw a row of grass that starts at (0,0) and is exactly
+    16 pixels high, and the normal width wide.</p>
+    
+    <p>After that, we fill the rest with filler pictures. This doesn't start
+    at (x1,y1), but at (x1,y1+16), because we need to start at the same horizontal
+    position, but 16 pixels lower (or we'd be drawing filler on top of the grass!).
+    And then it has to be wide enough to reach x2, horizontally, and high enough
+    to reach y2, vertically.</p>
+    
+    <p>Finally, because ground acts as something Mario can stand on, we add
+    a boundary that runs along the top of the grass, so that Mario has something
+    to stand on. And with that, we add some ground to our level layer:<p>
+    
+<textarea readonly style="width: 40em; height: 17em;">
+class MarioLayer extends LevelLayer {
+  [...]
+
+  MarioLayer(Level owner) {
+    [...]
+    addGround(-32,height-48, width+32,height);
+  }
+
+  [...]
+}
+</textarea>
+
+    <p>Now we'll have ground running across the screen, from 32 pixels "outside"
+    the screen on the left, to 32 pixels "outside" the screen on the right, filling
+    an area with height "height of the screen, minus 48 pixels" to "height of the screen".
+    What does that look like? Well, this:</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch08.pde"></canvas>
+       <figcaption>Now with ground to stand on!</figcaption>
+    </figure>  
+    
+    <p>What a difference some ground can make!</p>
+    
+    <p>There's another thing we can do that also makes a neat difference,
+    and that's adding a second layer of background that looks like it's
+    farther away, so that when we walk, it moves slower than the normal
+    background.</p>
+    
+    <p>We can do this really easily by adding a new layer to our level,
+    one that we'll simply stick behind the real layer that has Mario on it.
+    In fact, the code for it is not very long, can you tell what it does?</p>
+
+<textarea readonly style="width: 70em; height: 35em;">
+class MarioLevel extends Level {
+  MarioLevel(float levelWidth, float levelHeight) {
+    [...]
+    addLevelLayer("background", new BackgroundLayer(this));
+    addLevelLayer("layer", new MarioLayer(this));
+  }
+}
+
+
+class BackgroundLayer extends LevelLayer {
+  BackgroundLayer(Level owner) {
+    super(owner, owner.width, owner.height, 0, 0, 0.75, 0.75);
+    setBackgroundColor(color(0, 100, 190));
+    addStaticSpriteBG(new TilingSprite(new Sprite("graphics/backgrounds/sky_2.gif"),0,0,width,height));
+  }
+}
+
+class MarioLayer extends LevelLayer {
+  Mario mario;
+
+  MarioLayer(Level owner) {
+    super(owner);
+    // we no longer have a background color in the main level layer now
+    addStaticSpriteBG(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
+    [...]  
+  }
+
+  [...]
+}
+</textarea>
+
+    <p>The important part is that new <code>BackgroundLayer</code> class, which does something
+    special. Unlike a normal layer, such as the <code>MarioLayer</code>, the BackgroundLayer
+    has a more elaborate call to tell its super class what's up: it gives it seven values instead
+    of one! The first value is the same as for normal layers: the Level that this layer should
+    be in. So far so good. Then, it tells it what that level's width and height are. This is important,
+    because those are needed to do something intelligent with the following four values: the first
+    two are "shifting" values, which let us say by how much this layer is shifted left or right,
+    as well as up or down. We don't want that right now, so we keep both of those zero. Then,
+    the two values after that tell the layer by how much it is scaled. This is very important!
+    To make it look like this layer is farther away, we want it to move slower than the main
+    level layer with Mario in it. Since we can't tell layers how fast they need to move, we
+    instead tell them that they are bigger or smaller than the main level. This makes the game
+    library squash or stretch the level, so that the start and end match up -- if we
+    add a layer that is larger than the main layer, it will be squashed, and it'll look
+    like it scrolls faster than the main layer. And of course the other way around; if we add
+    a layer that is smaller, it will be stretch, and will look like it's scrolling slower. So 
+    that's what we do, we say that this new background layer is only 0.75 the size of the
+    main layer. So it should scroll slower. Let's find out:<p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch08b.pde"></canvas>
+       <figcaption>And now with a prettier background!</figcaption>
+    </figure>  
+
+    <p>go ahead, make Mario run to the right. Notice how our new background moves
+    slower than the one we already had? Does it make it look like this new background
+    is farther away? Cool, eh?</p>
+    
+    <p>Now we have a great start for a real game: we have a Mario, we have cool
+    backgrounds, and we have some ground to run on. Time to start adding finishing
+    touches, what do you say?</p>
+
+    <h2>Let's add some platforming elements </h2>
+
+    <p>text</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch09.pde"></canvas>
+       <figcaption>Yay, platforms</figcaption>
+    </figure> 
+    
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch10.pde"></canvas>
+       <figcaption>Now with shiny coins!</figcaption>
+    </figure> 
+    
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch11.pde"></canvas>
+       <figcaption>A challenger appears...</figcaption>
+    </figure> 
+    
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch12.pde"></canvas>
+       <figcaption>Hey, we can actually win now!</figcaption>
+    </figure> 
+
+    
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch13.pde"></canvas>
+       <figcaption>More challengers appear... if we're close enough</figcaption>
+    </figure> 
+
+    
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch14.pde"></canvas>
+       <figcaption>Now with a pit of despair O_O</figcaption>
+    </figure> 
+  
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch15.pde"></canvas>
+       <figcaption>Oh my gosh, we have audio!</figcaption>
+    </figure> 
+ 
+     <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch16.pde"></canvas>
+       <figcaption>Adding some final polish</figcaption>
+    </figure> 
+    
+     <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+    <p>text</p>
+
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch17.pde"></canvas>
+       <figcaption>Our final game. Do we rock or what?</figcaption>
+    </figure> 
+    
+  </body>
+</html> 

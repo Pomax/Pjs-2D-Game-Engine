@@ -1,3 +1,6 @@
+/**
+ * The muncher plant. To touch it is to lose.
+ */
 class Muncher extends Interactor {
 
   Muncher(float x, float y) {

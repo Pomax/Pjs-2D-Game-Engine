@@ -703,6 +703,7 @@ abstract class BoundedInteractor extends Interactor {
  * it's handled by this static computing class.
  */
 static class CollisionDetection {
+  private static boolean debug = false;
 
   /**
    * Static classes need global sketch binding
@@ -1016,7 +1017,7 @@ static class CollisionDetection {
 //        println("***");
         float[] ideal = getLineLineIntersection(px,py,cx,cy, i1[0],i1[1],i2[0],i2[1], false);
         if (ideal == null) { 
-          println("error: could not find the case "+currentCase+" ideal point based on corner ["+corner+"]");
+          if(debug) println("error: could not find the case "+currentCase+" ideal point based on corner ["+corner+"]");
           /*
           println("tried to find the intersection between:");
           println("[1] "+px+","+py+","+cx+","+cy+" (blue)");
@@ -3609,7 +3610,7 @@ class State {
     sprite.setState(this);
     Computer.states();
   }
-  
+
   /**
    * add path points to a state
    */

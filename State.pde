@@ -28,7 +28,7 @@ class State {
     sprite.setState(this);
     Computer.states();
   }
-  
+
   /**
    * add path points to a state
    */

@@ -23,10 +23,10 @@ class MainLevelLayer extends LevelLayer {
     // add general ground
     addGround("ground", -32,height-48, -32 + 17*32,height);
     addBoundary(new Boundary(-32 + 17*32,height-48,-32 + 17*32,height));
-    addInteractor(new Muncher(-32 + 17*32 + 8 + 16*0,height-8));
-    addInteractor(new Muncher(-32 + 17*32 + 8 + 16*1,height-8));
-    addInteractor(new Muncher(-32 + 17*32 + 8 + 16*2,height-8));
-    addInteractor(new Muncher(-32 + 17*32 + 8 + 16*3,height-8));
+    for(int i=0; i<4; i++)
+    {
+      addInteractor(new Muncher(-32 + (17*32) + 8 + (16*i),height-8));
+    }
     addBoundary(new Boundary(-31 + 19*32,height,-31 + 19*32,height-48));
     addGround("ground", -31 + 19*32,height-48, width+32,height);
 
@@ -62,8 +62,8 @@ class MainLevelLayer extends LevelLayer {
     // and let's add the thing that makes us win!
     addGoal(1920, height-48);
 
-    showBoundaries = true;
-    showTriggers = true;
+//    showBoundaries = true;
+//    showTriggers = true;
   }
   
   /**
@@ -209,5 +209,9 @@ class MainLevelLayer extends LevelLayer {
   void draw() {
     super.draw();
     viewbox.track(parent, mario);
+    // just in case!
+    if(mario!=null && mario.active != null && mario.active.name!="dead" && mario.y>height) {
+      reset();
+    }
   }
 }
