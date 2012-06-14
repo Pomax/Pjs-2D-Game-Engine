@@ -3,21 +3,68 @@
   <head>
     <title>2D gaming using Processing.js</title>
     <meta charset="utf-8">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" src="../../processing.js"></script>
     <script type="text/javascript" src="processing-lazyload.js"></script>
     <script type="text/javascript" src="../../minim.js"></script>
     <style>
-      textarea { display: block; outline: none; overflow: hidden; margin-left: 2em;}
+      canvas {
+        width: 512px;
+        height: 432px;
+        background-image: url("ajax-loader.gif");
+        background-position: center center;
+        background-repeat: no-repeat; }
+        
+      textarea {
+        display: block;
+        outline: none;
+        overflow: hidden;
+        margin-left: 2em; }
 
-      figure { clear: both; display: inline-block; border: 1px solid grey; padding: 5px; text-align: center; }
-      figure canvas { display: block; border: 1px solid black; }
-      figure figcaption { display: block; font-size: 90%; font-style: italic; }
+      figure {
+        clear: both;
+        display: inline-block;
+        border: 1px solid grey;
+        padding: 5px;
+        text-align: center; }
+        
+      figure canvas {
+        display: block;
+        border: 1px solid black; }
+        
+      figure figcaption {
+        display: block;
+        font-size: 90%;
+        font-style: italic; }
+        
       figure:after { clear: both; }
       
-      code { font-family: monospace; color: #004; }
+      code {
+        font-family: monospace;
+        color: #004; }
       
-      .colorblock { display: inline-block; width: 30px; height: 0.8em;}
+      .colorblock { 
+        display: inline-block;
+        width: 30px;
+        height: 0.8em;}
     </style>
+    <script>
+      document.addEventListener("DOMContentLoaded",function(){
+        // while focussed, play sketch
+        $("canvas").focus(function(){
+          window.console.log('focus on '+this.id);
+          Processing.getInstanceById(this.id).loop();
+          Processing.getInstanceById(this.id).unmute();
+        });
+        
+        // when focus is lost, pause sketch
+        $("canvas").blur(function(){
+          window.console.log('focus lost by '+this.id);
+          Processing.getInstanceById(this.id).noLoop();
+          Processing.getInstanceById(this.id).mute();
+        });
+      },false);
+    </script>
   </head>
   <body>
 
@@ -135,9 +182,12 @@ class MarioLayer extends LevelLayer {
     
     <h2>Making mario actually do things</h2>
     
-    <p>This is pretty boring. Much like the previous tutorial, nothing's
-    happening, so let's make things a little more interesting. First, let's
-    introduce some gravity. We introduce three new global values:</p>
+    <p>This is nice and all, but like the previous tutorial, nothing's
+    happening. Mario just hangs there. So, let's make things a little more
+    interesting. First, let's
+    introduce some gravity.</p>
+    
+    <p>We introduce three new global values:</p>
     
     <textarea readonly style="width: 40em; height: 4em;">
 float DOWN_FORCE = 2;
@@ -394,6 +444,13 @@ void initialize() {
     <p>Let's start with that background. It's boring, right? I mean, sure, it's
     a pretty color but it just... a plain color. How about instead we add
     some background in the Mario style?</p>
+    
+    <p>Let's add the following background:</p>
+
+    <figure>
+      <img src="graphics/backgrounds/sky.gif">
+      <figcaption>A background with Mario 'mountains'</figcaption>
+    </figure>  
 
 <textarea readonly style="width: 70em; height: 18em;">
 class MarioLayer extends LevelLayer {
@@ -516,11 +573,11 @@ class MarioLayer extends LevelLayer {
        <figcaption>So much goodness!</figcaption>
     </figure>  
     
-    <p>Now that's what I call pretty cool!</p>
-    
-    <p>...</p>
+    <p>Now that's what I call pretty cool! We can run around and the background
+    will scroll along, until we reach either end of the level and we simply
+    walk into the side walls.</p>
 
-    <p>How about we make it even cooler?</p>
+    <p>So... how about we make it even cooler?</p>
     
     <h2>This game needs ground and stuff!</h2>
 
@@ -541,15 +598,15 @@ class MarioLayer extends LevelLayer {
     underneath:</p>
     
     <figure>
-      grass: <img src="graphics/backgrounds/ground-top.gif">, filler: <img src="graphics/backgrounds/ground-filler.gif">
-      <figcaption>Mmm grassy soil</figcaption>
+      <img src="graphics/backgrounds/ground-top.gif"> + <img src="graphics/backgrounds/ground-filler.gif">
+      <figcaption>grassy soil!</figcaption>
     </figure>
 
     <p>The trick is to lay down a row of top soil, and then fill in the rest
     with filler. We've actually already seen how we are supposed to do this:
     we use a TilingSprite. First, let's define a method for "laying" ground:</p>
     
-<textarea readonly style="width: 40em; height: 17em;">
+<textarea readonly style="width: 60em; height: 19em;">
 class MarioLayer extends LevelLayer {
   [...]
   
@@ -592,7 +649,7 @@ class MarioLayer extends LevelLayer {
     a boundary that runs along the top of the grass, so that Mario has something
     to stand on. And with that, we add some ground to our level layer:<p>
     
-<textarea readonly style="width: 40em; height: 17em;">
+<textarea readonly style="width: 40em; height: 13em;">
 class MarioLayer extends LevelLayer {
   [...]
 
@@ -634,7 +691,6 @@ class MarioLevel extends Level {
     addLevelLayer("layer", new MarioLayer(this));
   }
 }
-
 
 class BackgroundLayer extends LevelLayer {
   BackgroundLayer(Level owner) {
@@ -692,135 +748,72 @@ class MarioLayer extends LevelLayer {
 
     <h2>Let's add some platforming elements </h2>
 
-    <p>text</p>
+<!-- CONTINUE HERE -->
+
+    <p>Let's add ground platforms. Two types: slanted sprite, and normal tiling ground</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch09.pde"></canvas>
        <figcaption>Yay, platforms</figcaption>
     </figure> 
     
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-
+    <p>And then let's add some pickups. Normal coins, and the mysterious Dragon coin.</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch10.pde"></canvas>
        <figcaption>Now with shiny coins!</figcaption>
     </figure> 
     
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-
+    <p>Then, let's add an enemy. Suddenl, we can die. But so can they if we squish them by jumping on them.</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch11.pde"></canvas>
        <figcaption>A challenger appears...</figcaption>
     </figure> 
     
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-
+    <p>So far we've been so caught up in adding cool things that we completely forgot that the point
+    of a game is to win it. So how do we win at this Mario game? Let's add a goal post that we need
+    to run through. With the goal line rope that goes up and down.</p>
+ 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch12.pde"></canvas>
        <figcaption>Hey, we can actually win now!</figcaption>
     </figure> 
 
     
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
+    <p>We need more enemies to make this challenging. But let's not add everything at
+    once - let's learn about "triggers".</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch13.pde"></canvas>
        <figcaption>More challengers appear... if we're close enough</figcaption>
     </figure> 
 
-    
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-
+    <p>Let's make the world a little more hazardous by introducing the bane of many
+    Mario players: munchers! In a pit!</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch14.pde"></canvas>
        <figcaption>Now with a pit of despair O_O</figcaption>
     </figure> 
   
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-
+    <p>We've gotten pretty far, but something is still missing. Something big. Sounds!</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch15.pde"></canvas>
        <figcaption>Oh my gosh, we have audio!</figcaption>
     </figure> 
  
-     <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-
+    <p>The details are what make games really great. Let's add a little detail: some foreground bushes.</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch16.pde"></canvas>
        <figcaption>Adding some final polish</figcaption>
     </figure> 
     
-     <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-    <p>text</p>
-
+    <p>And we're done! well, almost. I just had an idea. Wouldn't it be sneaky if people
+    could almost see the goal line, but then suddenly a huge monster pops up and they
+    have to avoid it to win? Let's add a giant bullet that flies across the screen!</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch17.pde"></canvas>

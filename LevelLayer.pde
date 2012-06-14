@@ -241,6 +241,20 @@ abstract class LevelLayer {
   }
 
   /**
+   * get the mouse pointer, as relative coordinates,
+   * relative to the indicated x/y coordinate in the layer.
+   */
+  float[] getMouseInformation(float x, float y, float mouseX, float mouseY) {
+    float[] mapped = mapCoordinateToScreen(x, y);
+    float ax = mapped[0], ay = mapped[1];
+    mapped = mapCoordinateFromScreen(mouseX, mouseY);
+    float mx = mapped[0], my = mapped[1];
+    float dx = mx-ax, dy = my-ay,
+          len = sqrt(dx*dx + dy*dy);
+    return new float[] {dx,dy,len};
+  }
+
+  /**
    *
    */
   void draw() {

@@ -179,7 +179,7 @@ class Mario extends Player {
 
     State dead = new State("dead", "graphics/mario/small/Dead-mario.gif", 1, 2);
     dead.setAnimationSpeed(0.25);
-    dead.setDuration(100);
+    dead.setDuration(15);
     addState(dead);   
     
     State jumping = new State("jumping", "graphics/mario/small/Jumping-mario.gif");
@@ -201,6 +201,9 @@ class Mario extends Player {
     }
   }
   void handleInput() {
+    // we don't handle any input when we're dead~
+    if(active.name=="dead" || active.name=="won") return;
+    
     if(isKeyDown('A') || isKeyDown('D')) {
       if (isKeyDown('A')) {
         setHorizontalFlip(true);

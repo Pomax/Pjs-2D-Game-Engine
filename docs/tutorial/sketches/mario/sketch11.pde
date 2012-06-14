@@ -7,6 +7,11 @@ float DAMPENING = 0.75;
 
 void initialize() {
   frameRate(30);
+  reset();
+}
+
+void reset() {
+  clearLevels();
   addLevel("level", new MarioLevel(4*width, height));
 }
 
@@ -154,8 +159,8 @@ class Mario extends Player {
 
     State dead = new State("dead", "graphics/mario/small/Dead-mario.gif", 1, 2);
     dead.setAnimationSpeed(0.25);
-    dead.setDuration(100);
-    addState(dead);   
+    dead.setDuration(15);
+    addState(dead);
     
     State jumping = new State("jumping", "graphics/mario/small/Jumping-mario.gif");
     jumping.setDuration(15);
@@ -164,9 +169,17 @@ class Mario extends Player {
     setCurrentState("idle");    
   }
   void handleStateFinished(State which) {
-    setCurrentState("idle");
+    if(which.name == "dead") {
+      removeActor();
+      reset();
+    } else {
+      setCurrentState("idle");
+    }
   }
   void handleInput() {
+    // we don't handle any input when we're dead~
+    if(active.name=="dead") return;    
+  
     if(isKeyDown('A') || isKeyDown('D')) {
       if (isKeyDown('A')) {
         setHorizontalFlip(true);

@@ -962,14 +962,14 @@ static class CollisionDetection {
       // we need to construct a new box that is spanned by
       // the two points next to the "hot" corner in both
       // [previous] and [current].
+      //
+      // FIXME: that said, if we treat (2) as a subset
+      //        of (3), things seem to work better.
       checkLines = new float[8];
       arrayCopy(current,0,checkLines,0,8);
 
-//      // if we're seeing case (3), set up bbox correctly.
-//      if (B_current < 4) {
-//        println("case 3");
-
       currentCase = 3;
+
       // two of these edges are guaranteed to not have intersections,
       // since otherwise the intersection would be inside either
       // [previous] or [current], which is case (2) instead.
@@ -977,11 +977,6 @@ static class CollisionDetection {
                                previous[(corner+2)%8], previous[(corner+3)%8],
                                current[(corner+2)%8],  current[(corner+3)%8],
                                current[(corner)%8],  current[(corner+1)%8]};
-//      }
-//      else
-//      { 
-//        println("case 2"); 
-//      }
 
       // Now that we have the correct box, perform line/line
       // intersection detection for each edge on the box.
@@ -1002,19 +997,19 @@ static class CollisionDetection {
       // (We can have zero, one, or two)
       int intersectionCount = intersections.size();
 
+      // get the supposed hit-line
+      float px = previous[corner],
+            py = previous[corner+1],
+            cx = current[corner],
+            cy = current[corner+1];
+
       // if we have two intersections, it's
       // relatively easy to determine by how
       // much we should move back.
-      if (intersectionCount == 2) {
-        float px = previous[corner],
-              py = previous[corner+1],
-              cx = current[corner],
-              cy = current[corner+1];
-
+      if (intersectionCount == 2)
+      {
         float[] i1 = intersections.get(0),
                  i2 = intersections.get(1);
-
-//        println("***");
         float[] ideal = getLineLineIntersection(px,py,cx,cy, i1[0],i1[1],i2[0],i2[1], false);
         if (ideal == null) { 
           if(debug) println("error: could not find the case "+currentCase+" ideal point based on corner ["+corner+"]");
@@ -1039,9 +1034,31 @@ static class CollisionDetection {
 
       // if there's only one intersection,
       // additional math is required.
-      else if (intersectionCount == 1) {
-        // ...code goes here...
-        return ZERO_DIFFERENCE;
+      else if (intersectionCount == 1)
+      {
+        float[] ideal = getLineLineIntersection(px,py,cx,cy, ox,oy,tx,ty, false);
+        // this might fail, because it's not necessarily the "hot corner"
+        // that ends up touching the boundary if we only have one intersection
+        int cv = 0;
+        for(cv = 2; cv<8 && ideal==null; cv+=4) {
+          px = previous[(corner+cv)%8];
+          py = previous[(corner+cv+1)%8];
+          cx = current[(corner+cv)%8];
+          cy = current[(corner+cv+1)%8];
+          ideal = getLineLineIntersection(px,py,cx,cy, ox,oy,tx,ty, false);
+        }
+
+        // If ideal is still null, something very curious has happened.
+        // Intersections occurred, but none of the corner paths are
+        // involved. To the best of my knowledge this is algorithmically
+        // impossible. Still, always good to see if I'm wrong:
+        if(ideal==null) {
+          if(debug) println("error: intersections occurred, but none of the corners were involved!");
+          return new float[]{px-cx, py-cy, corner};
+        }
+
+        // return the delta and relevant corner
+        return new float[]{ideal[0]-cx, ideal[1]-cy, (corner+cv)%8};
       }
     }
 
@@ -1061,7 +1078,7 @@ static class CollisionDetection {
    */
   static float[] getLineLineIntersection(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, boolean colinearity)
   {
-    float epsilon = 0.001;
+    float epsilon = 0.1;
     // convert lines to the generatised form [a * x + b + y = c]
     float a1 = -(y2 - y1), b1 = (x2 - x1), c1 = (x2 - x1) * y1 - (y2 - y1) * x1;
     float a2 = -(y4 - y3), b2 = (x4 - x3), c2 = (x4 - x3) * y3 - (y4 - y3) * x3;
@@ -1235,6 +1252,7 @@ Level activeLevel = null;
 void setup() {
   size(screenWidth, screenHeight);
   noLoop();
+
   levelSet = new HashMap<String, Level>();
   SpriteMapHandler.init(this);
   SoundManager.init(this);
@@ -1253,6 +1271,16 @@ void mousePressed()  { activeLevel.mousePressed(mouseX, mouseY, mouseButton); }
 void mouseDragged()  { activeLevel.mouseDragged(mouseX, mouseY, mouseButton); }
 void mouseReleased() { activeLevel.mouseReleased(mouseX, mouseY, mouseButton); }
 void mouseClicked()  { activeLevel.mouseClicked(mouseX, mouseY, mouseButton); }
+
+/**
+ * Mute the game
+ */
+void mute() { SoundManager.mute(true); }
+
+/**
+ * Unmute the game
+ */
+void unmute() { SoundManager.mute(false); }
 
 /**
  * Levels are added to the game through this function.
@@ -1755,6 +1783,20 @@ abstract class LevelLayer {
     mx *= xScale;
     my *= yScale;
     return new float[]{mx, my};
+  }
+
+  /**
+   * get the mouse pointer, as relative coordinates,
+   * relative to the indicated x/y coordinate in the layer.
+   */
+  float[] getMouseInformation(float x, float y, float mouseX, float mouseY) {
+    float[] mapped = mapCoordinateToScreen(x, y);
+    float ax = mapped[0], ay = mapped[1];
+    mapped = mapCoordinateFromScreen(mouseX, mouseY);
+    float mx = mapped[0], my = mapped[1];
+    float dx = mx-ax, dy = my-ay,
+          len = sqrt(dx*dx + dy*dy);
+    return new float[] {dx,dy,len};
   }
 
   /**
@@ -3982,7 +4024,7 @@ void drawBackground(float width, float height) {
 
 /* @ p j s  preload="docs/tutorial/graphics/mario/small/Standing-mario.gif"; */
 
-/*
+///*
 
 final int screenWidth = 512;
 final int screenHeight = 432;
@@ -3997,9 +4039,12 @@ class TestLevel extends Level {
   }
   
   void draw() {
-    fill(0,10);
+    fill(0,1);
     rect(-1,-1,width+2,height+2);
     super.draw();
+    stroke(0,255,0,150);
+    line(width/2,0,width/2,height);
+    line(width/2+16,0,width/2+16,height);
   }
 }
 
@@ -4021,10 +4066,10 @@ class TestLayer extends LevelLayer {
     t4 = new TestObject(3*width/4, height/4);
     t4.setForces(0,5);
 
-    addPlayer(t1);
+//    addPlayer(t1);
     addPlayer(t2);
-    addPlayer(t3);
-    addPlayer(t4);
+//    addPlayer(t3);
+//    addPlayer(t4);
 
     addBoundary(new Boundary(width/2+230,height,width/2+200,0));
     addBoundary(new Boundary(width/2-180,0,width/2-150,height));
@@ -4032,6 +4077,7 @@ class TestLayer extends LevelLayer {
     addBoundary(new Boundary(width,height/2-200,0,height/2-120));
     addBoundary(new Boundary(0,height/2+200,width,height/2+120));
 
+    addBoundary(new Boundary(width/2,height/2,width/2 + 16,height/2));
   }
 
   void draw() { 
@@ -4065,4 +4111,4 @@ class TestObject extends Player {
   }
 }
 
-*/
+//*/

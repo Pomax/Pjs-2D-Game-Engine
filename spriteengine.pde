@@ -12,7 +12,7 @@
 
 /* @ p j s  preload="docs/tutorial/graphics/mario/small/Standing-mario.gif"; */
 
-/*
+///*
 
 final int screenWidth = 512;
 final int screenHeight = 432;
@@ -27,9 +27,12 @@ class TestLevel extends Level {
   }
   
   void draw() {
-    fill(0,10);
+    fill(0,1);
     rect(-1,-1,width+2,height+2);
     super.draw();
+    stroke(0,255,0,150);
+    line(width/2,0,width/2,height);
+    line(width/2+16,0,width/2+16,height);
   }
 }
 
@@ -51,10 +54,10 @@ class TestLayer extends LevelLayer {
     t4 = new TestObject(3*width/4, height/4);
     t4.setForces(0,5);
 
-    addPlayer(t1);
+//    addPlayer(t1);
     addPlayer(t2);
-    addPlayer(t3);
-    addPlayer(t4);
+//    addPlayer(t3);
+//    addPlayer(t4);
 
     addBoundary(new Boundary(width/2+230,height,width/2+200,0));
     addBoundary(new Boundary(width/2-180,0,width/2-150,height));
@@ -62,6 +65,7 @@ class TestLayer extends LevelLayer {
     addBoundary(new Boundary(width,height/2-200,0,height/2-120));
     addBoundary(new Boundary(0,height/2+200,width,height/2+120));
 
+    addBoundary(new Boundary(width/2,height/2,width/2 + 16,height/2));
   }
 
   void draw() { 
@@ -95,4 +99,4 @@ class TestObject extends Player {
   }
 }
 
-*/
+//*/

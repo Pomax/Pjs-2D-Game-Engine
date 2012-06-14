@@ -16,6 +16,7 @@ Level activeLevel = null;
 void setup() {
   size(screenWidth, screenHeight);
   noLoop();
+
   levelSet = new HashMap<String, Level>();
   SpriteMapHandler.init(this);
   SoundManager.init(this);
@@ -34,6 +35,16 @@ void mousePressed()  { activeLevel.mousePressed(mouseX, mouseY, mouseButton); }
 void mouseDragged()  { activeLevel.mouseDragged(mouseX, mouseY, mouseButton); }
 void mouseReleased() { activeLevel.mouseReleased(mouseX, mouseY, mouseButton); }
 void mouseClicked()  { activeLevel.mouseClicked(mouseX, mouseY, mouseButton); }
+
+/**
+ * Mute the game
+ */
+void mute() { SoundManager.mute(true); }
+
+/**
+ * Unmute the game
+ */
+void unmute() { SoundManager.mute(false); }
 
 /**
  * Levels are added to the game through this function.

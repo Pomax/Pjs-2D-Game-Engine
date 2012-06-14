@@ -36,7 +36,7 @@ class MarioLayer extends LevelLayer {
     addBoundary(new Boundary(-1,0, -1,height));
     addBoundary(new Boundary(width+1,height, width+1,0));
     showBoundaries = true;
-    mario = new Mario(width/4, height/2);
+    mario = new Mario(32, height-64);
     addPlayer(mario);
 
     addGround("ground", -32,height-48, width+32,height);
