@@ -11,13 +11,20 @@ static class CollisionDetection {
   public static void init(PApplet s) { sketch = s; } 
 
   /**
-   *
+   * Perform line/rect intersection detection. Lines represent boundaries,
+   * and rather than doing "normal" line/rect intersection using a
+   * "box on a trajectory" that normal actor movement looks like, we pretend
+   * the actor box remains stationary, and move the boundary in the opposite
+   * direction with the same speed, which gives us a "boundary box", so that
+   * we can perform box/box overlap detection instead.
    */
   static float[] getLineRectIntersection(float[] line, float[] previous, float[] current)
   {
 //    sketch.println(sketch.frameCount + ">     previous: "+arrayToString(previous));
 //    sketch.println(sketch.frameCount + ">     current : "+arrayToString(current));
-      
+    
+    // First, let's do some dot-product math, to find out whether or not
+    // the actor's bounding box is even in range of the boundary.
     float x1=line[0], y1=line[1], x2=line[2], y2=line[3];
     float dx = x2-x1, dy = y2-y1, pv=PI/2.0,
           rdx = dx*cos(pv) - dy*sin(pv),
@@ -29,42 +36,44 @@ static class CollisionDetection {
     // determine range w.r.t. the end point of the boundary.
     float[] dotProducts2 = getDotProducts(x2,y2,x1,y1, previous);
 
-    // determine sidedness relative to the boundary.
+    // determine 'sidedness', relative to the boundary.
     float[] dotProducts3 = getDotProducts(x1,y1,x1+rdx,y1+rdy, previous);
     float[] dotProducts4 = getDotProducts(x1,y1,x1+rdx,y1+rdy, current);
 
-    // determine the three aspects:
+    // compute the relevant feature values based on the dot products:
     int inRangeS = 4, inRangeE = 4, above = 0, aboveAfter = 0;
-    float epsiolon = 0.01;
+    float epsilon = 0.01;
     for(int i=0; i<8; i+=2) {
-      if (dotProducts1[i] < epsiolon) { inRangeS--; }
-      if (dotProducts2[i] < epsiolon) { inRangeE--; }
-      if (dotProducts3[i] < epsiolon) { above++; }
-      if (dotProducts4[i] < epsiolon) { aboveAfter++; }}
+      if (dotProducts1[i] < epsilon) { inRangeS--; }
+      if (dotProducts2[i] < epsilon) { inRangeE--; }
+      if (dotProducts3[i] < epsilon) { above++; }
+      if (dotProducts4[i] < epsilon) { aboveAfter++; }}
 
-    // make sure to short-circuit if we're out of bounds
+    // make sure to short-circuit if the actor cannot
+    // interact with the boundary because it is out of range.
     if (inRangeS == 0 || inRangeE == 0 || above<4) return null;
 
 //    sketch.println(sketch.frameCount +">   "+inRangeS+"/"+inRangeE+"/"+above+"/"+aboveAfter);
 //    sketch.println(sketch.frameCount + ">     previous (2): "+arrayToString(previous));
 //    sketch.println(sketch.frameCount + ">     current  (2): "+arrayToString(current));
 
-    // has a collision been detected?
+    // Now then, let's determine whether overlap will occur.
     boolean found = false;
 
-    // We're in bounds. if above is 4 and aboveAfter is 0,
-    // we need to perform special collision detection
+    // We're in bounds: if 'above' is 4, meaning that our previous
+    // actor frame is on the blocking side of a boundary,  and
+    // 'aboveAfter' is 0, meaning its current frame is on the other
+    // side of the boundary, then a collision MUST have occurred.
     if (above==4 && aboveAfter<=2) {
-      println("full containment if we use boundary box");
+      // note that in this situation, the overlap may look
+      // like full containment, where the actor's bounding
+      // box is fully contained by the boundary's box.
       found = true;
     }
 
     else {
-      // We're in bounds. Rather than checking whether
-      // we cross the boundary from previous->current,
-      // we pretend the boundary moves, instead. This
-      // allows us to do box/box intersection checking
-      // instead using previous and the boundary-box.
+      // We're in bounds: do box/box intersection checking
+      // using the 'previous' box and the boundary-box.
       dx = previous[0] - current[0];
       dy = previous[1] - current[1];
       
@@ -74,8 +83,8 @@ static class CollisionDetection {
                       line[2]+dx, line[3]+dy,
                       line[0]+dx, line[1]+dy};
       
-      // do any of the "prev" edges intersect
-      // with any of the "bbox" edges?
+      // do any of the "previous" edges intersect
+      // with any of the "boundary box" edges?
       int i,j;
       float[] p = previous, b = bbox, intersection;
       for(i=0; i<8; i+=2) {
@@ -93,28 +102,38 @@ static class CollisionDetection {
 //    sketch.println(sketch.frameCount + ">     previous (3): "+arrayToString(previous));
 //    sketch.println(sketch.frameCount + ">     current  (3): "+arrayToString(current));
     
+    // Have we signaled any overlap?
     if (found) {
       float[] distances = getCornerDistances(x1,y1,x2,y2, previous, current);
       int[] corners = rankCorners(distances);
+
 //      sketch.print(sketch.frameCount + ">     ");
 //      for(int i=0; i<4; i++) {
 //        sketch.print(corners[i]+"="+distances[corners[i]]);
 //        if(i<3) sketch.print(", "); }
 //      sketch.println();
 
+      // Get the corner on the previous and current actor bounding
+      // box that will "hit" the boundary first.
       int corner = 0;
       float xp = previous[corners[corner]],
             yp = previous[corners[corner]+1],
             xc = current[corners[corner]],
             yc = current[corners[corner]+1];
 
+      // The trajectory for this point may intersect with
+      // the boundary. If it does, we'll have all the information
+      // we need to move the actor back along its trajectory by
+      // an amount that will place it "on" the boundary, at the right spot.
       float[] intersection = getLineLineIntersection(xp,yp,xc,yc, x1,y1,x2,y2, false, true);
 
       if (intersection==null) {
         println("nearest-to-boundary is actually not on the boundary itself. More complex math is required!");
-        
-        float sdx = line[2]-line[0], sdy = line[3]-line[1];      
-        intersection = getLineLineIntersection(line[0]-sdx,line[1]-sdy,line[2]+sdx,line[3]+sdy, xp,yp,xc,yc, false, true);
+
+        // it's also possible that the first corner to hit the boundary
+        // actually never touches the boundary because it intersects only
+        // if the boundary is infinitely long. So... let's make that happen:
+        intersection = getLineLineIntersection(xp,yp,xc,yc, x1,y1,x2,y2, false, false);
 
         if (intersection==null) {
           println("line extension alone is not enoough...");
@@ -123,21 +142,26 @@ static class CollisionDetection {
 
         return new float[]{intersection[0] - xc, intersection[1] - yc};
       }
-/*      
-      sketch.strokeWeight(3);
-      sketch.ellipse(intersection[0],intersection[1],3,3);
-      sketch.ellipse(intersection[0],intersection[1],5,5);
-      sketch.ellipse(intersection[0],intersection[1],9,9);
-      sketch.strokeWeight(1);
-
-      sketch.strokeWeight(3);
-      sketch.ellipse(xc,yc,3,3);
-      sketch.ellipse(xc,yc,5,5);
-      sketch.ellipse(xc,yc,9,9);
-      sketch.strokeWeight(1);
-*/
+      
+      // if we get here, there was a normal trajectory
+      // intersection with the boundary. Computing the
+      // corrective values by which to move the current
+      // frame's bounding box is really simple:
       dx = intersection[0] - xc;
       dy = intersection[1] - yc;
+      
+//      sketch.strokeWeight(3);
+//      sketch.ellipse(intersection[0],intersection[1],3,3);
+//      sketch.ellipse(intersection[0],intersection[1],5,5);
+//      sketch.ellipse(intersection[0],intersection[1],9,9);
+//      sketch.strokeWeight(1);
+
+//      sketch.strokeWeight(3);
+//      sketch.ellipse(xc,yc,3,3);
+//      sketch.ellipse(xc,yc,5,5);
+//      sketch.ellipse(xc,yc,9,9);
+//      sketch.strokeWeight(1);
+
 
 //      sketch.println(sketch.frameCount + ">     correction: "+dx+"/"+dy);
 //      sketch.println(sketch.frameCount + ">     previous (4): "+arrayToString(previous));
@@ -150,7 +174,9 @@ static class CollisionDetection {
   }
   
   /**
-   * 
+   * For each corner in an object's bounding box, get the distance from its "previous"
+   * box to the line defined by (x1,y1,x2,y2). Return this as float[8], corresponding
+   * to the bounding box array format.
    */
   static float[] getCornerDistances(float x1, float y1, float x2, float y2, float[] previous, float[] current) {
     float[] distances = {0,0,0,0,0,0,0,0}, intersection;
@@ -167,7 +193,8 @@ static class CollisionDetection {
   
   
   /**
-   * Get the intersection coordinate between two lines segments.
+   * Get the intersection coordinate between two lines segments,
+   * using fairly standard, if a bit lenghty, linear algebra.
    */
   static float[] getLineLineIntersection(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, boolean colinearity, boolean segments)
   {
@@ -215,7 +242,8 @@ static class CollisionDetection {
 
   /**
    * compute the dot product between all corner points of a
-   * bounding box, and a boundary line with origin ox/oy.
+   * bounding box, and a boundary line with origin ox/oy
+   * and end point tx/ty.
    */
   static float[] getDotProducts(float ox, float oy, float tx, float ty, float[] bbox) {
     float dotx = tx-ox, doty = ty-oy,
@@ -248,6 +276,8 @@ static class CollisionDetection {
    *
    * We rank by decreasing distance.
    */
+  // FIXME: this is a pretty fast code, but there might be
+  //        better ways to achieve the desired result.
   static int[] rankCorners(float[] distances) {
     int[] corners = {0,0,0,0};
     float corner1v=999999, corner2v=corner1v, corner3v=corner1v, corner4v=corner1v, distance;
@@ -255,20 +285,22 @@ static class CollisionDetection {
 
     for(int i=0; i<8; i+=2) {
       distance = distances[i];
-      if(distance<corner1v) { 
+      if (distance < corner1v) { 
         corner4v = corner3v;  corner4 = corner3;
         corner3v = corner2v;  corner3 = corner2;
         corner2v = corner1v;  corner2 = corner1;
-        corner1v = distance;  corner1 = i; }
-      else if(distance<corner2v) {
+        corner1v = distance;  corner1 = i; 
+        continue; }
+      if (distance < corner2v) {
         corner4v = corner3v;  corner4 = corner3;
         corner3v = corner2v;  corner3 = corner2;
-        corner2v = distance;  corner2 = i; }
-      else if(distance<corner3v) {
+        corner2v = distance;  corner2 = i;
+        continue; }
+      if (distance < corner3v) {
         corner4v = corner3v;  corner4 = corner3;
-        corner3v = distance;  corner3 = i; }
-      else {
-        corner4v = distance;  corner4 = i; }
+        corner3v = distance;  corner3 = i;
+        continue; }
+      corner4v = distance;  corner4 = i;
     }
 
     // Set up the corners, ranked by
@@ -282,7 +314,7 @@ static class CollisionDetection {
 
 
   /**
-   * Check if a bouning box's dot product
+   * Check if a bounding box's dot product
    * information implies it's safe, or blocked.
    */
   static boolean permitted(float[] dotProducts) {
@@ -291,9 +323,10 @@ static class CollisionDetection {
         return true; }
     return false;
   }
-  
+
+
   /**
-   *
+   * Simple drawing helper function
    */
   static void drawBox(float[] boundingbox) {
     sketch.line(boundingbox[0], boundingbox[1], boundingbox[2], boundingbox[3]);
@@ -303,7 +336,7 @@ static class CollisionDetection {
   }
 
   /**
-   *
+   * Simple printing helper function
    */
   static String arrayToString(float[] arr) {
     String str = "";

@@ -7,6 +7,9 @@ ArrayList<float[]> boundaries = new ArrayList<float[]>();
 int padding = 60;
 int skipover = 0;
 
+/**
+ * Boilerplate setup
+ */
 void setup() {
   size(500,500);
   CollisionDetection.init(this);
@@ -15,6 +18,9 @@ void setup() {
   reset();
 }
 
+/**
+ * Reset the world
+ */
 void reset() {
   skipover = 0;
 
@@ -30,6 +36,9 @@ void reset() {
   boundaries.add(new float[]{width-padding,padding,padding,padding});
 }
 
+/**
+ * Boilerplate draw function
+ */
 void draw() {
 //  println(frameCount +"> draw");
   
@@ -84,6 +93,7 @@ void draw() {
   }
 }
 
+// helper draw function for showing box wireframes
 void drawBox(float[] boundingbox) {
   line(boundingbox[0], boundingbox[1], boundingbox[2], boundingbox[3]);
   line(boundingbox[2], boundingbox[3], boundingbox[4], boundingbox[5]);
@@ -91,6 +101,12 @@ void drawBox(float[] boundingbox) {
   line(boundingbox[6], boundingbox[7], boundingbox[0], boundingbox[1]);
 }
 
+/**
+ * Move the actor by some random x/y value.
+ * (constrained by maxStep in the function)
+ *
+ * This move is treated as a "next frame" position.
+ */
 void nextFrame() {
   arrayCopy(prev,0,old,0,8);
   arrayCopy(bbox,0,prev,0,8);
@@ -100,6 +116,10 @@ void nextFrame() {
   updatePosition(dx,dy);
 }
 
+/**
+ * Move the actor by some specific x/y value.
+ * This move is NOT treated as a "next frame" position
+ */
 void updatePosition(float dx, float dy) {
   float securityFactor = 1.1;
   for(int i=0; i<8; i+=2) {
