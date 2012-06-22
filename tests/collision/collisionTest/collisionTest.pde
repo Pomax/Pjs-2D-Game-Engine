@@ -32,10 +32,21 @@ void reset() {
   old  = new float[]{0,0,0,0,0,0,0,0};
 
   boundaries.clear();
-  boundaries.add(new float[]{padding,padding,padding,height-padding});
-  boundaries.add(new float[]{padding,height-padding,width-padding,height-padding});
-  boundaries.add(new float[]{width-padding,height-padding,width-padding,padding});
-  boundaries.add(new float[]{width-padding,padding,padding,padding});
+  boundaries.add(new float[]{padding+50,padding,padding-50,height-padding});
+  boundaries.add(new float[]{padding-50,height-padding,width-padding+50,height-padding});
+  boundaries.add(new float[]{width-padding+50,height-padding,width-padding-50,padding});
+  boundaries.add(new float[]{width-padding-50,padding,padding+50,padding});
+
+  boundaries.add(new float[]{-200 + width/2-dx/3,height/2, -200 + width/2+dx/3,height/2});
+  boundaries.add(new float[]{-150 + width/2-dx/3,height/2, -150 + width/2+dx/3,height/2});
+  boundaries.add(new float[]{-100 + width/2-dx/3,height/2, -100 + width/2+dx/3,height/2});
+  boundaries.add(new float[]{ -50 + width/2-dx/3,height/2,  -50 + width/2+dx/3,height/2});
+  boundaries.add(new float[]{   0 + width/2-dx/3,height/2,    0 + width/2+dx/3,height/2});
+  boundaries.add(new float[]{  50 + width/2-dx/3,height/2,   50 + width/2+dx/3,height/2});
+  boundaries.add(new float[]{ 100 + width/2-dx/3,height/2,  100 + width/2+dx/3,height/2});
+  boundaries.add(new float[]{ 150 + width/2-dx/3,height/2,  150 + width/2+dx/3,height/2});
+  boundaries.add(new float[]{ 200 + width/2-dx/3,height/2,  200 + width/2+dx/3,height/2});
+
 }
 
 /**
@@ -85,14 +96,16 @@ void draw() {
     return;
   }
   
-  fill(0,150);
+  fill(0,15);
   rect(-1,-1,width+2,height+2);
 
+/*
   if(bbox[0]<padding-epsilon || bbox[2]>width+epsilon-padding || bbox[1]<padding-epsilon || bbox[5]>height+epsilon-padding) {
     println(frameCount +"> box found in illegal position, noLoop will be called");
     noLoop();
     skipover++;
   }
+*/
 
   // draw boundary and box
   int intensity = 0;
@@ -167,3 +180,5 @@ void updatePosition(float dx, float dy) {
 
 void mouseClicked() { if(mouseButton==LEFT) reset(); loop(); }
 void keyPressed() { reset(); loop(); }
+
+//void println(String s) {}
