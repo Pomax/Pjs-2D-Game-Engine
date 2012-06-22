@@ -5,7 +5,9 @@
 float[] old, prev, bbox;
 ArrayList<float[]> boundaries = new ArrayList<float[]>();
 int padding = 60;
+float epsilon = 0.5;
 int skipover = 0;
+boolean customtest = false;
 
 /**
  * Boilerplate setup
@@ -40,12 +42,53 @@ void reset() {
  * Boilerplate draw function
  */
 void draw() {
-//  println(frameCount +"> draw");
+  if(customtest) {
+    noLoop();
+/*
+2707>  testing against: 740.0, 740.0, 740.0, 60.0
+2707>   previous: 714.84, 713.32, 738.84, 713.32, 738.84, 737.32, 714.84, 737.32
+2707>   current : 753.21, 659.82, 777.21, 659.82, 777.21, 683.82, 753.21, 683.82
+*/
+    
+    float[] testline = {740.0, 740.0, 740.0, 60.0};
+    float[] previous = {714.84, 713.32, 738.84, 713.32, 738.84, 737.32, 714.84, 737.32};
+    float[] current = {753.21, 659.82, 777.21, 659.82, 777.21, 683.82, 753.21, 683.82};
+    float[] correction = CollisionDetection.getLineRectIntersection(testline, previous, current);
+    if(correction!=null) {
+      background(255);
+      stroke(0);
+      line(testline[0],testline[1],testline[2],testline[3]);
+      stroke(0,0,200);
+      drawBox(previous);
+      stroke(100,100,100);
+      drawBox(current);
+      stroke(255,0,0);
+      float x = (current[0]+current[2])/2;
+      float y = (current[1]+current[5])/2;
+      float dx = correction[0];
+      float dy = correction[1];
+      line(x,y,x+dx,y+dy);
+      ellipse(x,y,5,5);
+      
+      print(frameCount + "> corrected: ");
+      for(int i=0; i<8; i+=2) {
+        current[i] += dx;
+        current[i+1] += dy;
+        print(current[i] + ", "+ current[i+1]);
+        if(i<6) { print(", "); }}
+      println();
+
+      if(current[0]<padding-epsilon || current[2]>width+epsilon-padding || current[1]<padding-epsilon || current[5]>height+epsilon-padding) {
+        println("VIOLATION");
+      }
+    }
+    return;
+  }
   
   fill(0,150);
   rect(-1,-1,width+2,height+2);
 
-  if(bbox[0]<padding || bbox[2]>width-padding || bbox[1]<padding || bbox[5]>height-padding) {
+  if(bbox[0]<padding-epsilon || bbox[2]>width+epsilon-padding || bbox[1]<padding-epsilon || bbox[5]>height+epsilon-padding) {
     println(frameCount +"> box found in illegal position, noLoop will be called");
     noLoop();
     skipover++;
@@ -69,7 +112,7 @@ void draw() {
 
   // try to update
   if(skipover!=1) {
-    println(frameCount +"> advancing frame");
+    println("\n"+frameCount +"> advancing frame");
 
     skipover = 0;
 
@@ -116,10 +159,9 @@ void nextFrame() {
  * This move is NOT treated as a "next frame" position
  */
 void updatePosition(float dx, float dy) {
-  float securityFactor = 1.1;
   for(int i=0; i<8; i+=2) {
-    bbox[i] += dx * securityFactor;
-    bbox[i+1] += dy * securityFactor;
+    bbox[i] += dx;
+    bbox[i+1] += dy;
   }
 }
 

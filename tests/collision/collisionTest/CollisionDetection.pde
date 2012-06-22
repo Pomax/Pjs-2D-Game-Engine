@@ -20,8 +20,9 @@ static class CollisionDetection {
    */
   static float[] getLineRectIntersection(float[] line, float[] previous, float[] current)
   {
-    if(debug) sketch.println(sketch.frameCount + ">     previous: "+arrayToString(previous));
-    if(debug) sketch.println(sketch.frameCount + ">     current : "+arrayToString(current));
+    if(debug) sketch.println(sketch.frameCount + ">  testing against: "+arrayToString(line));
+    if(debug) sketch.println(sketch.frameCount + ">   previous: "+arrayToString(previous));
+    if(debug) sketch.println(sketch.frameCount + ">   current : "+arrayToString(current));
 
     // First, let's do some dot-product math, to find out whether or not
     // the actor's bounding box is even in range of the boundary.
@@ -42,18 +43,17 @@ static class CollisionDetection {
 
     // compute the relevant feature values based on the dot products:
     int inRangeS = 4, inRangeE = 4, above = 0, aboveAfter = 0;
-    float epsilon = -0.01;
     for(int i=0; i<8; i+=2) {
-      if (dotProducts1[i] < epsilon) { inRangeS--; }
-      if (dotProducts2[i] < epsilon) { inRangeE--; }
-      if (dotProducts3[i] < epsilon) { above++; }
-      if (dotProducts4[i] < epsilon) { aboveAfter++; }}
+      if (dotProducts1[i] < 0) { inRangeS--; }
+      if (dotProducts2[i] < 0) { inRangeE--; }
+      if (dotProducts3[i] < 0) { above++; }
+      if (dotProducts4[i] < 0) { aboveAfter++; }}
 
-    if(debug) sketch.println(sketch.frameCount +">   "+inRangeS+"/"+inRangeE+"/"+above+"/"+aboveAfter);
+    if(debug) sketch.println(sketch.frameCount +">    dotproduct result: "+inRangeS+"/"+inRangeE+"/"+above+"/"+aboveAfter);
 
     // make sure to short-circuit if the actor cannot
     // interact with the boundary because it is out of range.
-    if (inRangeS == 0 || inRangeE == 0 || above<4) {
+    if (inRangeS == 0 || inRangeE == 0 || (above>0 && aboveAfter>=above)) {
       if(debug) sketch.println(sketch.frameCount +">   this boundary is not involved in collisions for this frame.");
       return null;
     }
@@ -65,12 +65,12 @@ static class CollisionDetection {
     // actor frame is on the blocking side of a boundary,  and
     // 'aboveAfter' is 0, meaning its current frame is on the other
     // side of the boundary, then a collision MUST have occurred.
-    if (above==4 && aboveAfter<=2) {
+    if (above==4 && aboveAfter==0) {
       // note that in this situation, the overlap may look
       // like full containment, where the actor's bounding
       // box is fully contained by the boundary's box.
       found = true;
-      if(debug) sketch.println(sketch.frameCount +">   collision detected (due to full containment).");
+      if(debug) sketch.println(sketch.frameCount +">     collision detected (due to full containment).");
     }
 
     else {
@@ -94,7 +94,7 @@ static class CollisionDetection {
           intersection = getLineLineIntersection(p[i], p[i+1], p[(i+2)%8], p[(i+3)%8], b[j], b[j+1], b[(j+2)%8], b[(j+3)%8], false, true);
           if (intersection != null) {
             found = true;
-            if(debug) sketch.println(sketch.frameCount +">   collision detected (dus to box overlap).");
+            if(debug) sketch.println(sketch.frameCount +">     collision detected on a box edge (box overlap).");
           }
         }
       }
@@ -106,7 +106,7 @@ static class CollisionDetection {
       int[] corners = rankCorners(distances);
 
       if(debug) {
-        sketch.print(sketch.frameCount + ">     ");
+        sketch.print(sketch.frameCount + ">      ");
         for(int i=0; i<4; i++) {
           sketch.print(corners[i]+"="+distances[corners[i]]);
           if(i<3) sketch.print(", "); }
@@ -149,6 +149,8 @@ static class CollisionDetection {
       // frame's bounding box is really simple:
       dx = intersection[0] - xc;
       dy = intersection[1] - yc;
+
+      if(debug) sketch.println(sketch.frameCount +">      dx: "+dx+", dy: "+dy);
 
       return new float[]{dx, dy};
     }
