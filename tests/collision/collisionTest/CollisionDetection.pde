@@ -46,15 +46,25 @@ static class CollisionDetection {
     for(int i=0; i<8; i+=2) {
       if (dotProducts1[i] < 0) { inRangeS--; }
       if (dotProducts2[i] < 0) { inRangeE--; }
-      if (dotProducts3[i] < 0) { above++; }
-      if (dotProducts4[i] < 0) { aboveAfter++; }}
+      if (dotProducts3[i] <= 0) { above++; }
+      if (dotProducts4[i] <= 0) { aboveAfter++; }}
 
     if(debug) sketch.println(sketch.frameCount +">    dotproduct result: "+inRangeS+"/"+inRangeE+"/"+above+"/"+aboveAfter);
 
     // make sure to short-circuit if the actor cannot
     // interact with the boundary because it is out of range.
-    if (inRangeS == 0 || inRangeE == 0 || (above>0 && aboveAfter>=above)) {
+    if (inRangeS == 0 || inRangeE == 0) {
       if(debug) sketch.println(sketch.frameCount +">   this boundary is not involved in collisions for this frame.");
+      return null;
+    }
+    
+    if (above>0 && aboveAfter>above) {
+      if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (1).");
+      return null;
+    }
+    
+    if (above==4 && aboveAfter==4) {
+      if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (2).");
       return null;
     }
 
@@ -168,6 +178,9 @@ static class CollisionDetection {
     float dx, dy;
     for(int i=0; i<8; i+=2) {
       intersection = getLineLineIntersection(x1,y1,x2,y2, previous[i], previous[i+1], current[i], current[i+1], false, false);
+      if (intersection == null) {
+        continue;
+      }
       dx = intersection[0] - previous[i];
       dy = intersection[1] - previous[i+1];
       distances[i] = sqrt(dx*dx+dy*dy);
