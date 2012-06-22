@@ -11,7 +11,7 @@ int skipover = 0;
  * Boilerplate setup
  */
 void setup() {
-  size(500,500);
+  size(800,800);
   CollisionDetection.init(this);
   ellipseMode(CENTER);
   frameRate(1000);
@@ -42,28 +42,20 @@ void reset() {
 void draw() {
 //  println(frameCount +"> draw");
   
+  fill(0,150);
+  rect(-1,-1,width+2,height+2);
+
   if(bbox[0]<padding || bbox[2]>width-padding || bbox[1]<padding || bbox[5]>height-padding) {
-//  println(frameCount +"> noLoop will be called");
+    println(frameCount +"> box found in illegal position, noLoop will be called");
     noLoop();
     skipover++;
   }
-
-  fill(0,15);
-  rect(-1,-1,width+2,height+2);
 
   // draw boundary and box
   int intensity = 0;
   for(float[] boundary: boundaries) {
     stroke(100 + intensity++*20,100 + intensity++*20,200);
     line(boundary[0], boundary[1], boundary[2], boundary[3]);
-  }
-  
-  if(bbox[0]<padding || bbox[2]>width-padding || bbox[1]<padding || bbox[5]>height-padding) {
-    stroke(255,0,0,150);
-    line(prev[0],prev[1],bbox[0],bbox[1]);
-    line(prev[2],prev[3],bbox[2],bbox[3]);
-    line(prev[4],prev[5],bbox[4],bbox[5]);
-    line(prev[6],prev[7],bbox[6],bbox[7]);
   }
 
   stroke(0,0,255);
@@ -75,12 +67,16 @@ void draw() {
   stroke(255);
   drawBox(bbox);
 
+  // try to update
   if(skipover!=1) {
-    skipover = 0;    
-    // next frame's values
+    println(frameCount +"> advancing frame");
+
+    skipover = 0;
+
+    // set up the next frame's values
     nextFrame();
   
-    // perform collision detection
+    // perform collision detection for these values
     boolean repositioned = false;
     for(float[] boundary: boundaries) {
       float[] correction = CollisionDetection.getLineRectIntersection(boundary, prev, bbox);
@@ -103,16 +99,15 @@ void drawBox(float[] boundingbox) {
 
 /**
  * Move the actor by some random x/y value.
- * (constrained by maxStep in the function)
+ * (constrained by padding in the function)
  *
  * This move is treated as a "next frame" position.
  */
 void nextFrame() {
   arrayCopy(prev,0,old,0,8);
   arrayCopy(bbox,0,prev,0,8);
-  int maxStep = 150;
-  float dx = random(-maxStep,maxStep),
-        dy = random(-maxStep,maxStep);
+  float dx = random(-padding,padding),
+        dy = random(-padding,padding);
   updatePosition(dx,dy);
 }
 
