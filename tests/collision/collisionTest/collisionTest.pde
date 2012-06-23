@@ -96,16 +96,14 @@ void draw() {
     return;
   }
   
-  fill(0,15);
-  rect(-1,-1,width+2,height+2);
+//  fill(0,150);
+//  rect(-1,-1,width+2,height+2);
 
-/*
-  if(bbox[0]<padding-epsilon || bbox[2]>width+epsilon-padding || bbox[1]<padding-epsilon || bbox[5]>height+epsilon-padding) {
+  if(bbox[0]<0 || bbox[2]>width || bbox[1]<0 || bbox[5]>height) {
     println(frameCount +"> box found in illegal position, noLoop will be called");
     noLoop();
     skipover++;
   }
-*/
 
   // draw boundary and box
   int intensity = 0;
@@ -125,8 +123,6 @@ void draw() {
 
   // try to update
   if(skipover!=1) {
-    println("\n"+frameCount +"> advancing frame");
-
     skipover = 0;
 
     // set up the next frame's values
@@ -164,6 +160,7 @@ void nextFrame() {
   arrayCopy(bbox,0,prev,0,8);
   float dx = random(-padding,padding),
         dy = random(-padding,padding);
+  println("\n"+frameCount +"> advancing frame ("+dx+"/"+dy+")");
   updatePosition(dx,dy);
 }
 
