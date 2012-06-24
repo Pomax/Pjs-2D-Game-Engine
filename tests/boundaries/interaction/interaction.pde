@@ -7,6 +7,7 @@ int padding = 60;
 float epsilon = 0.5;
 int skipover = 0;
 
+
 /**
  * Boilerplate setup
  */
@@ -17,6 +18,7 @@ void setup() {
   frameRate(1000);
   reset();
 }
+
 
 /**
  * Reset the world
@@ -76,6 +78,7 @@ void draw() {
   println(frameCount + "> end of draw function");
 }
 
+
 // helper draw function for showing box wireframes
 void drawBox(float[] boundingbox) {
   line(boundingbox[0], boundingbox[1], boundingbox[2], boundingbox[3]);
@@ -84,7 +87,9 @@ void drawBox(float[] boundingbox) {
   line(boundingbox[6], boundingbox[7], boundingbox[0], boundingbox[1]);
 }
 
+
 float dx = 1, dy = 0;
+
 
 /**
  * Move the actor by some random x/y value.
@@ -109,12 +114,14 @@ void nextFrame() {
     updatePosition(redirected[0], redirected[1]);
   } else { updatePosition(dx,dy); }
   
-  // perform collision detection for these values
+  // perform collision detection based on these values
   println(frameCount + "> performing collision detection");
   boolean repositioned = false;
   for(int b=0, last=boundaries.size(); b<last; b++) {
     float[] boundary = boundaries.get(b);
-    if(attached.contains(boundary)) continue; 
+    // skip over boundaries we're (still) attached to.
+    if(attached.contains(boundary)) continue;
+    // performed collision detection for all boundaries we're not attached to. 
     float[] correction = CollisionDetection.getLineRectIntersection(boundary, prev, bbox);
     if (correction != null) {
       println(frameCount + "> received dx/dx "+correction[0]+"/"+correction[1]+" on boundary "+b);
@@ -124,6 +131,7 @@ void nextFrame() {
     }
   }
 }
+
 
 /**
  * Move the actor by some specific x/y value.
@@ -139,45 +147,38 @@ void updatePosition(float dx, float dy) {
   }
 }
 
+
 /**
  * redirect a force along a boundary's surface
  */
 float[] redirectOverBoundary(float[] forceVector, float[] boundary) {
+  // is this a permissible vector?
   float[] refVector = {boundary[2]-boundary[0], boundary[3]-boundary[1]};
-  float dotproduct = forceVector[0]*refVector[0] + forceVector[1]*refVector[1],
-        len = refVector[0]*refVector[0] + refVector[1]*refVector[1],
+  float dx = refVector[0], dy = refVector[1], pv=PI/2.0,
+        rdx = dx*cos(pv) - dy*sin(pv),
+        rdy = dx*sin(pv) + dy*cos(pv);
+  float dotproduct = CollisionDetection.getDotProduct(rdx, rdy, forceVector[0], forceVector[1]);
+  println(dotproduct);
+  if(dotproduct<0) { return new float[]{forceVector[0], forceVector[1], dotproduct}; }
+  
+  // no it's not. redirect it.
+  dotproduct = forceVector[0]*refVector[0] + forceVector[1]*refVector[1];
+  float len = refVector[0]*refVector[0] + refVector[1]*refVector[1],
         scalar = dotproduct / len;
   float[] redirected = {scalar*refVector[0], scalar*refVector[1]};
-
   println(frameCount+"> "+forceVector[0]+","+forceVector[1]+" over "+refVector[0]+","+refVector[1]+" = "+redirected[0]+","+redirected[1]);
-  
-  // determine whether this redirected vector takes us off the boundary.
-  float dotx = refVector[0], doty = refVector[1],
-        otlen = sqrt(len),
-        dx = forceVector[0], dy = forceVector[1]; 
-  dotx /= otlen;
-  doty /= otlen;
-  len = sqrt(dx*dx+dy*dy);
-  if(len==0) return new float[]{0,0,0};
-
-  dx /= len;
-  dy /= len;
-  dotproduct = dx*dotx + dy*doty;
-  println(frameCount+"> *** "+dotx+"/"+doty+", "+len+", "+dx+"/"+dy+": "+dotproduct);
-
-  // a negative dotproduct means we will detach from this boundary
-  return new float[]{redirected[0], redirected[1], dotproduct};
+  return new float[]{redirected[0], redirected[1], 0};
 }
 
 // =======================
 
 void mouseClicked() { if(mouseButton==LEFT) reset(); loop(); }
 void keyPressed() {
-  if(key=='w')      { dy = -2; }
-  else if(key=='a') { dx = -2; }
-  else if(key=='s') { dy = 2; }
-  else if(key=='d') { dx = 2; }
-  else { reset(); loop(); }
+  if(key=='w')      { dy = -20; }
+  if(key=='a') { dx = -20; }
+  if(key=='s') { dy = 20; }
+  if(key=='d') { dx = 20; }
+  if(key==' ') { reset(); loop(); }
 }
 
 void keyReleased() {

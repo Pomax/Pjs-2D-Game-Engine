@@ -247,27 +247,35 @@ static class CollisionDetection {
    */
   static float[] getDotProducts(float ox, float oy, float tx, float ty, float[] bbox) {
     float dotx = tx-ox, doty = ty-oy,
-          otlen = sqrt(dotx*dotx + doty*doty),
           dx, dy, len, dotproduct;
   
-    dotx /= otlen;
-    doty /= otlen;
-    
     float[] dotProducts = new float[8];
   
     for(int i=0; i<8; i+=2) {
       dx = bbox[i]-ox;
       dy = bbox[i+1]-oy;
-      len = sqrt(dx*dx+dy*dy);
-      dx /= len;
-      dy /= len;
-      dotproduct = dx*dotx + dy*doty;
+      dotproduct = getDotProduct(dotx,doty, dx, dy);
       dotProducts[i] = dotproduct;
     }
   
     return dotProducts;
   }
-
+  
+  /**
+   * get the dot product between two vectors
+   */
+  static float getDotProduct(float dx1, float dy1, float dx2, float dy2) {
+    // normalise both vectors
+    float l1 = sqrt(dx1*dx1 + dy1*dy1),
+          l2 = sqrt(dx2*dx2 + dy2*dy2);
+    if (l1==0 || l2==0) return 0;
+    dx1 /= l1;
+    dy1 /= l1;
+    dx2 /= l2;
+    dy2 /= l2;
+    return dx1*dx2 + dy1*dy2;
+  }
+  
 
   /**
    * Rank the corner points for a bounding box
