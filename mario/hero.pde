@@ -14,8 +14,8 @@ class Mario extends Player {
     handleKey('S');
     handleKey('D');
     setImpulseCoefficients(DAMPENING, DAMPENING);
-//    setForces(0, DOWN_FORCE);
-//    setAcceleration(0, ACCELERATION);
+    setForces(0, DOWN_FORCE);
+    setAcceleration(0, ACCELERATION);
   }
   
   /**

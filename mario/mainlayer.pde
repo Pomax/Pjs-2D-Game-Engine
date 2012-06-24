@@ -14,6 +14,10 @@ class MainLevelLayer extends LevelLayer {
     mario = new Mario();
     mario.setPosition(32, height-64);
     addPlayer(mario);
+    
+    addBoundedInteractor(new CoinBlock(64,height-96));
+    addBoundedInteractor(new CoinBlock(80,height-96));
+    addBoundedInteractor(new CoinBlock(96,height-96));
 
     // add general ground
     addGround("ground", -32,height-48, -32 + 17*32,height);
@@ -52,9 +56,10 @@ class MainLevelLayer extends LevelLayer {
     addSlant(1300, height-48);
     addSlant(1350, height-48);
 */
+
     // Let's also add a koopa on one of the slides
-    Koopa koopa = new Koopa(264, height-178);
-    addInteractor(koopa);
+//    Koopa koopa = new Koopa(264, height-178);
+//    addInteractor(koopa);
 
 /*    
     // add lots of just-in-time triggers
