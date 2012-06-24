@@ -194,4 +194,3 @@ class Boundary extends Positionable {
    */
   String toString() { return x+","+y+","+xw+","+yh; }
 }
-

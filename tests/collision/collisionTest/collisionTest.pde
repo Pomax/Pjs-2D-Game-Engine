@@ -4,10 +4,11 @@
 
 float[] old, prev, bbox;
 ArrayList<float[]> boundaries = new ArrayList<float[]>();
-int padding = 60;
+int padding = 60, jitter = 10;
 float epsilon = 0.5;
 int skipover = 0;
-boolean customtest = false;
+
+ArrayList<float[]> attached = new ArrayList<float[]>();
 
 /**
  * Boilerplate setup
@@ -26,28 +27,29 @@ void setup() {
 void reset() {
   skipover = 0;
 
-  int x = width/2, y=height/2, dx=24, dy=24;
+  int x = width/2, y=height/2-100, dx=24, dy=24;
   bbox = new float[]{x,y, x+dx,y, x+dx,y+dy, x,y+dy};
   prev = new float[]{0,0,0,0,0,0,0,0};
   old  = new float[]{0,0,0,0,0,0,0,0};
 
   boundaries.clear();
+  
+  // bounding poly
   boundaries.add(new float[]{padding+50,padding,padding-50,height-padding});
   boundaries.add(new float[]{padding-50,height-padding,width-padding+50,height-padding});
   boundaries.add(new float[]{width-padding+50,height-padding,width-padding-50,padding});
   boundaries.add(new float[]{width-padding-50,padding,padding+50,padding});
 
-  boundaries.add(new float[]{-200 + width/2-dx/3,height/2, -200 + width/2+dx/3,height/2});
-  boundaries.add(new float[]{-150 + width/2-dx/3,height/2, -150 + width/2+dx/3,height/2});
-  boundaries.add(new float[]{-100 + width/2-dx/3,height/2, -100 + width/2+dx/3,height/2});
-  boundaries.add(new float[]{ -50 + width/2-dx/3,height/2,  -50 + width/2+dx/3,height/2});
-  boundaries.add(new float[]{   0 + width/2-dx/3,height/2,    0 + width/2+dx/3,height/2});
-  boundaries.add(new float[]{  50 + width/2-dx/3,height/2,   50 + width/2+dx/3,height/2});
-  boundaries.add(new float[]{ 100 + width/2-dx/3,height/2,  100 + width/2+dx/3,height/2});
-  boundaries.add(new float[]{ 150 + width/2-dx/3,height/2,  150 + width/2+dx/3,height/2});
-  boundaries.add(new float[]{ 200 + width/2-dx/3,height/2,  200 + width/2+dx/3,height/2});
-
+  // intermediary boundaries
+  for(int i=0, f=0; i<9; i++) {
+    f = i*50;
+    boundaries.add(new float[]{-200 + f + width/2-dx/3,height/2, -200 + f + width/2+dx/3,height/2});
+    boundaries.add(new float[]{-200 + f + width/2+dx/3,height/2, -200 + f + width/2+dx/3,height/2+10});
+    boundaries.add(new float[]{-200 + f + width/2+dx/3,height/2+10, -200 + f + width/2-dx/3,height/2+10});
+    boundaries.add(new float[]{-200 + f + width/2-dx/3,height/2+10, -200 + f + width/2-dx/3,height/2}); }
 }
+
+boolean customtest = false;
 
 /**
  * Boilerplate draw function
@@ -56,14 +58,17 @@ void draw() {
   if(customtest) {
     noLoop();
 /*
-2707>  testing against: 740.0, 740.0, 740.0, 60.0
-2707>   previous: 714.84, 713.32, 738.84, 713.32, 738.84, 737.32, 714.84, 737.32
-2707>   current : 753.21, 659.82, 777.21, 659.82, 777.21, 683.82, 753.21, 683.82
+3824>  testing against: 242.0, 400.0, 258.0, 400.0
+3824>   previous: 244.18, 384.89, 268.18, 384.89, 268.18, 408.89, 244.18, 408.89
+3824>   current : 187.08, 384.02, 211.08, 384.02, 211.08, 408.02, 187.08, 408.02
+
+2948>  testing against: 740.0, 740.0, 740.0, 60.0
+2948>   previous: 716.0, 300.0, 740.0, 300.0, 740.0, 324.0, 716.0, 324.0
+2948>   current : 717.0, 290.0, 741.0, 290.0, 741.0, 314.0, 717.0, 314.0
 */
-    
     float[] testline = {740.0, 740.0, 740.0, 60.0};
-    float[] previous = {714.84, 713.32, 738.84, 713.32, 738.84, 737.32, 714.84, 737.32};
-    float[] current = {753.21, 659.82, 777.21, 659.82, 777.21, 683.82, 753.21, 683.82};
+    float[] previous = {716.0, 300.0, 740.0, 300.0, 740.0, 324.0, 716.0, 324.0};
+    float[] current = {717.0, 290.0, 741.0, 290.0, 741.0, 314.0, 717.0, 314.0};
     float[] correction = CollisionDetection.getLineRectIntersection(testline, previous, current);
     if(correction!=null) {
       background(255);
@@ -96,8 +101,8 @@ void draw() {
     return;
   }
   
-//  fill(0,150);
-//  rect(-1,-1,width+2,height+2);
+  fill(0,150);
+  rect(-1,-1,width+2,height+2);
 
   if(bbox[0]<0 || bbox[2]>width || bbox[1]<0 || bbox[5]>height) {
     println(frameCount +"> box found in illegal position, noLoop will be called");
@@ -135,6 +140,7 @@ void draw() {
       if (correction != null) {
         updatePosition(correction[0], correction[1]);
         repositioned = true;
+        attached.add(boundary);
 //        println(frameCount +"> blocked");
       }
     }
@@ -158,8 +164,8 @@ void drawBox(float[] boundingbox) {
 void nextFrame() {
   arrayCopy(prev,0,old,0,8);
   arrayCopy(bbox,0,prev,0,8);
-  float dx = random(-padding,padding),
-        dy = random(-padding,padding);
+  float dx = random(-jitter,jitter),
+        dy = random(-jitter,jitter);
   println("\n"+frameCount +"> advancing frame ("+dx+"/"+dy+")");
   updatePosition(dx,dy);
 }

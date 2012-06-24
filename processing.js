@@ -19763,7 +19763,9 @@
               }
               // DEBUGGING HACK PATCH TEST TEST TEST
             
-              return new Processing(canvas, code.join("\n"));
+              var sktch = new Processing(canvas, code.join("\n"));
+              sktch.noLoop();
+              return sktch;
 //            } catch(e) {
 //              throw "Processing.js: Unable to execute pjs sketch: " + e;
 //            }

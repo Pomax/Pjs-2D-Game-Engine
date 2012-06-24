@@ -62,8 +62,8 @@ class MainLevelLayer extends LevelLayer {
     // and let's add the thing that makes us win!
     addGoal(1920, height-48);
 
-//    showBoundaries = true;
-//    showTriggers = true;
+    showBoundaries = true;
+    showTriggers = true;
   }
   
   /**
@@ -210,7 +210,7 @@ class MainLevelLayer extends LevelLayer {
     super.draw();
     viewbox.track(parent, mario);
     // just in case!
-    if(mario!=null && mario.active != null && mario.active.name!="dead" && mario.y>height) {
+    if(mario!=null && mario.active != null && mario.active.name!="dead" && mario.y>height*2) {
       reset();
     }
   }

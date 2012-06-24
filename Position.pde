@@ -118,7 +118,9 @@ class Position {
     // overlap
     float angle = atan2(dy,dx);
     if(angle<0) { angle += 2*PI; }
-    return new float[]{dx, dy, angle};
+    float safedx = dw-dx,
+          safedy = dh-dy;
+    return new float[]{dx, dy, angle, safedx, safedy};
   }
 
   /**

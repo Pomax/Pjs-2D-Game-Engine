@@ -591,6 +591,7 @@ class Boundary extends Positionable {
    */
   String toString() { return x+","+y+","+xw+","+yh; }
 }
+
 /**
  * A bounded interactor is a normal Interactor with
  * one or more boundaries associated with it.
@@ -1133,7 +1134,8 @@ static class CollisionDetection {
     // And then return the transformed coordinates, plus angle used
     return new float[] {x1n, y1n, x2n, y2n, 0, 0, x4n, 0, angle};
   }
-}/**
+}
+/**
  * A static computation class.
  *
  * At the moment this houses the actor/boundary interaction
@@ -1959,12 +1961,7 @@ abstract class LevelLayer {
               float[] overlap = a.overlap(o);
               if(overlap!=null) {
                 a.overlapOccurredWith(o, overlap);
-                int len = overlap.length;
-                float[] inverse = new float[len];
-                arrayCopy(overlap,0,inverse,0,len);
-                for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
-                o.overlapOccurredWith(a, inverse); 
-              }
+                o.overlapOccurredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
               else if(o instanceof Tracker) {
                 ((Tracker)o).track(a, x,y,w,h);
               }
@@ -1976,12 +1973,7 @@ abstract class LevelLayer {
               float[] overlap = a.overlap(o);
               if(overlap!=null) {
                 a.overlapOccurredWith(o, overlap);
-                int len = overlap.length;
-                float[] inverse = new float[len];
-                arrayCopy(overlap,0,inverse,0,len);
-                for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
-                o.overlapOccurredWith(a, inverse); 
-              }
+                o.overlapOccurredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
               else if(o instanceof Tracker) {
                 ((Tracker)o).track(a, x,y,w,h);
               }
@@ -2267,9 +2259,7 @@ class Position {
     // overlap
     float angle = atan2(dy,dx);
     if(angle<0) { angle += 2*PI; }
-    float safedx = dw-dx,
-          safedy = dh-dy;
-    return new float[]{dx, dy, angle, safedx, safedy};
+    return new float[]{dx, dy, angle};
   }
 
   /**
@@ -2368,10 +2358,6 @@ abstract class Positionable extends Position implements Drawable {
 
   void detachFromAll() {
     boundaries.clear();
-  }
-  
-  void rewind() {
-    copyFrom(previous);
   }
 
   /**
@@ -2591,6 +2577,7 @@ abstract class Positionable extends Position implements Drawable {
     // we're attached to one or more boundaries, so we
     // are subject to (compound) impulse redirection.
     if(boundaries.size()>0) {
+//      println("redirecting impulse {"+_dx+","+_dy+"} over boundary surfaces...");
       float[] redirected = new float[]{_dx, _dy};
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
@@ -2599,6 +2586,7 @@ abstract class Positionable extends Position implements Drawable {
           continue;
         }
         redirected = boundary.redirectForce(redirected[0], redirected[1]);
+//        println("redirected to {"+redirected[0]+","+redirected[1]+"}.");
       }
       x += redirected[0];
       y += redirected[1];
@@ -4031,43 +4019,71 @@ void initialize() {
 class TestLevel extends Level {
   TestLevel(float w, float h) {
     super(w,h); 
-    addLevelLayer("test", new TestLayer(this));
+    addLevelLayer("test", new TestLayer(this,w,h));
   }
   
   void draw() {
-    fill(0,10);
+    fill(0,1);
     rect(-1,-1,width+2,height+2);
     super.draw();
+    stroke(0,255,0,150);
+    line(width/2,0,width/2,height);
+    line(width/2+16,0,width/2+16,height);
   }
 }
 
 class TestLayer extends LevelLayer {
   TestObject t1, t2, t3, t4;
-  TestLayer(Level p) {
-    super(p,p.width,p.height); 
+  TestLayer(Level p, float w, float h) {
+    super(p,w,h); 
     showBoundaries = true;
-    
-    int v = 10;
 
-    t1 = new TestObject(width/2+v/2, height/2-200);
+    t1 = new TestObject(width/4, height/4);
     t1.setForces(5,0);
-    
-    t1.setForces(0,0.01);
-    t1.setAcceleration(0,0.1);
 
-    addPlayer(t1);
+    t2 = new TestObject(width/4, 3*height/4);
+    t2.setForces(0,-5);
+
+    t3 = new TestObject(3*width/4, 3*height/4);
+    t3.setForces(-5,0);
+
+    t4 = new TestObject(3*width/4, height/4);
+    t4.setForces(0,5);
+
+//    addPlayer(t1);
+    addPlayer(t2);
+//    addPlayer(t3);
+//    addPlayer(t4);
 
     addBoundary(new Boundary(width/2+230,height,width/2+200,0));
-    addBoundary(new Boundary(width/2-180,0,width/2-150,height));   
+    addBoundary(new Boundary(width/2-180,0,width/2-150,height));
+    
     addBoundary(new Boundary(width,height/2-200,0,height/2-120));
     addBoundary(new Boundary(0,height/2+200,width,height/2+120));
 
-    addBoundary(new Boundary(width/2,height/2,width/2 + v,height/2));
+    addBoundary(new Boundary(width/2,height/2,width/2 + 16,height/2));
   }
 
-  void draw() {
+  void draw() { 
     super.draw();
-    viewbox.track(parent,t1);
+    
+    if (t1.getX() > 0.75*width)      { t1.setForces(-5,0); }
+    else if (t1.getX() < 0.25*width) { t1.setForces(5,0); }
+
+    if (t3.getX() > 0.75*width)      { t3.setForces(-5,0); }
+    else if (t3.getX() < 0.25*width) { t3.setForces(5,0); }
+
+    if (t2.getY() > 0.75*height)      { t2.setForces(0,-5); }
+    else if (t2.getY() < 0.25*height) { t2.setForces(0,5); }
+
+    if (t4.getY() > 0.75*height)      { t4.setForces(0,-5); }
+    else if (t4.getY() < 0.25*height) { t4.setForces(0,5); }
+  }
+  
+  void mouseClicked(int mx, int my, int mb) {
+    if(mb==RIGHT) { noLoop(); return; }
+    boundaries.clear();
+    addBoundary(new Boundary(width/2, height/2, mx, my));
   }
 }
 

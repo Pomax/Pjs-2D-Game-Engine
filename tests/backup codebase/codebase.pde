@@ -591,6 +591,7 @@ class Boundary extends Positionable {
    */
   String toString() { return x+","+y+","+xw+","+yh; }
 }
+
 /**
  * A bounded interactor is a normal Interactor with
  * one or more boundaries associated with it.
@@ -835,92 +836,46 @@ static class CollisionDetection {
 
 
   /**
-   * generate the dot products for each of the current
-   * and previous corner points, relative to (ox,oy).
-   *
-   * note: we want dot products with the vector that is
-   *       perpendicular to the boundary, so that we have
-   *       a clear "on blocked side" (positive) and "on
-   *       pass-through side" (negative) value classifier.
-   */
-  private static int[] getDotProductsPerCorner(float[] line, float[] current, float[] current_dots, float[] previous, float[] previous_dots, int[] corners) {
-    int B_current = 0,
-        B_previous = 0,
-        B_sum = 0;
-
-    float ox=line[0], oy=line[1], tx=line[2], ty=line[3],
-          dotx = tx-ox, doty = ty-oy,
-          otlen = sqrt(dotx*dotx + doty*doty);
-
-    // normalise the boundary vector
-    dotx /= otlen;
-    doty /= otlen;
-
-    float p = PI/2, cosp = cos(p), sinp = sin(p),
-          pdx = dotx*cosp - doty*sinp,
-          pdy = dotx*sinp + doty*cosp,
-          dx, dy, len, dotproduct,
-          dotvalue = 999999, curval;
-          
-    float corner1v=3, corner2v=3, corner3v=3, corner4v=3;
-    int   corner1=-1, corner2=-1, corner3=-1, corner4=-1;
-
-    // FIXME: I'm sure this can be optimised
-    for(int i=0; i<8; i+=2) {
-      // Dot product for corner on 'current'
-      dx = current[i]-ox;
-      dy = current[i+1]-oy;
-      len = sqrt(dx*dx+dy*dy);
-      dx /= len;
-      dy /= len;
-      dotproduct = dx*pdx + dy*pdy;
-      if (dotproduct < 0) { B_current++; }
-      current_dots[i] = dotproduct;
-
-      // Dot product for corner on 'previous'
-      dx = previous[i]-ox;
-      dy = previous[i+1]-oy;
-      len = sqrt(dx*dx+dy*dy);
-      dx /= len;
-      dy /= len;
-      dotproduct = dx*pdx + dy*pdy;
-      if (dotproduct < 0) { B_previous++; }
-      previous_dots[i] = dotproduct;
-      
-      // this is silly, but relatively fast
-      if(dotproduct<corner1v) { 
-        corner4v = corner3v; corner3v = corner2v; corner2v = corner1v; corner1v = dotproduct;
-        corner4 = corner3; corner3 = corner2; corner2 = corner1; corner1 = i; }
-      else if(dotproduct<corner2v) {
-        corner4v = corner3v; corner3v = corner2v; corner2v = dotproduct;
-        corner4 = corner3; corner3 = corner2; corner2 = i; }
-      else if(dotproduct<corner3v) {
-        corner4v = corner3v; corner3v = dotproduct;
-        corner4 = corner3; corner3 = i; }
-      else {
-        corner4v = dotproduct;
-        corner4 = i; }
-    }
-    
-    // Set up the corners, ranked by
-    // proximity to the boundary.
-    corners[0] = corner1;
-    corners[1] = corner2;
-    corners[2] = corner3;
-    corners[3] = corner4;
-
-    // return "on blocking side" counts for both boxes
-    return new int[]{B_current, B_previous, B_current+B_previous};
-  }
-
-
-  /**
    * Line-through-box intersection algorithm.
    *
-   * There are a few possibilities, illustrated
-   * in the CollisionDetection.psd and
-   * CollisionDetection2.psd files included with
-   * this source code.
+   * There are a few possibilities, with B() meaning
+   * "on blocking side", I() meaning "intersecting"
+   * and P() meaning "on pass-through side":
+   *
+   *               |
+   * (1)  []  []  <|    =  B(prev), B(current)
+   *               |
+   *
+   *              |
+   * (2)  []    [<|]   =  B(prev), B(current) and I(current) and P(current)
+   *              |
+   *
+   *           |
+   * (3)  []  <|  []   =  B(prev), P(current)
+   *           |
+   *
+   *        |
+   * (4)  [<|]    []   =  B(prev) and I(prev) and P(prev), P(current)
+   *        |
+   *
+   *
+   *       |
+   * (5)  <|  []  []   =  P(prev), P(current)
+   *       |
+   *
+   * By computing the dot product for the eight corners of the two bounding
+   * boxes, we can determine which of these situations we are in. Only in
+   * (2) and (3) should we signal an intersection occuring. While (4) might
+   * look like another case in which this should happen, we assume that
+   * because the "previous" state is boundary overlapping, it was permitted
+   * earlier (for instance, it moved through the boundary in the allowed
+   * direction, but then moved back before having fully passed the boundary).
+   *
+   * DOCUMENTATION FIX: we can actually treat 2 and 3 as the same case, with
+   *                    a more reliable result, by always constructing a 
+   *                    new intersection-validating parallelogram from the 
+   *                    "hot corner" and an adjacent corner in {previous} and
+   *                    {current}.
    *
    *
    * @return null if no intersect, otherwise float[3]
@@ -928,66 +883,114 @@ static class CollisionDetection {
    */
   static float[] getLineRectIntersection(float[] line, float[] current, float[] previous)
   {
-    float ox=line[0], oy=line[1], tx=line[2], ty=line[3];
-    
-    // get the dot products per corner... just like the method says
-    int[] corners = {0,0,0,0},
-          B_counts = getDotProductsPerCorner(line, current, current_dots, previous, previous_dots, corners);
+    int B_current = 0, B_previous = 0, B_sum = 0;
+    float ox=line[0], oy=line[1], tx=line[2], ty=line[3],
+          dotx = tx-ox, doty = ty-oy,
+          otlen = sqrt(dotx*dotx + doty*doty),
+          x, y, dx, dy, len, dotproduct;
 
-    int B_current = B_counts[0],
-        B_previous = B_counts[1],
-        B_sum = B_counts[2];
+    // normalised boundary vector
+    dotx /= otlen;
+    doty /= otlen;
 
-    // cases (1) or (6)? no collision.
-    if (B_sum == 0 || B_sum == 8) { return null; }
+    // note: we want the dot product with the
+    // vector that is perpendicular to the boundary!
+    float p = PI/2, cosp = cos(p), sinp = sin(p),
+          pdx = dotx*cosp - doty*sinp,
+          pdy = dotx*sinp + doty*cosp;
 
-    // case (4) or (5)? no collision, by convention.
-    if (B_previous < 4) { return null; }
+    // how many corners are blocked in [current]?
+    for(int i=0; i<8; i+=2) {
+      x = current[i];
+      y = current[i+1];
+      dx = x-ox;
+      dy = y-oy;
+      len = sqrt(dx*dx+dy*dy);
+      dx /= len;
+      dy /= len;
+      dotproduct = dx*pdx + dy*pdy;
+      if (dotproduct < 0) { B_current++; }
+      current_dots[i] = dotproduct;
+    }
 
-    // what remains is case (2) or (3)
+    // how many corners are blocked in [previous]? (copied for speed)
+    for(int i=0; i<8; i+=2) {
+      x = previous[i];
+      y = previous[i+1];
+      dx = x-ox;
+      dy = y-oy;
+      len = sqrt(dx*dx+dy*dy);
+      dx /= len;
+      dy /= len;
+      dotproduct = dx*pdx + dy*pdy;
+      if (dotproduct < 0) { B_previous++; }
+      previous_dots[i] = dotproduct;
+    }
+
+    // cases (1) or (5)?
+    B_sum = B_current + B_previous;
+    if (B_sum == 0 || B_sum == 8) {
+//      println("case " + (B_sum==8? "1" : "5"));
+      return null;
+    }
+
+    // case (4)?
+    if (B_previous < 4 && B_current == 0) {
+//      println("case 4");
+      return null;
+    }
+
+    // Before we continue, find the point in [previous]
+    // that is closest to the boundary, since that'll
+    // cross the boundary first (based on its dot product
+    // value.)
+    int corner=-1, curcorner;
+    float dotvalue = 999999, curval;
+    for(curcorner=0; curcorner<8; curcorner+=2) {
+      curval = abs(previous_dots[curcorner]);
+      if(curval<dotvalue) {
+        corner = curcorner;
+        dotvalue = curval; }}
+
+    // Right then. Case (2) or (3)?
     if (B_previous == 4) {
-    
-      // first, we need to find out which corner point actually
-      // intersects our boundary. Typically this will be the
-      // first ranked corner, but not always.
-      float x1, y1, x2, y2;
-      int corner = -1;
-      float[] intersection;
-      for(int i=0, last=corners.length; i<last; i++) {
-        corner = corners[i];
-        x1 = previous[corner];
-        y1 = previous[corner+1];
-        x2 = current[corner];
-        y2 = current[corner+1];
-        intersection = getLineLineIntersection(ox,oy,tx,ty, x1,y1,x2,y2, false);
-        if(intersection!=null) break;
-      }
+      int currentCase = 2;
+      // for (2) and (3) the approach is essentially
+      // the same, except that we need different bounding
+      // boxes to determine the intersection. For (2) we
+      // can use the [current] bounding box, but for (3)
+      // we need to construct a new box that is spanned by
+      // the two points next to the "hot" corner in both
+      // [previous] and [current].
+      checkLines = new float[8];
+      arrayCopy(current,0,checkLines,0,8);
 
-      // get the guaranteed hit-line
-      float px = previous[corner],
-            py = previous[corner+1],
-            cx = current[corner],
-            cy = current[corner+1];
-      
-      // We now have the corner that's going to pass through
-      // the boundary first. we construct a new bbox to
-      // perform poly-through-line detection.
-      checkLines = new float[]{px, py,
+//      // if we're seeing case (3), set up bbox correctly.
+//      if (B_current < 4) {
+//        println("case 3");
+
+      currentCase = 3;
+      // two of these edges are guaranteed to not have intersections,
+      // since otherwise the intersection would be inside either
+      // [previous] or [current], which is case (2) instead.
+      checkLines = new float[]{previous[(corner)%8], previous[(corner+1)%8],
                                previous[(corner+2)%8], previous[(corner+3)%8],
                                current[(corner+2)%8],  current[(corner+3)%8],
-                               cx, cy};
+                               current[(corner)%8],  current[(corner+1)%8]};
+//      }
+//      else
+//      { 
+//        println("case 2"); 
+//      }
 
       // Now that we have the correct box, perform line/line
       // intersection detection for each edge on the box.
       intersections.clear();
-      x1=checkLines[0];
-      y1=checkLines[1];
-      x2=x1;
-      y2=y1;
+      float x1=checkLines[0], y1=checkLines[1], x2=x1, y2=y1;
       for (int i=0, last=checkLines.length; i<last; i+=2) {
         x2 = checkLines[(i+2)%last];
         y2 = checkLines[(i+3)%last];
-        intersection = getLineLineIntersection(ox,oy,tx,ty, x1,y1,x2,y2, false);
+        float[] intersection = getLineLineIntersection(ox,oy,tx,ty, x1,y1,x2,y2, false);
         if (intersection!=null) {
           intersections.add(intersection);
           if(intersections.size()==2) { break; }}
@@ -1002,13 +1005,33 @@ static class CollisionDetection {
       // if we have two intersections, it's
       // relatively easy to determine by how
       // much we should move back.
-      if (intersectionCount == 2)
-      {
+      if (intersectionCount == 2) {
+        float px = previous[corner],
+              py = previous[corner+1],
+              cx = current[corner],
+              cy = current[corner+1];
+
         float[] i1 = intersections.get(0),
                  i2 = intersections.get(1);
+
+//        println("***");
         float[] ideal = getLineLineIntersection(px,py,cx,cy, i1[0],i1[1],i2[0],i2[1], false);
         if (ideal == null) { 
-          if(debug) println("error: could not find the ideal point based on corner ["+corner+"]");
+          if(debug) println("error: could not find the case "+currentCase+" ideal point based on corner ["+corner+"]");
+          /*
+          println("tried to find the intersection between:");
+          println("[1] "+px+","+py+","+cx+","+cy+" (blue)");
+          println("[2] "+i1[0]+","+i1[1]+","+i2[0]+","+i2[1]+" (green)");
+          //debugfunctions_drawBoundingBox(current,sketch);
+          //debugfunctions_drawBoundingBox(previous,sketch);
+          debugfunctions_drawBoundingBox(checkLines,sketch);
+          
+          sketch.noLoop();
+          sketch.stroke(0,200,255);
+          sketch.line(px,py,cx,cy);
+          sketch.stroke(0,255,0);
+          sketch.line(i1[0],i1[1],i2[0],i2[1]);
+          */
           return new float[]{px-cx, py-cy, corner}; 
         }
         return new float[]{ideal[0]-cx, ideal[1]-cy, corner};
@@ -1016,37 +1039,14 @@ static class CollisionDetection {
 
       // if there's only one intersection,
       // additional math is required.
-      else if (intersectionCount == 1)
-      {
-        float[] ideal = getLineLineIntersection(px,py,cx,cy, ox,oy,tx,ty, false);
-        // this might fail, because it's not necessarily the "hot corner"
-        // that ends up touching the boundary if we only have one intersection
-        int cv = 0;
-        for(cv = 2; cv<8 && ideal==null; cv+=4) {
-          px = previous[(corner+cv)%8];
-          py = previous[(corner+cv+1)%8];
-          cx = current[(corner+cv)%8];
-          cy = current[(corner+cv+1)%8];
-          ideal = getLineLineIntersection(px,py,cx,cy, ox,oy,tx,ty, false);
-        }
-
-        // If ideal is still null, something very curious has happened.
-        // Intersections occurred, but none of the corner paths are
-        // involved. To the best of my knowledge this is algorithmically
-        // impossible. Still, always good to see if I'm wrong:
-        if(ideal==null) {
-          if(debug) println("error: intersections occurred, but none of the corners were involved!");
-          return new float[]{px-cx, py-cy, corner};
-        }
-
-        // return the delta and relevant corner
-        return new float[]{ideal[0]-cx, ideal[1]-cy, (corner+cv)%8};
+      else if (intersectionCount == 1) {
+        // ...code goes here...
+        return ZERO_DIFFERENCE;
       }
     }
 
     // Uncaught cases get a pass - with a warning.
-    // At least theoretically, there are no uncaught cases.
-    // But as a programmer, I can be wrong.
+//    println("unknown case! (B_current: "+B_current+", B_previous: "+B_previous+")");
     return null;
   }
 
@@ -1061,7 +1061,7 @@ static class CollisionDetection {
    */
   static float[] getLineLineIntersection(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, boolean colinearity)
   {
-    float epsilon = 0.1;
+    float epsilon = 0.001;
     // convert lines to the generatised form [a * x + b + y = c]
     float a1 = -(y2 - y1), b1 = (x2 - x1), c1 = (x2 - x1) * y1 - (y2 - y1) * x1;
     float a2 = -(y4 - y3), b2 = (x4 - x3), c2 = (x4 - x3) * y3 - (y4 - y3) * x3;
@@ -1133,7 +1133,8 @@ static class CollisionDetection {
     // And then return the transformed coordinates, plus angle used
     return new float[] {x1n, y1n, x2n, y2n, 0, 0, x4n, 0, angle};
   }
-}/**
+}
+/**
  * A static computation class.
  *
  * At the moment this houses the actor/boundary interaction
@@ -1233,8 +1234,6 @@ Level activeLevel = null;
 // implement yourself.
 void setup() {
   size(screenWidth, screenHeight);
-  noLoop();
-
   levelSet = new HashMap<String, Level>();
   SpriteMapHandler.init(this);
   SoundManager.init(this);
@@ -1254,14 +1253,8 @@ void mouseDragged()  { activeLevel.mouseDragged(mouseX, mouseY, mouseButton); }
 void mouseReleased() { activeLevel.mouseReleased(mouseX, mouseY, mouseButton); }
 void mouseClicked()  { activeLevel.mouseClicked(mouseX, mouseY, mouseButton); }
 
-/**
- * Mute the game
- */
+// muting and unmuting
 void mute() { SoundManager.mute(true); }
-
-/**
- * Unmute the game
- */
 void unmute() { SoundManager.mute(false); }
 
 /**
@@ -1271,7 +1264,6 @@ void addLevel(String name, Level level) {
   levelSet.put(name, level);
   if (activeLevel == null) {
     activeLevel = level;
-    loop();
   }
 }
 
@@ -1959,12 +1951,7 @@ abstract class LevelLayer {
               float[] overlap = a.overlap(o);
               if(overlap!=null) {
                 a.overlapOccurredWith(o, overlap);
-                int len = overlap.length;
-                float[] inverse = new float[len];
-                arrayCopy(overlap,0,inverse,0,len);
-                for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
-                o.overlapOccurredWith(a, inverse); 
-              }
+                o.overlapOccurredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
               else if(o instanceof Tracker) {
                 ((Tracker)o).track(a, x,y,w,h);
               }
@@ -1976,12 +1963,7 @@ abstract class LevelLayer {
               float[] overlap = a.overlap(o);
               if(overlap!=null) {
                 a.overlapOccurredWith(o, overlap);
-                int len = overlap.length;
-                float[] inverse = new float[len];
-                arrayCopy(overlap,0,inverse,0,len);
-                for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
-                o.overlapOccurredWith(a, inverse); 
-              }
+                o.overlapOccurredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
               else if(o instanceof Tracker) {
                 ((Tracker)o).track(a, x,y,w,h);
               }
@@ -2267,9 +2249,7 @@ class Position {
     // overlap
     float angle = atan2(dy,dx);
     if(angle<0) { angle += 2*PI; }
-    float safedx = dw-dx,
-          safedy = dh-dy;
-    return new float[]{dx, dy, angle, safedx, safedy};
+    return new float[]{dx, dy, angle};
   }
 
   /**
@@ -2368,10 +2348,6 @@ abstract class Positionable extends Position implements Drawable {
 
   void detachFromAll() {
     boundaries.clear();
-  }
-  
-  void rewind() {
-    copyFrom(previous);
   }
 
   /**
@@ -2591,6 +2567,7 @@ abstract class Positionable extends Position implements Drawable {
     // we're attached to one or more boundaries, so we
     // are subject to (compound) impulse redirection.
     if(boundaries.size()>0) {
+//      println("redirecting impulse {"+_dx+","+_dy+"} over boundary surfaces...");
       float[] redirected = new float[]{_dx, _dy};
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
@@ -2599,6 +2576,7 @@ abstract class Positionable extends Position implements Drawable {
           continue;
         }
         redirected = boundary.redirectForce(redirected[0], redirected[1]);
+//        println("redirected to {"+redirected[0]+","+redirected[1]+"}.");
       }
       x += redirected[0];
       y += redirected[1];
@@ -2796,7 +2774,7 @@ static class SoundManager {
     AudioPlayer player = audioplayers.get(filename);
     if(player==null) {
       player = minim.loadFile(filename);
-      if(muted) player.mute();
+      if(muted) { player.mute(); }
       audioplayers.put(filename, player); }
     owners.put(identifier, player);
   }
@@ -4031,7 +4009,7 @@ void initialize() {
 class TestLevel extends Level {
   TestLevel(float w, float h) {
     super(w,h); 
-    addLevelLayer("test", new TestLayer(this));
+    addLevelLayer("test", new TestLayer(this,w,h));
   }
   
   void draw() {
@@ -4043,31 +4021,55 @@ class TestLevel extends Level {
 
 class TestLayer extends LevelLayer {
   TestObject t1, t2, t3, t4;
-  TestLayer(Level p) {
-    super(p,p.width,p.height); 
+  TestLayer(Level p, float w, float h) {
+    super(p,w,h); 
     showBoundaries = true;
-    
-    int v = 10;
 
-    t1 = new TestObject(width/2+v/2, height/2-200);
+    t1 = new TestObject(width/4, height/4);
     t1.setForces(5,0);
-    
-    t1.setForces(0,0.01);
-    t1.setAcceleration(0,0.1);
+
+    t2 = new TestObject(width/4, 3*height/4);
+    t2.setForces(0,-5);
+
+    t3 = new TestObject(3*width/4, 3*height/4);
+    t3.setForces(-5,0);
+
+    t4 = new TestObject(3*width/4, height/4);
+    t4.setForces(0,5);
 
     addPlayer(t1);
+    addPlayer(t2);
+    addPlayer(t3);
+    addPlayer(t4);
 
     addBoundary(new Boundary(width/2+230,height,width/2+200,0));
-    addBoundary(new Boundary(width/2-180,0,width/2-150,height));   
+    addBoundary(new Boundary(width/2-180,0,width/2-150,height));
+    
     addBoundary(new Boundary(width,height/2-200,0,height/2-120));
     addBoundary(new Boundary(0,height/2+200,width,height/2+120));
 
-    addBoundary(new Boundary(width/2,height/2,width/2 + v,height/2));
   }
 
-  void draw() {
+  void draw() { 
     super.draw();
-    viewbox.track(parent,t1);
+    
+    if (t1.getX() > 0.75*width)      { t1.setForces(-5,0); }
+    else if (t1.getX() < 0.25*width) { t1.setForces(5,0); }
+
+    if (t3.getX() > 0.75*width)      { t3.setForces(-5,0); }
+    else if (t3.getX() < 0.25*width) { t3.setForces(5,0); }
+
+    if (t2.getY() > 0.75*height)      { t2.setForces(0,-5); }
+    else if (t2.getY() < 0.25*height) { t2.setForces(0,5); }
+
+    if (t4.getY() > 0.75*height)      { t4.setForces(0,-5); }
+    else if (t4.getY() < 0.25*height) { t4.setForces(0,5); }
+  }
+  
+  void mouseClicked(int mx, int my, int mb) {
+    if(mb==RIGHT) { noLoop(); return; }
+    boundaries.clear();
+    addBoundary(new Boundary(width/2, height/2, mx, my));
   }
 }
 

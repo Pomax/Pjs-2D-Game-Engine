@@ -64,6 +64,10 @@ abstract class Positionable extends Position implements Drawable {
   void detachFromAll() {
     boundaries.clear();
   }
+  
+  void rewind() {
+    copyFrom(previous);
+  }
 
   /**
    * change the position, relative
@@ -282,7 +286,6 @@ abstract class Positionable extends Position implements Drawable {
     // we're attached to one or more boundaries, so we
     // are subject to (compound) impulse redirection.
     if(boundaries.size()>0) {
-//      println("redirecting impulse {"+_dx+","+_dy+"} over boundary surfaces...");
       float[] redirected = new float[]{_dx, _dy};
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
@@ -291,7 +294,6 @@ abstract class Positionable extends Position implements Drawable {
           continue;
         }
         redirected = boundary.redirectForce(redirected[0], redirected[1]);
-//        println("redirected to {"+redirected[0]+","+redirected[1]+"}.");
       }
       x += redirected[0];
       y += redirected[1];

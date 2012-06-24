@@ -127,8 +127,8 @@ class MainLevelLayer extends LevelLayer {
     // and let's add the thing that makes us win!
     addGoal(1920, height-48);
 
-    showBoundaries = true;
-    showTriggers = true;
+    //showBoundaries = true;
+    //showTriggers = true;
   }
   
   /**

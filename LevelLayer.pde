@@ -432,7 +432,12 @@ abstract class LevelLayer {
               float[] overlap = a.overlap(o);
               if(overlap!=null) {
                 a.overlapOccurredWith(o, overlap);
-                o.overlapOccurredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
+                int len = overlap.length;
+                float[] inverse = new float[len];
+                arrayCopy(overlap,0,inverse,0,len);
+                for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
+                o.overlapOccurredWith(a, inverse); 
+              }
               else if(o instanceof Tracker) {
                 ((Tracker)o).track(a, x,y,w,h);
               }
@@ -444,7 +449,12 @@ abstract class LevelLayer {
               float[] overlap = a.overlap(o);
               if(overlap!=null) {
                 a.overlapOccurredWith(o, overlap);
-                o.overlapOccurredWith(a, new float[]{-overlap[0], -overlap[1], overlap[2]}); }
+                int len = overlap.length;
+                float[] inverse = new float[len];
+                arrayCopy(overlap,0,inverse,0,len);
+                for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
+                o.overlapOccurredWith(a, inverse); 
+              }
               else if(o instanceof Tracker) {
                 ((Tracker)o).track(a, x,y,w,h);
               }

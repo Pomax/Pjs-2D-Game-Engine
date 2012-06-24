@@ -118,6 +118,17 @@ class Mario extends Player {
   }
   
   /**
+   * When we touch down on a boundary,
+   * and we're in our jump animation,
+   * just go back to the idle state.
+   */
+  void gotBlocked(Boundary b, float[] intersection) {
+    if(active.name=="jumping") {
+      setCurrentState("idle");
+    }
+  }
+  
+  /**
    * What happens when we touch another actor?
    */
   void overlapOccurredWith(Actor other, float[] direction) {

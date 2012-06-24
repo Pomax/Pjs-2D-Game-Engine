@@ -147,7 +147,9 @@ static class CollisionDetection {
 
         if (intersection==null) {
           println("line extension alone is not enoough...");
-          return null;
+          
+          // FIXME: this is not satisfactory! A real solution should be implemented!
+          return new float[]{xp-xc, yp-yc}; // effect a full rewind for now
         }
 
         return new float[]{intersection[0] - xc, intersection[1] - yc};

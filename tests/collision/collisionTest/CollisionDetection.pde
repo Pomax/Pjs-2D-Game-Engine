@@ -116,7 +116,7 @@ static class CollisionDetection {
       int[] corners = rankCorners(distances);
 
       if(debug) {
-        sketch.print(sketch.frameCount + ">      ");
+        sketch.print(sketch.frameCount + ">      corner distances: ");
         for(int i=0; i<4; i++) {
           sketch.print(corners[i]+"="+distances[corners[i]]);
           if(i<3) sketch.print(", "); }
@@ -146,8 +146,10 @@ static class CollisionDetection {
         intersection = getLineLineIntersection(xp,yp,xc,yc, x1,y1,x2,y2, false, false);
 
         if (intersection==null) {
-          println("line extension alone is not enoough...");
-          return null;
+          println("line extension alone is not enough...");
+          
+          // FIXME: this is not satisfactory! A real solution should be implemented!
+          return new float[]{xp-xc, yp-yc}; // effect a full rewind for now
         }
 
         return new float[]{intersection[0] - xc, intersection[1] - yc};
@@ -160,7 +162,7 @@ static class CollisionDetection {
       dx = intersection[0] - xc;
       dy = intersection[1] - yc;
 
-      if(debug) sketch.println(sketch.frameCount +">      dx: "+dx+", dy: "+dy);
+      if(debug) sketch.println(sketch.frameCount +">      suggested correction: dx="+dx+", dy="+dy);
 
       return new float[]{dx, dy};
     }
