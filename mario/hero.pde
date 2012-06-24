@@ -14,8 +14,8 @@ class Mario extends Player {
     handleKey('S');
     handleKey('D');
     setImpulseCoefficients(DAMPENING, DAMPENING);
-    setForces(0, DOWN_FORCE);
-    setAcceleration(0, ACCELERATION);
+//    setForces(0, DOWN_FORCE);
+//    setAcceleration(0, ACCELERATION);
   }
   
   /**
@@ -123,9 +123,9 @@ class Mario extends Player {
    * just go back to the idle state.
    */
   void gotBlocked(Boundary b, float[] intersection) {
-    if(active.name=="jumping") {
-      setCurrentState("idle");
-    }
+//    if(active.name=="jumping") {
+//      setCurrentState("idle");
+//    }
   }
   
   /**

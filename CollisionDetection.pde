@@ -1,7 +1,5 @@
 /**
- * Collision detection is a complicated thing.
- * In order not to pollute the Boundary class,
- * it's handled by this static computing class.
+ * Alternative collision detection
  */
 static class CollisionDetection {
   private static boolean debug = false;
@@ -10,7 +8,7 @@ static class CollisionDetection {
    * Static classes need global sketch binding
    */
   private static PApplet sketch;
-  public static void init(PApplet s) { sketch = s; } 
+  public static void init(PApplet s) { sketch = s; }
 
 
   /**
@@ -18,350 +16,212 @@ static class CollisionDetection {
    */
   static void interact(Boundary b, Actor a)
   {
-    if (a.isAttachedTo(b)) { return; }
-
-    float[] bbox = a.getBoundingBox(),
-             correction = blocks(b,a,bbox);
-
+    float[] correction = blocks(b,a);
     if(correction != null) {
-      //adjustForSpriteMask(b, a, bbox, correction);
-      a.attachTo(b, correction); 
+      a.attachTo(b, correction);
     }
   }
 
 
   /**
    * Is this boundary blocking the specified actor?
-   *
-   * @return null if no intersect, otherwise float[3]
-   *         indices: [0] = dx, [1] = dy, [2] = bbox (x) index to hit boundary first   
    */
-  static float[] blocks(Boundary b, Actor a, float[] bbox)
+  static float[] blocks(Boundary b, Actor a)
   {
-    // we don't block in the pass-through direction.
-    if(b.allowPassThrough(a.ix, a.iy)) { return null; }
-
-    float[] current = bbox,
+    float[] current = a.getBoundingBox(),
             previous = a.previous.getBoundingBox(),
             line = {b.x, b.y, b.xw, b.yh};
-
-    return CollisionDetection.getLineRectIntersection(line, current, previous);
+    return CollisionDetection.getLineRectIntersection(line, previous, current);
   }
 
 
   /**
-   * The correction moves the bounding box to a safe location on the boundary,
-   * but this might not be the correct location given the sprite inside the
-   * bounding box. In order to make things look 'right', we examine the bounding
-   * box to see by how much we can decrease the correction so that it looks as
-   * if the sprite is anchored to the boundary.
-   *
-   * Does not return anything. The correction array is modified in-place.
+   * Perform line/rect intersection detection. Lines represent boundaries,
+   * and rather than doing "normal" line/rect intersection using a
+   * "box on a trajectory" that normal actor movement looks like, we pretend
+   * the actor box remains stationary, and move the boundary in the opposite
+   * direction with the same speed, which gives us a "boundary box", so that
+   * we can perform box/box overlap detection instead.
    */
-  static void adjustForSpriteMask(Boundary b, Actor a, float[] bbox, float[] correction)
+  static float[] getLineRectIntersection(float[] line, float[] previous, float[] current)
   {
-    int corner = (int)correction[2];
-    if (corner == -1) return; 
+    if(debug) sketch.println(sketch.frameCount + ">  testing against: "+arrayToString(line));
+    if(debug) sketch.println(sketch.frameCount + ">   previous: "+arrayToString(previous));
+    if(debug) sketch.println(sketch.frameCount + ">   current : "+arrayToString(current));
 
-    int sx = (int) bbox[corner],
-        sy = (int) bbox[corner+1],
-        ex = (int) (bbox[corner] - a.ix),
-        ey = (int) (bbox[corner+1] - a.iy),
-        minx = (int) bbox[0],  // FIXME: this will be incorrect for rotated actors
-        miny = (int) bbox[1];
-    PImage mask = a.getSpriteMask();
-    if (mask != null) {
-      int[] distance = getPermissibleSpriteMaskShift(mask, sx,sy, ex,ey, minx,miny);
-      correction[0] -= distance[0];
-      correction[1] -= distance[1];
-    }
-  }
+    // First, let's do some dot-product math, to find out whether or not
+    // the actor's bounding box is even in range of the boundary.
+    float x1=line[0], y1=line[1], x2=line[2], y2=line[3];
+    float dx = x2-x1, dy = y2-y1, pv=PI/2.0,
+          rdx = dx*cos(pv) - dy*sin(pv),
+          rdy = dx*sin(pv) + dy*cos(pv);
 
+    // determine range w.r.t. the starting point of the boundary.
+    float[] dotProducts1 = getDotProducts(x1,y1,x2,y2, previous);
 
-  /**
-   * Find the safe distance by which we can move a sprite so that 
-   * rather than having its corner touch a boundary, it will look
-   * like the sprite's image touches the boundary instead.
-   *
-   * This uses Bresenham's line algorithm, with a
-   * safety conditional to prevent infinite loops.
-   */  
-  static int[] getPermissibleSpriteMaskShift(PImage m, int x0, int y0, int x1, int y1, int minx, int miny)
-  {
-    int[] shift = {0,0};
-    int sx = x0,
-        sy = y0,
-        dx = (int) abs(x1-x0),  // distance to travel
-        dy = (int) abs(y1-y0),
-        ax = (x0<x1) ? 1 : -1,  // x and y stepping values
-        ay = (y0<y1) ? 1 : -1,
-        imx = 0,                // x and y coordinate on the image mask
-        imy = 0,
-        err = dx-dy,
-        // Conceptually you rely on "while(true)", but no one
-        // should ever do that. Safety first: add a cutoff.
-        // Verifying over a 65535 pixel line should be enough.
-        safety = 0;
-    while(safety++ < 0xFFFF) {
-      // if we find a pixel in the mask that is not
-      // transparent, we have found our safe distance.
-      imx = x0-minx;
-      imy = y0-miny;
-      if(sketch.alpha(m.get(imx,imy)) > 0) {
-        shift = new int[]{(x0-sx), (y0-sy)};
-        return shift;
-      }
-      // We must stop when we've reached the end coordinate
-      else if(x0==x1 && y0==y1) {
-        return shift;
-      }
-      // continue: move to the next pixel
-      int e2 = err<<1;
-      if(e2 > -dy) { err -= dy; x0 += ax; }
-      if(e2 < dx) { err += dx; y0 += ay; }
-    }
-    // This code is unreachable, but ONLY in theory.
-    // We could still get here if the cutoff is reached.
-    return shift;
-  }
+    // determine range w.r.t. the end point of the boundary.
+    float[] dotProducts2 = getDotProducts(x2,y2,x1,y1, previous);
 
+    // determine 'sidedness', relative to the boundary.
+    float[] dotProducts3 = getDotProducts(x1,y1,x1+rdx,y1+rdy, previous);
+    float[] dotProducts4 = getDotProducts(x1,y1,x1+rdx,y1+rdy, current);
 
-// =================================================================
-
-  // recycled containers
-  private static float[] current_dots = {0,0,0,0,0,0,0,0};
-  private static float[] previous_dots = {0,0,0,0,0,0,0,0};
-  private static ArrayList<float[]> intersections = new ArrayList<float[]>();
-  private static float[] checkLines = {0,0,0,0,0,0,0,0};
-  private static float[] ZERO_DIFFERENCE = {0,0,-1};
-
-
-  /**
-   * generate the dot products for each of the current
-   * and previous corner points, relative to (ox,oy).
-   *
-   * note: we want dot products with the vector that is
-   *       perpendicular to the boundary, so that we have
-   *       a clear "on blocked side" (positive) and "on
-   *       pass-through side" (negative) value classifier.
-   */
-  private static int[] getDotProductsPerCorner(float[] line, float[] current, float[] current_dots, float[] previous, float[] previous_dots, int[] corners) {
-    int B_current = 0,
-        B_previous = 0,
-        B_sum = 0;
-
-    float ox=line[0], oy=line[1], tx=line[2], ty=line[3],
-          dotx = tx-ox, doty = ty-oy,
-          otlen = sqrt(dotx*dotx + doty*doty);
-
-    // normalise the boundary vector
-    dotx /= otlen;
-    doty /= otlen;
-
-    float p = PI/2, cosp = cos(p), sinp = sin(p),
-          pdx = dotx*cosp - doty*sinp,
-          pdy = dotx*sinp + doty*cosp,
-          dx, dy, len, dotproduct,
-          dotvalue = 999999, curval;
-          
-    float corner1v=3, corner2v=3, corner3v=3, corner4v=3;
-    int   corner1=-1, corner2=-1, corner3=-1, corner4=-1;
-
-    // FIXME: I'm sure this can be optimised
+    // compute the relevant feature values based on the dot products:
+    int inRangeS = 4, inRangeE = 4, above = 0, aboveAfter = 0;
     for(int i=0; i<8; i+=2) {
-      // Dot product for corner on 'current'
-      dx = current[i]-ox;
-      dy = current[i+1]-oy;
-      len = sqrt(dx*dx+dy*dy);
-      dx /= len;
-      dy /= len;
-      dotproduct = dx*pdx + dy*pdy;
-      if (dotproduct < 0) { B_current++; }
-      current_dots[i] = dotproduct;
+      if (dotProducts1[i] < 0) { inRangeS--; }
+      if (dotProducts2[i] < 0) { inRangeE--; }
+      if (dotProducts3[i] <= 0) { above++; }
+      if (dotProducts4[i] <= 0) { aboveAfter++; }}
 
-      // Dot product for corner on 'previous'
-      dx = previous[i]-ox;
-      dy = previous[i+1]-oy;
-      len = sqrt(dx*dx+dy*dy);
-      dx /= len;
-      dy /= len;
-      dotproduct = dx*pdx + dy*pdy;
-      if (dotproduct < 0) { B_previous++; }
-      previous_dots[i] = dotproduct;
-      
-      // this is silly, but relatively fast
-      if(dotproduct<corner1v) { 
-        corner4v = corner3v; corner3v = corner2v; corner2v = corner1v; corner1v = dotproduct;
-        corner4 = corner3; corner3 = corner2; corner2 = corner1; corner1 = i; }
-      else if(dotproduct<corner2v) {
-        corner4v = corner3v; corner3v = corner2v; corner2v = dotproduct;
-        corner4 = corner3; corner3 = corner2; corner2 = i; }
-      else if(dotproduct<corner3v) {
-        corner4v = corner3v; corner3v = dotproduct;
-        corner4 = corner3; corner3 = i; }
-      else {
-        corner4v = dotproduct;
-        corner4 = i; }
+    if(debug) sketch.println(sketch.frameCount +">    dotproduct result: "+inRangeS+"/"+inRangeE+"/"+above+"/"+aboveAfter);
+
+    // make sure to short-circuit if the actor cannot
+    // interact with the boundary because it is out of range.
+    if (inRangeS == 0 || inRangeE == 0) {
+      if(debug) sketch.println(sketch.frameCount +">   this boundary is not involved in collisions for this frame.");
+      return null;
     }
-    
-    // Set up the corners, ranked by
-    // proximity to the boundary.
-    corners[0] = corner1;
-    corners[1] = corner2;
-    corners[2] = corner3;
-    corners[3] = corner4;
 
-    // return "on blocking side" counts for both boxes
-    return new int[]{B_current, B_previous, B_current+B_previous};
-  }
+    if (above>0 && aboveAfter>above) {
+      if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (1).");
+      return null;
+    }
 
+    if (above==4 && aboveAfter==4) {
+      if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (2).");
+      return null;
+    }
 
-  /**
-   * Line-through-box intersection algorithm.
-   *
-   * There are a few possibilities, illustrated
-   * in the CollisionDetection.psd and
-   * CollisionDetection2.psd files included with
-   * this source code.
-   *
-   *
-   * @return null if no intersect, otherwise float[3]
-   *         indices: [0] = dx, [1] = dy, [2] = bbox (x) index to hit boundary first   
-   */
-  static float[] getLineRectIntersection(float[] line, float[] current, float[] previous)
-  {
-    float ox=line[0], oy=line[1], tx=line[2], ty=line[3];
-    
-    // get the dot products per corner... just like the method says
-    int[] corners = {0,0,0,0},
-          B_counts = getDotProductsPerCorner(line, current, current_dots, previous, previous_dots, corners);
+    // Now then, let's determine whether overlap will occur.
+    boolean found = false;
 
-    int B_current = B_counts[0],
-        B_previous = B_counts[1],
-        B_sum = B_counts[2];
+    // We're in bounds: if 'above' is 4, meaning that our previous
+    // actor frame is on the blocking side of a boundary,  and
+    // 'aboveAfter' is 0, meaning its current frame is on the other
+    // side of the boundary, then a collision MUST have occurred.
+    if (above==4 && aboveAfter==0) {
+      // note that in this situation, the overlap may look
+      // like full containment, where the actor's bounding
+      // box is fully contained by the boundary's box.
+      found = true;
+      if(debug) sketch.println(sketch.frameCount +">     collision detected (due to full containment).");
+    }
 
-    // cases (1) or (6)? no collision.
-    if (B_sum == 0 || B_sum == 8) { return null; }
+    else {
+      // We're in bounds: do box/box intersection checking
+      // using the 'previous' box and the boundary-box.
+      dx = previous[0] - current[0];
+      dy = previous[1] - current[1];
 
-    // case (4) or (5)? no collision, by convention.
-    if (B_previous < 4) { return null; }
+      // form boundary box
+      float[] bbox = {line[0], line[1],
+                      line[2], line[3],
+                      line[2]+dx, line[3]+dy,
+                      line[0]+dx, line[1]+dy};
 
-    // what remains is case (2) or (3)
-    if (B_previous == 4) {
-    
-      // first, we need to find out which corner point actually
-      // intersects our boundary. Typically this will be the
-      // first ranked corner, but not always.
-      float x1, y1, x2, y2;
-      int corner = -1;
-      float[] intersection;
-      for(int i=0, last=corners.length; i<last; i++) {
-        corner = corners[i];
-        x1 = previous[corner];
-        y1 = previous[corner+1];
-        x2 = current[corner];
-        y2 = current[corner+1];
-        intersection = getLineLineIntersection(ox,oy,tx,ty, x1,y1,x2,y2, false);
-        if(intersection!=null) break;
-      }
-
-      // get the guaranteed hit-line
-      float px = previous[corner],
-            py = previous[corner+1],
-            cx = current[corner],
-            cy = current[corner+1];
-      
-      // We now have the corner that's going to pass through
-      // the boundary first. we construct a new bbox to
-      // perform poly-through-line detection.
-      checkLines = new float[]{px, py,
-                               previous[(corner+2)%8], previous[(corner+3)%8],
-                               current[(corner+2)%8],  current[(corner+3)%8],
-                               cx, cy};
-
-      // Now that we have the correct box, perform line/line
-      // intersection detection for each edge on the box.
-      intersections.clear();
-      x1=checkLines[0];
-      y1=checkLines[1];
-      x2=x1;
-      y2=y1;
-      for (int i=0, last=checkLines.length; i<last; i+=2) {
-        x2 = checkLines[(i+2)%last];
-        y2 = checkLines[(i+3)%last];
-        intersection = getLineLineIntersection(ox,oy,tx,ty, x1,y1,x2,y2, false);
-        if (intersection!=null) {
-          intersections.add(intersection);
-          if(intersections.size()==2) { break; }}
-        x1 = x2;
-        y1 = y2;
-      }
-
-      // How many intersections did we find?
-      // (We can have zero, one, or two)
-      int intersectionCount = intersections.size();
-
-      // if we have two intersections, it's
-      // relatively easy to determine by how
-      // much we should move back.
-      if (intersectionCount == 2)
-      {
-        float[] i1 = intersections.get(0),
-                 i2 = intersections.get(1);
-        float[] ideal = getLineLineIntersection(px,py,cx,cy, i1[0],i1[1],i2[0],i2[1], false);
-        if (ideal == null) { 
-          if(debug) println("error: could not find the ideal point based on corner ["+corner+"]");
-          return new float[]{px-cx, py-cy, corner}; 
+      // do any of the "previous" edges intersect
+      // with any of the "boundary box" edges?
+      int i,j;
+      float[] p = previous, b = bbox, intersection;
+      for(i=0; i<8; i+=2) {
+        for(j=0; j<8; j+=2) {
+          intersection = getLineLineIntersection(p[i], p[i+1], p[(i+2)%8], p[(i+3)%8], b[j], b[j+1], b[(j+2)%8], b[(j+3)%8], false, true);
+          if (intersection != null) {
+            found = true;
+            if(debug) sketch.println(sketch.frameCount +">     collision detected on a box edge (box overlap).");
+          }
         }
-        return new float[]{ideal[0]-cx, ideal[1]-cy, corner};
-      }
-
-      // if there's only one intersection,
-      // additional math is required.
-      else if (intersectionCount == 1)
-      {
-        float[] ideal = getLineLineIntersection(px,py,cx,cy, ox,oy,tx,ty, false);
-        // this might fail, because it's not necessarily the "hot corner"
-        // that ends up touching the boundary if we only have one intersection
-        int cv = 0;
-        for(cv = 2; cv<8 && ideal==null; cv+=4) {
-          px = previous[(corner+cv)%8];
-          py = previous[(corner+cv+1)%8];
-          cx = current[(corner+cv)%8];
-          cy = current[(corner+cv+1)%8];
-          ideal = getLineLineIntersection(px,py,cx,cy, ox,oy,tx,ty, false);
-        }
-
-        // If ideal is still null, something very curious has happened.
-        // Intersections occurred, but none of the corner paths are
-        // involved. To the best of my knowledge this is algorithmically
-        // impossible. Still, always good to see if I'm wrong:
-        if(ideal==null) {
-          if(debug) println("error: intersections occurred, but none of the corners were involved!");
-          return new float[]{px-cx, py-cy, corner};
-        }
-
-        // return the delta and relevant corner
-        return new float[]{ideal[0]-cx, ideal[1]-cy, (corner+cv)%8};
       }
     }
 
-    // Uncaught cases get a pass - with a warning.
-    // At least theoretically, there are no uncaught cases.
-    // But as a programmer, I can be wrong.
+    // Have we signaled any overlap?
+    if (found) {
+      float[] distances = getCornerDistances(x1,y1,x2,y2, previous, current);
+      int[] corners = rankCorners(distances);
+
+      if(debug) {
+        sketch.print(sketch.frameCount + ">      ");
+        for(int i=0; i<4; i++) {
+          sketch.print(corners[i]+"="+distances[corners[i]]);
+          if(i<3) sketch.print(", "); }
+        sketch.println();
+      }
+
+      // Get the corner on the previous and current actor bounding
+      // box that will "hit" the boundary first.
+      int corner = 0;
+      float xp = previous[corners[corner]],
+            yp = previous[corners[corner]+1],
+            xc = current[corners[corner]],
+            yc = current[corners[corner]+1];
+
+      // The trajectory for this point may intersect with
+      // the boundary. If it does, we'll have all the information
+      // we need to move the actor back along its trajectory by
+      // an amount that will place it "on" the boundary, at the right spot.
+      float[] intersection = getLineLineIntersection(xp,yp,xc,yc, x1,y1,x2,y2, false, true);
+
+      if (intersection==null) {
+        println("nearest-to-boundary is actually not on the boundary itself. More complex math is required!");
+
+        // it's also possible that the first corner to hit the boundary
+        // actually never touches the boundary because it intersects only
+        // if the boundary is infinitely long. So... let's make that happen:
+        intersection = getLineLineIntersection(xp,yp,xc,yc, x1,y1,x2,y2, false, false);
+
+        if (intersection==null) {
+          println("line extension alone is not enoough...");
+
+          // FIXME: this is not satisfactory! A real solution should be implemented!
+          return new float[]{xp-xc, yp-yc}; // effect a full rewind for now
+        }
+
+        return new float[]{intersection[0] - xc, intersection[1] - yc};
+      }
+
+      // if we get here, there was a normal trajectory
+      // intersection with the boundary. Computing the
+      // corrective values by which to move the current
+      // frame's bounding box is really simple:
+      dx = intersection[0] - xc;
+      dy = intersection[1] - yc;
+
+      if(debug) sketch.println(sketch.frameCount +">      dx: "+dx+", dy: "+dy);
+
+      return new float[]{dx, dy};
+    }
+
     return null;
   }
 
+  /**
+   * For each corner in an object's bounding box, get the distance from its "previous"
+   * box to the line defined by (x1,y1,x2,y2). Return this as float[8], corresponding
+   * to the bounding box array format.
+   */
+  static float[] getCornerDistances(float x1, float y1, float x2, float y2, float[] previous, float[] current) {
+    float[] distances = {0,0,0,0,0,0,0,0}, intersection;
+    float dx, dy;
+    for(int i=0; i<8; i+=2) {
+      intersection = getLineLineIntersection(x1,y1,x2,y2, previous[i], previous[i+1], current[i], current[i+1], false, false);
+      if (intersection == null) {
+        continue;
+      }
+      dx = intersection[0] - previous[i];
+      dy = intersection[1] - previous[i+1];
+      distances[i] = sqrt(dx*dx+dy*dy);
+      distances[i+1] = distances[i];
+    }
+    return distances;
+  }
+
 
   /**
-   * Line-through-line intersection algorithm, using
-   * relative rotation and intersection projection.
-   *
-   * returns float[] representing {x, y, onedge}, where
-   *                 onedge=1 means on an edge, onedge=0
-   *                 means somewhere inside the bounding box.
+   * Get the intersection coordinate between two lines segments,
+   * using fairly standard, if a bit lenghty, linear algebra.
    */
-  static float[] getLineLineIntersection(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, boolean colinearity)
+  static float[] getLineLineIntersection(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, boolean colinearity, boolean segments)
   {
     float epsilon = 0.1;
     // convert lines to the generatised form [a * x + b + y = c]
@@ -373,7 +233,7 @@ static class CollisionDetection {
       // Two lines are parallel: we are not interested in the
       // segment if the points are not colinear.
       if (!colinearity || (x2 - x3) * (y2 - y1) != (y2 - y3) * (x2 - x1)) {
-        return null; 
+        return null;
       }
       // Solve the algebraic functions [x = (x1 - x0) * t + x0] for t
       float t1 = x3 != x4 ? (x1 - x3) / (x4 - x3) : (y1 - y3) / (y4 - y3);
@@ -393,15 +253,108 @@ static class CollisionDetection {
       float x = (c1 * b2 - c2 * b1) / d;
       float y = (a1 * c2 - a2 * c1) / d;
       // make sure the point can be found on both segments.
-      if (x < min(x1, x2) - epsilon || max(x1, x2) + epsilon < x ||
-          y < min(y1, y2) - epsilon || max(y1, y2) + epsilon < y ||
-          x < min(x3, x4) - epsilon || max(x3, x4) + epsilon < x ||
-          y < min(y3, y4) - epsilon || max(y3, y4) + epsilon < y) {
+      if (segments && (x < min(x1, x2) - epsilon || max(x1, x2) + epsilon < x ||
+                       y < min(y1, y2) - epsilon || max(y1, y2) + epsilon < y ||
+                       x < min(x3, x4) - epsilon || max(x3, x4) + epsilon < x ||
+                       y < min(y3, y4) - epsilon || max(y3, y4) + epsilon < y)) {
         // not on either, or both, segments.
         return null;
       }
       return new float[]{x, y};
     }
+  }
+
+
+  /**
+   * compute the dot product between all corner points of a
+   * bounding box, and a boundary line with origin ox/oy
+   * and end point tx/ty.
+   */
+  static float[] getDotProducts(float ox, float oy, float tx, float ty, float[] bbox) {
+    float dotx = tx-ox, doty = ty-oy,
+          dx, dy, len, dotproduct;
+
+    float[] dotProducts = new float[8];
+
+    for(int i=0; i<8; i+=2) {
+      dx = bbox[i]-ox;
+      dy = bbox[i+1]-oy;
+      dotproduct = getDotProduct(dotx,doty, dx, dy);
+      dotProducts[i] = dotproduct;
+    }
+
+    return dotProducts;
+  }
+
+  /**
+   * get the dot product between two vectors
+   */
+  static float getDotProduct(float dx1, float dy1, float dx2, float dy2) {
+    // normalise both vectors
+    float l1 = sqrt(dx1*dx1 + dy1*dy1),
+          l2 = sqrt(dx2*dx2 + dy2*dy2);
+    if (l1==0 || l2==0) return 0;
+    dx1 /= l1;
+    dy1 /= l1;
+    dx2 /= l2;
+    dy2 /= l2;
+    return dx1*dx2 + dy1*dy2;
+  }
+
+
+  /**
+   * Rank the corner points for a bounding box
+   * based on it's distance to the boundary,
+   * along its trajectory path.
+   *
+   * We rank by decreasing distance.
+   */
+  // FIXME: this is a pretty fast code, but there might be
+  //        better ways to achieve the desired result.
+  static int[] rankCorners(float[] distances) {
+    int[] corners = {0,0,0,0};
+    float corner1v=999999, corner2v=corner1v, corner3v=corner1v, corner4v=corner1v, distance;
+    int   corner1=-1, corner2=-1, corner3=-1, corner4=-1;
+
+    for(int i=0; i<8; i+=2) {
+      distance = distances[i];
+      if (distance < corner1v) {
+        corner4v = corner3v;  corner4 = corner3;
+        corner3v = corner2v;  corner3 = corner2;
+        corner2v = corner1v;  corner2 = corner1;
+        corner1v = distance;  corner1 = i;
+        continue; }
+      if (distance < corner2v) {
+        corner4v = corner3v;  corner4 = corner3;
+        corner3v = corner2v;  corner3 = corner2;
+        corner2v = distance;  corner2 = i;
+        continue; }
+      if (distance < corner3v) {
+        corner4v = corner3v;  corner4 = corner3;
+        corner3v = distance;  corner3 = i;
+        continue; }
+      corner4v = distance;  corner4 = i;
+    }
+
+    // Set up the corners, ranked by
+    // proximity to the boundary.
+    corners[0] = corner1;
+    corners[1] = corner2;
+    corners[2] = corner3;
+    corners[3] = corner4;
+    return corners;
+  }
+
+
+  /**
+   * Check if a bounding box's dot product
+   * information implies it's safe, or blocked.
+   */
+  static boolean permitted(float[] dotProducts) {
+    for(int i=0; i<8; i+=2) {
+      if (dotProducts[i]>0)
+        return true; }
+    return false;
   }
 
 
@@ -434,5 +387,27 @@ static class CollisionDetection {
 
     // And then return the transformed coordinates, plus angle used
     return new float[] {x1n, y1n, x2n, y2n, 0, 0, x4n, 0, angle};
+  }
+
+
+  /**
+   * Simple drawing helper function
+   */
+  static void drawBox(float[] boundingbox) {
+    sketch.line(boundingbox[0], boundingbox[1], boundingbox[2], boundingbox[3]);
+    sketch.line(boundingbox[2], boundingbox[3], boundingbox[4], boundingbox[5]);
+    sketch.line(boundingbox[4], boundingbox[5], boundingbox[6], boundingbox[7]);
+    sketch.line(boundingbox[6], boundingbox[7], boundingbox[0], boundingbox[1]);
+  }
+
+  /**
+   * Simple printing helper function
+   */
+  static String arrayToString(float[] arr) {
+    String str = "";
+    for(int i=0; i<arr.length; i++) {
+      str += int(100*arr[i])/100.0;
+      if(i<arr.length-1) { str += ", "; }}
+    return str;
   }
 }

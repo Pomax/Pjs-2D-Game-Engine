@@ -15,13 +15,9 @@ class MainLevelLayer extends LevelLayer {
     mario.setPosition(32, height-64);
     addPlayer(mario);
 
-    // we don't want mario to walk off the level,
-    // so let's add some side walls
-    addBoundary(new Boundary(-1,0, -1,height));
-    addBoundary(new Boundary(width+1,height, width+1,0));
-
     // add general ground
     addGround("ground", -32,height-48, -32 + 17*32,height);
+/*
     addBoundary(new Boundary(-32 + 17*32,height-48,-32 + 17*32,height));
     for(int i=0; i<4; i++)
     {
@@ -30,9 +26,13 @@ class MainLevelLayer extends LevelLayer {
     addBoundary(new Boundary(-31 + 19*32,height,-31 + 19*32,height-48));
     addGround("ground", -31 + 19*32,height-48, width+32,height);
 
+    // we don't want mario to walk off the level,
+    // so let's add some side walls
+    addBoundary(new Boundary(-1,0, -1,height));
+    addBoundary(new Boundary(width+1,height, width+1,0));
+
     // add decorative foreground bushes
     addBushes();
-
     // add some ground platforms    
     addGroundPlatform("ground", 928, height-224, 96, 112);
     addCoins(928,height-236,96);
@@ -51,17 +51,18 @@ class MainLevelLayer extends LevelLayer {
     addSlant(256, height-48);
     addSlant(1300, height-48);
     addSlant(1350, height-48);
-
+*/
     // Let's also add a koopa on one of the slides
     Koopa koopa = new Koopa(264, height-178);
     addInteractor(koopa);
-    
+
+/*    
     // add lots of just-in-time triggers
     addTriggers();
     
     // and let's add the thing that makes us win!
     addGoal(1920, height-48);
-
+*/
     showBoundaries = true;
     showTriggers = true;
   }

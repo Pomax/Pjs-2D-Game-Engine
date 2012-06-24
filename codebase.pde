@@ -700,7 +700,7 @@ abstract class BoundedInteractor extends Interactor {
  * Alternative collision detection
  */
 static class CollisionDetection {
-  private static boolean debug = true;
+  private static boolean debug = false;
 
   /**
    * Static classes need global sketch binding
@@ -714,7 +714,6 @@ static class CollisionDetection {
    */
   static void interact(Boundary b, Actor a)
   {
-    println();
     float[] correction = blocks(b,a);
     if(correction != null) {
       a.attachTo(b, correction);

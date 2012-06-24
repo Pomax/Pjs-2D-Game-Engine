@@ -116,7 +116,7 @@ static class CollisionDetection {
       int[] corners = rankCorners(distances);
 
       if(debug) {
-        sketch.print(sketch.frameCount + ">      corner distances: ");
+        sketch.print(sketch.frameCount + ">      ");
         for(int i=0; i<4; i++) {
           sketch.print(corners[i]+"="+distances[corners[i]]);
           if(i<3) sketch.print(", "); }
@@ -146,7 +146,7 @@ static class CollisionDetection {
         intersection = getLineLineIntersection(xp,yp,xc,yc, x1,y1,x2,y2, false, false);
 
         if (intersection==null) {
-          println("line extension alone is not enough...");
+          println("line extension alone is not enoough...");
           
           // FIXME: this is not satisfactory! A real solution should be implemented!
           return new float[]{xp-xc, yp-yc}; // effect a full rewind for now
@@ -162,7 +162,7 @@ static class CollisionDetection {
       dx = intersection[0] - xc;
       dy = intersection[1] - yc;
 
-      if(debug) sketch.println(sketch.frameCount +">      suggested correction: dx="+dx+", dy="+dy);
+      if(debug) sketch.println(sketch.frameCount +">      dx: "+dx+", dy: "+dy);
 
       return new float[]{dx, dy};
     }
@@ -247,27 +247,35 @@ static class CollisionDetection {
    */
   static float[] getDotProducts(float ox, float oy, float tx, float ty, float[] bbox) {
     float dotx = tx-ox, doty = ty-oy,
-          otlen = sqrt(dotx*dotx + doty*doty),
           dx, dy, len, dotproduct;
   
-    dotx /= otlen;
-    doty /= otlen;
-    
     float[] dotProducts = new float[8];
   
     for(int i=0; i<8; i+=2) {
       dx = bbox[i]-ox;
       dy = bbox[i+1]-oy;
-      len = sqrt(dx*dx+dy*dy);
-      dx /= len;
-      dy /= len;
-      dotproduct = dx*dotx + dy*doty;
+      dotproduct = getDotProduct(dotx,doty, dx, dy);
       dotProducts[i] = dotproduct;
     }
   
     return dotProducts;
   }
-
+  
+  /**
+   * get the dot product between two vectors
+   */
+  static float getDotProduct(float dx1, float dy1, float dx2, float dy2) {
+    // normalise both vectors
+    float l1 = sqrt(dx1*dx1 + dy1*dy1),
+          l2 = sqrt(dx2*dx2 + dy2*dy2);
+    if (l1==0 || l2==0) return 0;
+    dx1 /= l1;
+    dy1 /= l1;
+    dx2 /= l2;
+    dy2 /= l2;
+    return dx1*dx2 + dy1*dy2;
+  }
+  
 
   /**
    * Rank the corner points for a bounding box

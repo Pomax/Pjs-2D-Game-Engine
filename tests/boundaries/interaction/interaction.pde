@@ -174,7 +174,7 @@ float[] redirectOverBoundary(float[] forceVector, float[] boundary) {
 
 void mouseClicked() { if(mouseButton==LEFT) reset(); loop(); }
 void keyPressed() {
-  if(key=='w')      { dy = -20; }
+  if(key=='w') { dy = -20; }
   if(key=='a') { dx = -20; }
   if(key=='s') { dy = 20; }
   if(key=='d') { dx = 20; }

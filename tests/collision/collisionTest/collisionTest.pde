@@ -4,7 +4,7 @@
 
 float[] old, prev, bbox;
 ArrayList<float[]> boundaries = new ArrayList<float[]>();
-int padding = 60, jitter = 10;
+int padding = 60, jitter = 40;
 float epsilon = 0.5;
 int skipover = 0;
 
@@ -44,9 +44,10 @@ void reset() {
   for(int i=0, f=0; i<9; i++) {
     f = i*50;
     boundaries.add(new float[]{-200 + f + width/2-dx/3,height/2, -200 + f + width/2+dx/3,height/2});
-    boundaries.add(new float[]{-200 + f + width/2+dx/3,height/2, -200 + f + width/2+dx/3,height/2+10});
-    boundaries.add(new float[]{-200 + f + width/2+dx/3,height/2+10, -200 + f + width/2-dx/3,height/2+10});
-    boundaries.add(new float[]{-200 + f + width/2-dx/3,height/2+10, -200 + f + width/2-dx/3,height/2}); }
+    //boundaries.add(new float[]{-200 + f + width/2+dx/3,height/2, -200 + f + width/2+dx/3,height/2+10});
+    //boundaries.add(new float[]{-200 + f + width/2+dx/3,height/2+10, -200 + f + width/2-dx/3,height/2+10});
+    //boundaries.add(new float[]{-200 + f + width/2-dx/3,height/2+10, -200 + f + width/2-dx/3,height/2});
+  }
 }
 
 boolean customtest = false;
