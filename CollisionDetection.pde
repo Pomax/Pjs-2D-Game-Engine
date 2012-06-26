@@ -16,6 +16,7 @@ static class CollisionDetection {
    */
   static void interact(Boundary b, Actor a)
   {
+    if (a.remove) return;
     float[] correction = blocks(b,a);
     if(correction != null) {
       a.attachTo(b, correction);
@@ -28,7 +29,6 @@ static class CollisionDetection {
    */
   static float[] blocks(Boundary b, Actor a)
   {
-    if (a.remove) return null;
     float[] current = a.getBoundingBox(),
             previous = a.previous.getBoundingBox(),
             line = {b.x, b.y, b.xw, b.yh};
