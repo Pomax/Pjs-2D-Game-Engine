@@ -193,6 +193,7 @@ class Mario extends Player {
         setForces(0, DOWN_FORCE);
         setAcceleration(0, ACCELERATION);
       }
+      spriteSet = "mario";
       setCurrentState("won");
     }
     // oh my god, R-Type! O_O
