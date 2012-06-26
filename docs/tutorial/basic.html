@@ -3,20 +3,16 @@
   <head>
     <title>2D gaming using Processing.js</title>
     <meta charset="utf-8">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" src="../../processing.js"></script>
     <script type="text/javascript" src="processing-lazyload.js"></script>
     <script type="text/javascript" src="../../minim.js"></script>
+    <script type="text/javascript" src="syntaxHighlight.js"></script>
+    <script type="text/javascript" src="canvasFocus.js"></script>
+    <link rel="stylesheet" href="style.css">
     <style>
-      textarea { display: block; outline: none; overflow: hidden; margin-left: 2em;}
-
-      figure { clear: both; display: inline-block; border: 1px solid grey; padding: 5px; text-align: center; }
-      figure canvas { display: block; border: 1px solid black; }
-      figure figcaption { display: block; font-size: 90%; font-style: italic; }
-      figure:after { clear: both; }
-      
-      code { font-family: monospace; color: #004; }
-      
-      .colorblock { display: inline-block; width: 30px; height: 0.8em;}
+    /* override from mario dimensions */
+    canvas { width: 200px; height: 200px; }
     </style>
   </head>
   <body>
@@ -26,12 +22,14 @@
     <p>Making great games is hard. You need to get all the art made, you need good music, you
     need engaging game play and a story that players want to believe and follow through, you
     need to do a lot of programming and on top of all that, it needs to be so original that
-    people don't go "that's just like ... only nowhere near as good". That said...</p>
+    people don't go "that's just like [fill in similar game here], only nowhere near as good".</p>
     
-    <p>Making games is actually not as hard as you might think, if you're trying to make the
-    next big game that everyone's going to want to play forever! In fact, at the end of this
-    tutorial, I'm fairly confident we'll have made a simple game with the potential for
-    making much more elaborate while being fun to play.</p>
+    <p>That said...</p>
+    
+    <p>Making games is actually not as hard as you might think, if long as you're not trying
+    to make the next "big game" that everyone should want to play forever. In fact, at the
+    end of this tutorial, I'm fairly confident we'll have made a simple game with the potential
+    for making much more elaborate while being fun to play.</p>
     
     <p>So, do you want to learn to make games? Then let's go!</p>
     
@@ -71,7 +69,7 @@
     <p>So let's start programming. And when I say "let's" I really mean "let me show you 
     how we're going to do all these things" =D</p>
     
-    <textarea readonly style="width: 40em; height: 5em;">
+    <textarea>
 final int screenWidth = 200;
 final int screenHeight = 200;
 
