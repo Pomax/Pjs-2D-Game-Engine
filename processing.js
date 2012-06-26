@@ -19762,10 +19762,9 @@
                 code = preProcessProcessingCode(code.join("\n"));
               }
               // DEBUGGING HACK PATCH TEST TEST TEST
-            
-              var sktch = new Processing(canvas, code.join("\n"));
-              sktch.noLoop();
-              return sktch;
+
+              return new Processing(canvas, code.join("\n"));
+
 //            } catch(e) {
 //              throw "Processing.js: Unable to execute pjs sketch: " + e;
 //            }
@@ -19789,7 +19788,7 @@
     }
 
     for (var i = 0; i < sourcesCount; ++i) {
-      loadBlock(i, sources[i]);
+      var sketch = loadBlock(i, sources[i]);
     }
   };
 

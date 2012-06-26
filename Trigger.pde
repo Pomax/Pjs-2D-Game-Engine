@@ -19,6 +19,7 @@ abstract class Trigger extends Positionable {
   }
   
   void drawObject() {
+    stroke(255,127,0,150);
     fill(255,127,0,150);
     rect(-width/2,height/2,width,height);
     fill(0);

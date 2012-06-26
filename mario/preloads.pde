@@ -55,6 +55,7 @@
                   graphics/enemies/Boo-waiting.gif,
                   graphics/enemies/Coin-boo-transition.gif,
                   graphics/enemies/Dead-koopa.gif,
+                  graphics/enemies/Muncher.gif,
                   graphics/enemies/Naked-koopa-walking.gif,
                   graphics/enemies/Red-koopa-flying.gif,
                   graphics/enemies/Red-koopa-standing.gif,

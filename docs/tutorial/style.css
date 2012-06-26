@@ -1,0 +1,87 @@
+canvas {
+  width: 512px;
+  height: 432px;
+  background-image: url("ajax-loader.gif");
+  background-position: center center;
+  background-repeat: no-repeat; }
+  
+textarea {
+  display: block;
+  outline: none;
+  overflow: hidden;
+  margin-left: 2em; }
+
+ol li img {
+  vertical-align: middle
+}
+
+figure {
+  clear: both;
+  display: inline-block;
+  border: 1px solid grey;
+  padding: 5px;
+  text-align: center; }
+  
+figure canvas {
+  display: block;
+  border: 1px solid black; }
+  
+figure figcaption {
+  display: block;
+  font-size: 90%;
+  font-style: italic; }
+  
+figure:after { clear: both; }
+
+.imageblock {
+  display: inline-block;
+  padding: 0px;
+  margin: 0px;
+}
+.imageblock img {
+  display: block;
+  margin: 0px;
+  padding: 0px;
+}
+
+code {
+  font-family: monospace;
+  color: #009; 
+  font-weight: bold;
+  font-size: 110%; }
+code:before { content: "["; }
+code:after { content: "]"; }
+
+.colorblock { 
+  display: inline-block;
+  width: 30px;
+  height: 0.8em; }
+ 
+.codeblock {
+  margin: 1em 2em;
+  padding: 0.5em 0.5em;
+  padding-right: 0px;
+  border: 1px solid black;
+}
+
+.codeblock pre {
+  margin: 0px;
+  padding: 0px;
+  line-height: 1em;
+}
+
+.keyword {
+  color: red;
+}
+
+.string {
+  color: blue;
+}
+
+.number {
+  color: blue;
+}
+
+.comment {
+  color: darkgreen;
+}

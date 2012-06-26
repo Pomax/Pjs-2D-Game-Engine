@@ -37,31 +37,20 @@ class MarioLayer extends LevelLayer {
   MarioLayer(Level owner) {
     super(owner);
     addStaticSpriteBG(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
+    addBoundary(new Boundary(0,height-48,width,height-48));
     addBoundary(new Boundary(-1,0, -1,height));
     addBoundary(new Boundary(width+1,height, width+1,0));
-
-    //showBoundaries = true;
-    //showTriggers = true;
-
+    showBoundaries = true;
     mario = new Mario(32, height-64);
     addPlayer(mario);
+
+    // add base ground
+    addGround("ground", -32,height-48, width+32,height);
 
     // add a few slanted hills
     addSlant(256, height-48);
     addSlant(1300, height-48);
     addSlant(1350, height-48);
-
-    // add base ground... with munchers!
-    addGround("ground", -32,height-48, -32 + 17*32,height);
-    addBoundary(new Boundary(-32 + 17*32,height-48,-32 + 17*32,height));
-
-    addInteractor(new Muncher(521, height-8));
-    addInteractor(new Muncher(536, height-8));
-    addInteractor(new Muncher(552, height-8));
-    addInteractor(new Muncher(567, height-8));
-
-    addBoundary(new Boundary(-32 + 19*32,height,-32 + 19*32,height-48));
-    addGround("ground", -32 + 19*32,height-48, width+32,height);
 
     // add some ground platforms, some with coins
     addGroundPlatform("ground", 928, height-224, 96, 112);
@@ -80,12 +69,6 @@ class MarioLayer extends LevelLayer {
     // Let's also add a koopa on one of the slides
     Koopa koopa = new Koopa(264, height-178);
     addInteractor(koopa);
-
-    // add just-in-time triggers
-    addTriggers();
-
-    // and let's add the thing that makes us win!
-    addGoal(1920, height-48);
   }
 
   /**
@@ -150,38 +133,9 @@ class MarioLayer extends LevelLayer {
     }
   }
 
-  // And finally, the end of the level!
-  void addGoal(float xpos, float hpos) {
-    hpos += 1;
-    // background post
-    Sprite goal_b = new Sprite("graphics/assorted/Goal-back.gif");
-    goal_b.align(CENTER, BOTTOM);
-    goal_b.setPosition(xpos, hpos);
-    addStaticSpriteBG(goal_b);
-    // foreground post
-    Sprite goal_f = new Sprite("graphics/assorted/Goal-front.gif");
-    goal_f.align(CENTER, BOTTOM);
-    goal_f.setPosition(xpos+32, hpos);
-    addStaticSpriteFG(goal_f);
-    // the finish line rope
-    addForPlayerOnly(new Rope(xpos, hpos-16));
-  }
-
-  // In order to effect "just-in-time" sprite placement,
-  // we set up some trigger regions.
-  void addTriggers() {
-    addTrigger(new KoopaTrigger(412,0,5,height, 350, height-64, -0.2, 0));
-    addTrigger(new KoopaTrigger(562,0,5,height, 350, height-64, -0.2, 0));
-    addTrigger(new KoopaTrigger(916,0,5,height, 350, height-64, -0.2, 0));
-  }
-
   void draw() {
     super.draw();
     viewbox.track(parent, mario);
-    // just in case!
-    if(mario!=null && mario.active != null && mario.active.name!="dead" && mario.y>height) {
-      reset();
-    }
   }
 }
 
@@ -206,20 +160,16 @@ class Mario extends Player {
     State dead = new State("dead", "graphics/mario/small/Dead-mario.gif", 1, 2);
     dead.setAnimationSpeed(0.25);
     dead.setDuration(15);
-    addState(dead);   
+    addState(dead);
     
     State jumping = new State("jumping", "graphics/mario/small/Jumping-mario.gif");
     jumping.setDuration(15);
     addState(jumping);
 
-    State won = new State("won", "graphics/mario/small/Standing-mario.gif");
-    won.setDuration(15);
-    addState(won);
-
     setCurrentState("idle");    
   }
   void handleStateFinished(State which) {
-    if(which.name == "dead" || which.name == "won") {
+    if(which.name == "dead") {
       removeActor();
       reset();
     } else {
@@ -227,8 +177,9 @@ class Mario extends Player {
     }
   }
   void handleInput() {
-    if(active.name == "dead" || active.name == "won") return;
-
+    // we don't handle any input when we're dead~
+    if(active.name=="dead") return;    
+  
     if(isKeyDown('A') || isKeyDown('D')) {
       if (isKeyDown('A')) {
         setHorizontalFlip(true);
@@ -264,45 +215,7 @@ class Mario extends Player {
     else if (pickup.name=="Dragon coin") {
       score+=100;
     }
-    // we won!
-    else if (pickup.name=="Finish line") {
-      setCurrentState("won");
-    }
   }
-
-  
-  /**
-   * What happens when we touch another actor?
-   */
-  void overlapOccurredWith(Actor other, float[] direction) {
-    if (other instanceof Koopa) {
-      Koopa koopa = (Koopa) other;
-      float angle = direction[2];
-
-      // We bopped a koopa on the head!
-      float tolerance = radians(75);
-      if (PI/2 - tolerance <= angle && angle <= PI/2 + tolerance) {
-        koopa.squish();
-        stop(0,0);
-        setImpulse(0, -30);
-        setCurrentState("jumping");
-      }
-
-      // Oh no! We missed and touched a koopa!
-      else { die(); }
-    }
-  }
-
-  /**
-   * When we die, we need to go in the funky "oh no we lost~" dance dive.
-   */
-  void die() {
-    setCurrentState("dead");
-    setInteracting(false);
-    addImpulse(0,-30);
-    setForces(0,3);
-  }
-  
 }
 
 /**
@@ -343,24 +256,6 @@ class DragonCoin extends MarioPickup {
 
 
 /**
- * The finish line is also a pickup,
- * and will trigger the "clear" state
- * for the level when picked up.
- */
-class Rope extends MarioPickup {
-  Rope(float x, float y) {
-    super("Finish line", "graphics/assorted/Goal-slider.gif", 1, 1, x, y, true);
-    Sprite s = getState("Finish line").sprite;
-    s.align(LEFT, TOP);
-    s.setNoRotation(true);
-    s.addPathLine(0, 0, 1, 1, 0, 0, -116, 1, 1, 0, 50);
-    s.addPathLine(0, -116, 1, 1, 0, 0, 0, 1, 1, 0, 50);
-    s.setLooping(true);
-  }
-}
-
-
-/**
  * Our main enemy
  */
 class Koopa extends Interactor {
@@ -381,106 +276,5 @@ class Koopa extends Interactor {
     State walking = new State("idle", "graphics/enemies/Red-koopa-walking.gif", 1, 2);
     walking.setAnimationSpeed(0.12);
     addState(walking);
-    
-    // if we get squished, we first get naked...
-    State naked = new State("naked", "graphics/enemies/Naked-koopa-walking.gif", 1, 2);
-    naked.setAnimationSpeed(0.12);
-    addState(naked);
-    
-    setCurrentState("idle");
-  }
-  
-  /**
-   * when we hit a vertical wall, we want our
-   * koopa to reverse direction
-   */
-  void gotBlocked(Boundary b, float[] intersection) {
-    if (b.x==b.xw) {
-      fx = -fx;
-      setHorizontalFlip(fx > 0);
-    }
-  }
-  
-  void squish() {
-    // do we have our shell? Then we only get half-squished.
-    if (active.name != "naked") {
-      setCurrentState("naked");
-      return;
-    }
-    
-    // no shell... this koopa is toast.
-    removeActor();
-  }
-}
-
-/***************************************
- *                                     *
- *             TRIGGERS                *
- *                                     *
- ***************************************/
-
-/**
- * triggers a koopa trooper 350px to the right
- */
-class KoopaTrigger extends Trigger {
-  float kx, ky, fx, fy;
-  KoopaTrigger(float x, float y, float w, float h, float _kx, float _ky, float _fx, float _fy) {
-    super("koopa", x, y, w, h);
-    kx = _kx;
-    ky = _ky;
-    fx = _fx;
-    fy = _fy;
-  }
-  void run(LevelLayer layer, Actor actor, float[] intersection) {
-    Koopa k = new Koopa(x+kx, ky);
-    if (fx>0) { 
-      k.setHorizontalFlip(true);
-    }
-    layer.addInteractor(k);
-    // remove this trigger so that it's not repeated
-    removeTrigger();
-  }
-}
-
-
-/**
- * triggers a Banzai Bill!
- */
-class BanzaiBillTrigger extends Trigger {
-  float kx, ky, fx, fy;
-  BanzaiBillTrigger(float x, float y, float w, float h, float _kx, float _ky, float _fx, float _fy) {
-    super("banzai bill", x, y, w, h);
-    kx = _kx;
-    ky = _ky;
-    fx = _fx;
-    fy = _fy;
-  }
-  void run(LevelLayer layer, Actor actor, float[] intersection) {
-    BanzaiBill k = new BanzaiBill(x+kx, ky);
-    k.setImpulse(fx, fy);
-    layer.addInteractor(k);
-    // remove this trigger so that it's not repeated
-    removeTrigger();
-  }
-}
-
-class Muncher extends Interactor {
-
-  Muncher(float x, float y) {
-    super("Muncher");
-    setPosition(x,y);
-    setupStates();
-  }
-
-  void setupStates() {
-    State munch = new State("munch","graphics/enemies/Muncher.gif", 1, 2);
-    munch.setAnimationSpeed(0.20);
-    addState(munch);
-  }
-
-  void overlapOccurredWith(Actor other, float[] overlap) {
-    if (other instanceof Mario) {
-      ((Mario)other).die();
-    }
   }
 }

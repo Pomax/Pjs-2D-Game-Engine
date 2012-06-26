@@ -78,6 +78,11 @@ class MainLevelLayer extends LevelLayer {
     mario.setPosition(32, height-64);
     addPlayer(mario);
 
+    // add a few slanted hills
+    addSlant(256, height-48);
+    addSlant(1300, height-48);
+    addSlant(1350, height-48);
+
     // we don't want mario to walk off the level,
     // so let's add some side walls
     addBoundary(new Boundary(-1,0, -1,height));
@@ -111,11 +116,6 @@ class MainLevelLayer extends LevelLayer {
     
     // mystery coins
     addForPlayerOnly(new DragonCoin(352,height-164));
-    
-    // add a few slanted hills
-    addSlant(256, height-48);
-    addSlant(1300, height-48);
-    addSlant(1350, height-48);
 
     // Let's also add a koopa on one of the slides
     Koopa koopa = new Koopa(264, height-178);
@@ -126,9 +126,6 @@ class MainLevelLayer extends LevelLayer {
     
     // and let's add the thing that makes us win!
     addGoal(1920, height-48);
-
-    //showBoundaries = true;
-    //showTriggers = true;
   }
   
   /**

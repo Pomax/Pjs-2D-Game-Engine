@@ -5,6 +5,7 @@ class Mario extends Player {
   
   int score = 0;
   float speed = 2;
+  boolean canShoot = false;
 
   Mario() {
     super("Mario");
@@ -169,6 +170,26 @@ class Mario extends Player {
     else if (pickup.name=="Finish line") {
       setCurrentState("won");
     }
+    // oh my god, Contra O_O
+    else if (pickup.name=="Fire flower") {
+      // we could effect a full sprite swap here
+      canShoot = true;
+    }
+  }
+  
+  void mousePressed(int mx, int my, int mb) {
+    if(canShoot) {
+      float[] mi = layer.getMouseInformation(getX(), getY(), mx, my);
+      float speed = 10,
+            dx = mi[0],
+            dy = mi[1],
+            len = sqrt(dx*dx + dy*dy);
+      dx/=len;
+      dy/=len;
+      FireBlob fb = new FireBlob(getX(), getY());
+      fb.addImpulse(speed*dx, speed*dy);
+      layer.addForInteractorsOnly(fb);
+    }    
   }
   
 }

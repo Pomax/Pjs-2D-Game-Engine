@@ -229,8 +229,8 @@ abstract class Actor extends Positionable {
    * moved back by dx/dy
    */
   void stop(float dx, float dy) {
-    x = round(x+dx);
-    y = round(y+dy);
+    x += dx;
+    y += dy;
     ix = 0;
     iy = 0;
     aFrameCount = 0;

@@ -49,6 +49,40 @@ class DragonCoin extends MarioPickup {
 }
 
 /**
+ * A fire flower
+ */
+class FireFlower extends MarioPickup {
+  FireFlower(float x, float y) {
+    super("Fire flower", "graphics/assorted/Flower.gif", 1, 1, x, y, true);
+    SoundManager.load(this, "audio/Powerup.mp3");
+  }
+  void pickedUp() { 
+    SoundManager.play(this);
+  }
+}
+
+/**
+ * A fire blob
+ */
+class FireBlob extends MarioPickup {
+  FireBlob(float x, float y) {
+    super("Fire blob", "graphics/assorted/Flowerpower.gif", 1, 4, x, y, false);
+    SoundManager.load(this, "audio/Squish.mp3");
+    
+  }
+  void pickedUp() { 
+    SoundManager.play(this);
+  }
+  void overlapOccurredWith(Actor other) {
+    super.overlapOccurredWith(other);
+    other.removeActor();
+  }
+  void gotBlocked(Boundary b, float[] intersection) {
+    removeActor();
+  }
+}
+
+/**
  * The finish line is also a pickup,
  * and will trigger the "clear" state
  * for the level when picked up.

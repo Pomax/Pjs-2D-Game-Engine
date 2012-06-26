@@ -28,6 +28,7 @@ static class CollisionDetection {
    */
   static float[] blocks(Boundary b, Actor a)
   {
+    if (a.remove) return null;
     float[] current = a.getBoundingBox(),
             previous = a.previous.getBoundingBox(),
             line = {b.x, b.y, b.xw, b.yh};
@@ -45,16 +46,29 @@ static class CollisionDetection {
    */
   static float[] getLineRectIntersection(float[] line, float[] previous, float[] current)
   {
+    if(debug) sketch.println(sketch.frameCount + " ***");    
     if(debug) sketch.println(sketch.frameCount + ">  testing against: "+arrayToString(line));
     if(debug) sketch.println(sketch.frameCount + ">   previous: "+arrayToString(previous));
     if(debug) sketch.println(sketch.frameCount + ">   current : "+arrayToString(current));
 
     // First, let's do some dot-product math, to find out whether or not
     // the actor's bounding box is even in range of the boundary.
-    float x1=line[0], y1=line[1], x2=line[2], y2=line[3];
-    float dx = x2-x1, dy = y2-y1, pv=PI/2.0,
+    float x1=line[0], y1=line[1], x2=line[2], y2=line[3],
+          fx = current[0] - previous[0],
+          fy = current[1] - previous[1],
+          pv=PI/2.0,
+          dx = x2-x1,
+          dy = y2-y1,
           rdx = dx*cos(pv) - dy*sin(pv),
           rdy = dx*sin(pv) + dy*cos(pv);
+          
+    // is the delta in a permitted direction? If so, we don't have to do
+    // intersection detection because there won't be any.
+    float dotproduct = getDotProduct(rdx, rdy, fx, fy);
+    if(dotproduct<0) { return null; }
+
+    // then: in-range checks. If not in range, no need to do the more
+    //       complicated intersection detections checks.
 
     // determine range w.r.t. the starting point of the boundary.
     float[] dotProducts1 = getDotProducts(x1,y1,x2,y2, previous);
@@ -79,17 +93,18 @@ static class CollisionDetection {
     // make sure to short-circuit if the actor cannot
     // interact with the boundary because it is out of range.
     if (inRangeS == 0 || inRangeE == 0) {
-      if(debug) sketch.println(sketch.frameCount +">   this boundary is not involved in collisions for this frame.");
+      if(debug) sketch.println(sketch.frameCount +">   this boundary is not involved in collisions for this frame (out of range).");
       return null;
     }
 
-    if (above>0 && aboveAfter>above) {
-      if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (1).");
-      return null;
-    }
-
+    // if the force goes against the border's permissible direction, but
+    // both previous and current frame actor boxes are above the boundary,
+    // then we don't have to bother with intersection detection.
     if (above==4 && aboveAfter==4) {
-      if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (2).");
+      if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (inherently safe 'above' locations).");
+      return null;
+    } else if(0 < above && above < 4) {
+      if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (never fully went through boundary).");
       return null;
     }
 
@@ -163,7 +178,7 @@ static class CollisionDetection {
       float[] intersection = getLineLineIntersection(xp,yp,xc,yc, x1,y1,x2,y2, false, true);
 
       if (intersection==null) {
-        println("nearest-to-boundary is actually not on the boundary itself. More complex math is required!");
+        if(debug) println("nearest-to-boundary is actually not on the boundary itself. More complex math is required!");
 
         // it's also possible that the first corner to hit the boundary
         // actually never touches the boundary because it intersects only
@@ -171,7 +186,7 @@ static class CollisionDetection {
         intersection = getLineLineIntersection(xp,yp,xc,yc, x1,y1,x2,y2, false, false);
 
         if (intersection==null) {
-          println("line extension alone is not enoough...");
+          if(debug) println("line extension alone is not enoough...");
 
           // FIXME: this is not satisfactory! A real solution should be implemented!
           return new float[]{xp-xc, yp-yc}; // effect a full rewind for now

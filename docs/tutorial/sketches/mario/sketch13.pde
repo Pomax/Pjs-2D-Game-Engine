@@ -162,9 +162,9 @@ class MarioLayer extends LevelLayer {
   // In order to effect "just-in-time" sprite placement,
   // we set up some trigger regions.
   void addTriggers() {
-    addTrigger(new KoopaTrigger(412,0,5,height, 350, height-64, -0.2, 0));
-    addTrigger(new KoopaTrigger(562,0,5,height, 350, height-64, -0.2, 0));
-    addTrigger(new KoopaTrigger(916,0,5,height, 350, height-64, -0.2, 0));
+    addTrigger(new KoopaTrigger(412,0,5,height, 350, height-64));
+    addTrigger(new KoopaTrigger(562,0,5,height, 350, height-64));
+    addTrigger(new KoopaTrigger(916,0,5,height, 350, height-64));
   }
 
   void draw() {
@@ -412,13 +412,11 @@ class Koopa extends Interactor {
  * triggers a koopa trooper 350px to the right
  */
 class KoopaTrigger extends Trigger {
-  float kx, ky, fx, fy;
-  KoopaTrigger(float x, float y, float w, float h, float _kx, float _ky, float _fx, float _fy) {
+  float kx, ky;
+  KoopaTrigger(float x, float y, float w, float h, float _kx, float _ky) {
     super("koopa", x, y, w, h);
     kx = _kx;
     ky = _ky;
-    fx = _fx;
-    fy = _fy;
   }
   void run(LevelLayer layer, Actor actor, float[] intersection) {
     Koopa k = new Koopa(x+kx, ky);

@@ -14,20 +14,15 @@ class MainLevelLayer extends LevelLayer {
     mario = new Mario();
     mario.setPosition(32, height-64);
     addPlayer(mario);
-    
-    addBoundedInteractor(new CoinBlock(64,height-96));
-    addBoundedInteractor(new CoinBlock(80,height-96));
-    addBoundedInteractor(new CoinBlock(96,height-96));
 
     // add general ground
     addGround("ground", -32,height-48, -32 + 17*32,height);
-/*
-    addBoundary(new Boundary(-32 + 17*32,height-48,-32 + 17*32,height));
+    addBoundary(new Boundary(-32 + 17*32,height-47,-32 + 17*32,height));
     for(int i=0; i<4; i++)
     {
       addInteractor(new Muncher(-32 + (17*32) + 8 + (16*i),height-8));
     }
-    addBoundary(new Boundary(-31 + 19*32,height,-31 + 19*32,height-48));
+    addBoundary(new Boundary(-31 + 19*32,height,-31 + 19*32,height-47));
     addGround("ground", -31 + 19*32,height-48, width+32,height);
 
     // we don't want mario to walk off the level,
@@ -37,6 +32,12 @@ class MainLevelLayer extends LevelLayer {
 
     // add decorative foreground bushes
     addBushes();
+    
+    // add a few slanted hills
+    addSlant(256, height-48);
+    addSlant(1300, height-48);
+    addSlant(1350, height-48);
+
     // add some ground platforms    
     addGroundPlatform("ground", 928, height-224, 96, 112);
     addCoins(928,height-236,96);
@@ -47,29 +48,28 @@ class MainLevelLayer extends LevelLayer {
     addGroundPlatform("ground", 1442, height-128, 128, 80);
     addCoins(1442,height-140,128);
     addGroundPlatform("ground", 1442+64, height-96, 128, 48);
-    
+
+    for(int i=0; i<5; i++) {
+      addBoundedInteractor(new CoinBlock(1174+i*16,height-96));
+    }
+    addBoundedInteractor(new FlowerBlock(1174+2*16,height-148));
+
+
     // mystery coins
     addForPlayerOnly(new DragonCoin(352,height-164));
-    
-    // add a few slanted hills
-    addSlant(256, height-48);
-    addSlant(1300, height-48);
-    addSlant(1350, height-48);
-*/
 
     // Let's also add a koopa on one of the slides
-//    Koopa koopa = new Koopa(264, height-178);
-//    addInteractor(koopa);
+    Koopa koopa = new Koopa(264, height-178);
+    addInteractor(koopa);
 
-/*    
     // add lots of just-in-time triggers
     addTriggers();
     
     // and let's add the thing that makes us win!
     addGoal(1920, height-48);
-*/
-    showBoundaries = true;
-    showTriggers = true;
+
+    //showBoundaries = true;
+    //showTriggers = true;
   }
   
   /**

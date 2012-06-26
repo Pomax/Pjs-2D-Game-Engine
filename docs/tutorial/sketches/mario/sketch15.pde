@@ -23,10 +23,14 @@ void initialize() {
   reset();
 }
 
+/**
+ * Reset the entire game
+ */
 void reset() {
   clearLevels();
   addLevel("MainLevel", new MainLevel(4*width, height));  
 }
+
 
 /**
  * Our "empty" level is a single layer
@@ -43,6 +47,7 @@ class MainLevel extends Level {
     SoundManager.play(this);
   }
 }
+
 
 /**
  * Our main level layer has a background
@@ -77,6 +82,11 @@ class MainLevelLayer extends LevelLayer {
     mario = new Mario();
     mario.setPosition(32, height-64);
     addPlayer(mario);
+    
+    // add a few slanted hills
+    addSlant(256, height-48);
+    addSlant(1300, height-48);
+    addSlant(1350, height-48);
 
     // we don't want mario to walk off the level,
     // so let's add some side walls
@@ -108,11 +118,6 @@ class MainLevelLayer extends LevelLayer {
     
     // mystery coins
     addForPlayerOnly(new DragonCoin(352,height-164));
-    
-    // add a few slanted hills
-    addSlant(256, height-48);
-    addSlant(1300, height-48);
-    addSlant(1350, height-48);
 
     // Let's also add a koopa on one of the slides
     Koopa koopa = new Koopa(264, height-178);
@@ -123,9 +128,6 @@ class MainLevelLayer extends LevelLayer {
     
     // and let's add the thing that makes us win!
     addGoal(1920, height-48);
-
-    showBoundaries = true;
-    showTriggers = true;
   }
   
   /**
@@ -225,8 +227,14 @@ class MainLevelLayer extends LevelLayer {
   }
 }
 
+
+//////////////
+//  ACTORS  //
+//////////////
+
+
 /**
- * Our dapper hero
+ * Our dapper mustachioed hero
  */
 class Mario extends Player {
   
@@ -399,8 +407,9 @@ class Mario extends Player {
   }
 }
 
+
 /**
- * Our main enemy
+ * Our main enemy in this game
  */
 class Koopa extends Interactor {
 
@@ -456,6 +465,7 @@ class Koopa extends Interactor {
   }
 }
 
+
 /**
  * The muncher plant. To touch it is to lose.
  */
@@ -481,6 +491,12 @@ class Muncher extends Interactor {
   }
 }
 
+
+/////////////////
+//   PICKUPS   //
+/////////////////
+
+
 /**
  * All pickups in Mario may move, and if
  * they do, they will bounce when hitting
@@ -498,6 +514,7 @@ class MarioPickup extends Pickup {
   }
 }
 
+
 /**
  * A regular coin
  */
@@ -511,6 +528,7 @@ class Coin extends MarioPickup {
   }
 }
 
+
 /**
  * A dragon coin!
  */
@@ -523,6 +541,7 @@ class DragonCoin extends MarioPickup {
     SoundManager.play(this);
   }
 }
+
 
 /**
  * The finish line is also a pickup,
@@ -549,6 +568,12 @@ class Rope extends MarioPickup {
   }
 }
 
+
+////////////////
+//  TRIGGERS  //
+////////////////
+
+
 /**
  * triggers a koopa trooper 350px to the right
  */
@@ -566,28 +591,6 @@ class KoopaTrigger extends Trigger {
     if (fx>0) { 
       k.setHorizontalFlip(true);
     }
-    layer.addInteractor(k);
-    // remove this trigger so that it's not repeated
-    removeTrigger();
-  }
-}
-
-
-/**
- * triggers a Banzai Bill!
- */
-class BanzaiBillTrigger extends Trigger {
-  float kx, ky, fx, fy;
-  BanzaiBillTrigger(float x, float y, float w, float h, float _kx, float _ky, float _fx, float _fy) {
-    super("banzai bill", x, y, w, h);
-    kx = _kx;
-    ky = _ky;
-    fx = _fx;
-    fy = _fy;
-  }
-  void run(LevelLayer layer, Actor actor, float[] intersection) {
-    BanzaiBill k = new BanzaiBill(x+kx, ky);
-    k.setImpulse(fx, fy);
     layer.addInteractor(k);
     // remove this trigger so that it's not repeated
     removeTrigger();

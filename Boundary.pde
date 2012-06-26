@@ -169,11 +169,10 @@ class Boundary extends Positionable {
    */
   void drawObject() {
     strokeWeight(1);
-    stroke(255, 0, 255);
+    stroke(255);
     line(0, 0, dx, dy);
 
     // draw an arrow to indicate the pass-through direction
-    stroke(127);
     float cs = cos(angle-PI/2), ss = sin(angle-PI/2);
 
     float fx = 10*cs;

@@ -7,64 +7,9 @@
     <script type="text/javascript" src="../../processing.js"></script>
     <script type="text/javascript" src="processing-lazyload.js"></script>
     <script type="text/javascript" src="../../minim.js"></script>
-    <style>
-      canvas {
-        width: 512px;
-        height: 432px;
-        background-image: url("ajax-loader.gif");
-        background-position: center center;
-        background-repeat: no-repeat; }
-        
-      textarea {
-        display: block;
-        outline: none;
-        overflow: hidden;
-        margin-left: 2em; }
-
-      figure {
-        clear: both;
-        display: inline-block;
-        border: 1px solid grey;
-        padding: 5px;
-        text-align: center; }
-        
-      figure canvas {
-        display: block;
-        border: 1px solid black; }
-        
-      figure figcaption {
-        display: block;
-        font-size: 90%;
-        font-style: italic; }
-        
-      figure:after { clear: both; }
-      
-      code {
-        font-family: monospace;
-        color: #004; }
-      
-      .colorblock { 
-        display: inline-block;
-        width: 30px;
-        height: 0.8em;}
-    </style>
-    <script>
-      document.addEventListener("DOMContentLoaded",function(){
-        // while focussed, play sketch
-        $("canvas").focus(function(){
-          window.console.log('focus on '+this.id);
-          Processing.getInstanceById(this.id).loop();
-          Processing.getInstanceById(this.id).unmute();
-        });
-        
-        // when focus is lost, pause sketch
-        $("canvas").blur(function(){
-          window.console.log('focus lost by '+this.id);
-          Processing.getInstanceById(this.id).noLoop();
-          Processing.getInstanceById(this.id).mute();
-        });
-      },false);
-    </script>
+    <script type="text/javascript" src="syntaxHighlight.js"></script>
+    <script type="text/javascript" src="canvasFocus.js"></script>
+    <link rel="stylesheet" href="style.css">
   </head>
   <body>
 
@@ -87,7 +32,7 @@
     one level which has at least one level layer so that we can even put
     mario somewhere. Just like we did last time. So let's get cracking:</p>
     
-    <textarea readonly style="width: 40em; height: 26em;">
+<textarea>
 final int screenWidth = 512;
 final int screenHeight = 432;
 
@@ -132,18 +77,18 @@ class MarioLayer extends LevelLayer {
     
     <p>So, let's find some pictures for all these different things:</p>
 
-    <ul>
+    <ol style="line-height: 2.5em;">
       <li>Standing around: <img src="graphics/mario/small/Standing-mario.gif"></li>
       <li>Running: <img src="graphics/mario/small/Running-mario.gif"></li>
       <li>Jumping: <img src="graphics/mario/small/Jumping-mario.gif"></li>
       <li>Losing: <img src="graphics/mario/small/Dead-mario.gif"></li>
-    </ul>
+    </ol>
     
     <p>You'll notice that some of these states use multiple pictures. This lets us
     create the illusion of "animation": if we loop through the images quickly enough,
     it'll see like Mario's animated, and that's good! So let's make a Mario!</p>
 
-    <textarea readonly style="width: 60em; height: 17em;">
+<textarea>
 class Mario extends Player {
   Mario(float x, float y) {
     super("Mario");
@@ -162,7 +107,7 @@ class Mario extends Player {
 
     <p>And then let's add a mario to our world:</p>
     
-    <textarea readonly style="width: 40em; height: 12em;">
+<textarea>
 class MarioLayer extends LevelLayer {
   MarioLayer(Level owner) {
     super(owner);
@@ -189,7 +134,7 @@ class MarioLayer extends LevelLayer {
     
     <p>We introduce three new global values:</p>
     
-    <textarea readonly style="width: 40em; height: 4em;">
+<textarea>
 float DOWN_FORCE = 2;
 float ACCELERATION = 1.3;
 float DAMPENING = 0.75;
@@ -208,7 +153,7 @@ float DAMPENING = 0.75;
     <p>Of course, we also need to make sure those forces apply to Mario,
     so we modify our constructor:</p>
 
-<textarea readonly style="width: 40em; height: 10em;">
+<textarea>
   Mario(float x, float y) {
     super("Mario");
     setupStates();
@@ -229,7 +174,7 @@ float DAMPENING = 0.75;
     controls again, so that 'W' means "up", 'A' means "left", 'S' means...
     ... well we're not actually going to use 'S', but 'D', means "right".</p>
 
-<textarea readonly style="width: 40em; height: 23em;">
+<textarea>
   Mario(float x, float y) {
     super("Mario");
     setupStates();
@@ -265,7 +210,7 @@ float DAMPENING = 0.75;
     
     <p>hang on to your pants, this one's a biggy:</p>
 
-<textarea readonly style="width: 60em; height: 30em;">
+<textarea>
   void handleInput() {
     // handle running
     if(isKeyDown('A') || isKeyDown('D')) {
@@ -351,7 +296,7 @@ float DAMPENING = 0.75;
     will run our games at 60 frames per second. That's really high, so let's
     set that to 30 instead:</p>
     
-    <textarea readonly style="width: 40em; height: 5em;">
+<textarea>
 void initialize() {
   addLevel("level", new MarioLevel(width, height));  
   frameRate(30);
@@ -379,7 +324,7 @@ void initialize() {
     a specific duration, and 2) make sure the input handling takes into account that
     we might not be able to change states while Mario is jumping. Let's-a-di-go!</p>
 
-<textarea readonly style="width: 60em; height: 32em;">
+<textarea>
   void setupStates() {
     [...]
     
@@ -448,11 +393,14 @@ void initialize() {
     <p>Let's add the following background:</p>
 
     <figure>
-      <img src="graphics/backgrounds/sky.gif">
+      <img src="graphics/backgrounds/sky.gif" style="border: 1px solid grey;">
       <figcaption>A background with Mario 'mountains'</figcaption>
-    </figure>  
+    </figure>
+    
+    <p>Adding a background means treating it like a special kind of sprite,
+    and adding this to the list of not-moving background sprites:</p>
 
-<textarea readonly style="width: 70em; height: 18em;">
+<textarea>
 class MarioLayer extends LevelLayer {
   MarioLayer(Level owner) {
     super(owner);
@@ -482,7 +430,7 @@ class MarioLayer extends LevelLayer {
     <p>We could keep it at that, but since we're updating the background anyway, let's make
     sure that Mario can't run out of the level:</p>
 
-<textarea readonly style="width: 70em; height: 12em;">
+<textarea>
 class MarioLayer extends LevelLayer {
   MarioLayer(Level owner) {
     [...]
@@ -498,12 +446,17 @@ class MarioLayer extends LevelLayer {
     <p>These two extra boundaries sit *just* outside the level on the left and the right,
     like what we did in the previous tutorial to keep our "Thingy" inside the screen. 
     Except this time our Thingy is a Mario! =D</p>
-    
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch06-pretrack.pde"></canvas>
+       <figcaption>A background can help a lot.</figcaption>
+    </figure>  
+
     <p>And because we can, let's make one more change: a background is nice, but it
     would be even better if we could actually see that it repeats, by making the level
     wider than a single screen. So... let's do that!</p>
 
-<textarea readonly style="width: 40em; height: 15em;">
+<textarea>
 void initialize() {
   frameRate(30);
   addLevel("level", new MarioLevel(2*width, height));  
@@ -529,7 +482,7 @@ class MarioLevel extends Level {
     can follow a player around. So we make one final change:</p>
 
 
-<textarea readonly style="width: 40em; height: 17em;">
+<textarea>
 class MarioLayer extends LevelLayer {
   Mario mario;
   
@@ -591,7 +544,7 @@ class MarioLayer extends LevelLayer {
     invisible boundaries (which we can see right now because we're cheating and
     we're drawing them, even though normally you don't), we can actually just
     leave the boundary where it is, and set up some more background that makes it
-    look like there's ground underneat the boundary line.</p>
+    look like there's ground underneath the boundary line.</p>
     
     <p>In order to make ground, we're going to use a few images. Two, in fact.
     One to look like the top soil, with grass, and one that fills in the region
@@ -599,6 +552,19 @@ class MarioLayer extends LevelLayer {
     
     <figure>
       <img src="graphics/backgrounds/ground-top.gif"> + <img src="graphics/backgrounds/ground-filler.gif">
+      = 
+
+      <div class="imageblock">
+        <img src="graphics/backgrounds/ground-top.gif">
+        <img src="graphics/backgrounds/ground-filler.gif">
+      </div><div class="imageblock">
+        <img src="graphics/backgrounds/ground-top.gif">
+        <img src="graphics/backgrounds/ground-filler.gif">
+      </div><div class="imageblock">
+        <img src="graphics/backgrounds/ground-top.gif">
+        <img src="graphics/backgrounds/ground-filler.gif">
+      </div>
+      
       <figcaption>grassy soil!</figcaption>
     </figure>
 
@@ -606,7 +572,7 @@ class MarioLayer extends LevelLayer {
     with filler. We've actually already seen how we are supposed to do this:
     we use a TilingSprite. First, let's define a method for "laying" ground:</p>
     
-<textarea readonly style="width: 60em; height: 19em;">
+<textarea>
 class MarioLayer extends LevelLayer {
   [...]
   
@@ -649,7 +615,7 @@ class MarioLayer extends LevelLayer {
     a boundary that runs along the top of the grass, so that Mario has something
     to stand on. And with that, we add some ground to our level layer:<p>
     
-<textarea readonly style="width: 40em; height: 13em;">
+<textarea>
 class MarioLayer extends LevelLayer {
   [...]
 
@@ -678,12 +644,18 @@ class MarioLayer extends LevelLayer {
     and that's adding a second layer of background that looks like it's
     farther away, so that when we walk, it moves slower than the normal
     background.</p>
-    
-    <p>We can do this really easily by adding a new layer to our level,
-    one that we'll simply stick behind the real layer that has Mario on it.
+
+    <h2>Parallax, or "faking distance"</h2>
+
+    <p>We can add "parallax", or the concept of faking distance by tricking
+    the eyes into believing there's distance by making things that should
+    seem "close" move fast and things that should seem "far" move slolwy,
+    by adding new layers to our level.
+    We're going to make it look like we have more background in the distance,
+    so we'll add a new layer behind the main layer that has Mario on it.
     In fact, the code for it is not very long, can you tell what it does?</p>
 
-<textarea readonly style="width: 70em; height: 35em;">
+<textarea>
 class MarioLevel extends Level {
   MarioLevel(float levelWidth, float levelHeight) {
     [...]
@@ -748,49 +720,937 @@ class MarioLayer extends LevelLayer {
 
     <h2>Let's add some platforming elements </h2>
 
-<!-- CONTINUE HERE -->
+    <p>Usually, a "platformer" such as the game we're making is called, has "platforms"
+    that you can jump on, and from. Of course, our game doesn't have these... yet! But
+    we can add them pretty easily by using the same idea as before: the part of a
+    platform that we can stand on will be represented by a boundary, and everything
+    else will just be a backgroud image, of course placed so that it looks like there
+    is a platform. We'll be adding two types: a slanted platform, and straight platforms.<p>
 
-    <p>Let's add ground platforms. Two types: slanted sprite, and normal tiling ground</p>
+
+    <figure>
+      <img src="graphics/backgrounds/ground-slant.gif">
+      &nbsp;
+      &nbsp;
+      &nbsp;
+      <div class="imageblock">
+        <img src="graphics/backgrounds/ground-corner-left.gif">
+        <img src="graphics/backgrounds/ground-side-left.gif">
+      </div>
+      <div class="imageblock">
+        <img src="graphics/backgrounds/ground-top.gif">
+        <img src="graphics/backgrounds/ground-filler.gif">
+      </div>
+      <div class="imageblock">
+        <img src="graphics/backgrounds/ground-corner-right.gif">
+        <img src="graphics/backgrounds/ground-side-right.gif">
+      </div>
+      
+      <figcaption>A slanted platform, and horizontal platforms</figcaption>
+    </figure>
+
+    <p>For the slant, we'll use a single image, and the code is pretty simple:</p>
+    
+<textarea>
+class MarioLayer extends LevelLayer {
+  [...]
+  
+  MarioLayer(Level owner) {
+    [...]
+
+    // add a few slanted hills
+    addSlant(256, height-48);
+    addSlant(1300, height-48);
+    addSlant(1350, height-48);
+  }
+  
+  [...]
+
+  void addSlant(float x, float y) {
+    Sprite groundslant = new Sprite("graphics/backgrounds/ground-slant.gif");
+    groundslant.align(LEFT, BOTTOM);
+    groundslant.setPosition(x, y);
+    addStaticSpriteBG(groundslant);
+    addBoundary(new Boundary(x, y + 48 - groundslant.height, x + 48, y - groundslant.height));
+  }
+}
+</textarea>
+    
+    <p>For the horizontal platforms we're going to put in a bit more work, using the same trick
+    that we used for the normal ground: if we treat it as six images (three for the top
+    soil, and three for the filler below it) then we can make any sized platform by
+    always drawing the top left and right corners, and bottom left and right corners,
+    and then "filling in the space between them " with the bits that go in the middle:
+    
+<textarea>
+class MarioLayer extends LevelLayer {
+  [...]
+  
+  MarioLayer(Level owner) {
+    [...]
+
+    // add some ground platforms    
+    addGroundPlatform(928, height-224, 96, 112);
+    addGroundPlatform(920, height-176, 32, 64);
+    addGroundPlatform(912, height-128, 128, 80);
+    addGroundPlatform(976, height-96, 128, 48);
+    addGroundPlatform(1442, height-128, 128, 80);
+    addGroundPlatform(1442+64, height-96, 128, 48);  
+  }
+  
+  [...]
+
+  void addGroundPlatform(float x, float y, float w, float h) {
+    // create our top soil layer
+    Sprite lc = new Sprite("graphics/backgrounds/"+tileset+"-corner-left.gif");
+    lc.align(LEFT, TOP);
+    lc.setPosition(x, y);
+    Sprite tp = new Sprite("graphics/backgrounds/ground-top.gif");
+    Sprite rc = new Sprite("graphics/backgrounds/ground-corner-right.gif");
+    rc.align(LEFT, TOP);
+    rc.setPosition(x+w-rc.width, y);
+    TilingSprite toprow = new TilingSprite(tp, x+lc.width, y, x+(w-rc.width), y+tp.height);
+
+    addStaticSpriteBG(lc);
+    addStaticSpriteBG(toprow);
+    addStaticSpriteBG(rc);
+
+    // sides/filler
+    TilingSprite sideleft  = new TilingSprite(new Sprite("graphics/backgrounds/ground-side-left.gif"),
+                                              x,            y+tp.height, x+lc.width,     y+h);
+    TilingSprite filler    = new TilingSprite(new Sprite("graphics/backgrounds/ground-filler.gif"),
+                                              x+lc.width,   y+tp.height, x+(w-rc.width), y+h);
+    TilingSprite sideright = new TilingSprite(new Sprite("graphics/backgrounds/ground-side-right.gif"),
+                                              x+w-rc.width, y+tp.height, x+w,            y+h);
+
+    addStaticSpriteBG(sideleft);
+    addStaticSpriteBG(filler);
+    addStaticSpriteBG(sideright);
+
+    // boundary to walk on
+    addBoundary(new Boundary(x, y, x+w, y));
+  }
+}
+</textarea>
+    
+    <p>You may be wondering what that <code>lc.align(LEFT, TOP);</code> does.
+    By default, sprites are placed with their center point wherever you tell them
+    to position to. If we call <code>setPosition(0,0)</code> and the sprite is
+    a 16 by 16 pixel image, then 8 pixels will be on the left of (0,0), 8 will be
+    on the right, 8 above, and 8 below. Sometimes, that's not useful at all, and
+    you want to change that so that if you put an image at (0,0), the entire image
+    is to the left, right, top or bottom of that coordinate. In those cases, we
+    can use <code>align(...,...)</code> to change the default placement. In this
+    case, we want the image's left side, and top, to be aligned with the coordinate
+    we give its <code>setPosition</code>, so we say <code>align(LEFT,TOP)</code>
+    (we have to tell it how to do horizontal align first, and then vertical align).</p>
+    
+    <p>So, not very complicated code, just "a lot of it" to make something really
+    useful happen: After we define our function <code>addGroundPlatform</code> we
+    can call it as many times as we like to add platforms to our level. In the
+    above code, we added six platforms, and then a little above that we added
+    three slanted platforms, so... what does it look like?</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch09.pde"></canvas>
        <figcaption>Yay, platforms</figcaption>
     </figure> 
     
-    <p>And then let's add some pickups. Normal coins, and the mysterious Dragon coin.</p>
+    <p>That's more like it! Now we're starting to make a real game. Of course, there's still
+    stuff missing. We want treasures, and enemies, and a way to win. At the least. So
+    let's start adding those things in shall we?</p>
+    
+    <h2>Shiny, shiny pickups</h2>
+    
+    <p>In the game library, treasure is a form of "pickup". Pickups are things that can
+    be picked up by either players or NPCs (non-player characters) by walking into them,
+    and when they do, "something" can happen. Of course, we're in control, so what happens
+    is up to us. Very handy.</p>
+    
+    <p>If you've ever played a mario game, you might known that mario likes to collect
+    coins, of all sizes and colors. In our game, we'll give him two different kinds of
+    coins to pick up: normal coins, and the mysterious dragon coin:</p>
+    
+    <figure>
+      <img src="graphics/assorted/Regular-coin.gif" alt="regular coins">
+      <figcaption>Normal treasure...</figcaption>
+    </figure>
+
+    <figure>
+      <img src="graphics/assorted/Dragon-coin.gif" alt="dragon coins">
+      <figcaption>Special treasure!</figcaption>
+    </figure>
+    
+    <p>In order to make the coin pickups, we start by making a master "Mario pickup"
+    thing, that we can use as a <code>superclass</code> for every pickup we're going
+    to make in our game:</p>
+
+<textarea>
+class MarioPickup extends Pickup {
+  MarioPickup(String name, String spritesheet, int rows, int columns, float x, float y, boolean visible) {
+    super(name, spritesheet, rows, columns, x, y, visible);
+  }
+}
+</textarea>
+
+    <p>While this code doesn't do a great deal, it'll let us group things as "Mario Pickups", and
+    that will become handy if we ever introduce a class of pickups that aren't for Mario.</p>
+   
+    <p>So, let's write our coin pickups. They're pretty straightforward, so here goes:</p>
+
+<textarea>
+// the regular coin pickup
+class Coin extends MarioPickup {
+  Coin(float x, float y) {
+    super("Regular coin", "graphics/assorted/Regular-coin.gif", 1, 4, x, y, true);
+  }
+}
+
+
+// the dragon coin pickup
+class DragonCoin extends MarioPickup {
+  DragonCoin(float x, float y) {
+    super("Dragon coin", "graphics/assorted/Dragon-coin.gif", 1, 10, x, y, true);
+  }
+}
+</textarea>
+
+    <p>That's it, that's all we have to define. Now if we want to use them in our
+    game, we simply make <code>new Coin(...,...)</code> or <code>new DragonCoin(...,...)</code>
+    and then add them to our list of pickups, for the player only:</p>
+
+<textarea>
+class MarioLayer extends LevelLayer {
+  [...]
+  MarioLayer(Level owner) {
+    [...]
+    
+    // add coints above the horizontal platforms
+    addCoins(928,height-236,96);
+    addCoins(912,height-140,128);
+    addCoins(1442,height-140,128);
+
+    // add a dragon coin at the start
+    addForPlayerOnly(new DragonCoin(352,height-164));
+  }
+
+  // a handy function for placing lots of coins
+  void addCoins(float x, float y, float w) {
+    float step = 16, i = 0, last = w/step;
+    for(i=0; i<last; i++) {
+      addForPlayerOnly(new Coin(x+8+i*step,y));
+    }
+  }
+}  
+</textarea>
+
+    <p>The <code>addCoins</code> function is a convenient function that lets us add a string
+    of coins starting at position <code>x/y</code> and spanning a width of <code>w</code>.
+    We use the <code>step</code> value to space out our coins, using 16 pixels as distance
+    from one coin's center to the next coin's center, and then we start adding coins "for the player only",
+    as is obvious from the <code>addForPlayerOnly(...)</code> function name. The result?
+    Why, let's play our updated game and see for ourselves:</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch10.pde"></canvas>
        <figcaption>Now with shiny coins!</figcaption>
     </figure> 
     
-    <p>Then, let's add an enemy. Suddenl, we can die. But so can they if we squish them by jumping on them.</p>
+    <p>As you can see, we can pick up coins by running into them. If we want, we can make Mario's
+    score go up whenever he picks up a coin, but we're going to do that later because it requires
+    working with something called a "HUD", which is the information that you get about your game
+    like score, health, time remaining, currently equipment, and all that kind of stuff. We'll
+    be adding that in in the next tutorial.</p>
+    
+    <p>Instead, we're going to move on to make this a proper game... it's time for......</p>
+    
+    <h2>Enemies!</h2>
+    
+    <p>Yes, it's time to add enemies to our game. Just running around collection coins
+    gets a lot more challenging if you're trying to not hit an enemy at the same time.
+    So let's add the old Mario favourite: the Koopa Trooper.</p>
+    
+    <p>Koopa troopers are very much like Mario: They have states and need to switch
+    between them when they do things, so probably not surprisingly, defining a Koopa
+    trooper is very similar to defining Mario. Except we don't have to worry about
+    putting in input handling, because we're not going to control. (Although,
+    wouldn't it be cool to play as the enemy? Maybe we'll do that in a next tutorial!)</p>
+    
+<textarea>
+class Koopa extends Interactor {
+  // we construct a Koopa trooper pretty much the same way we did Mario:
+  Koopa(float x, float y) {
+    super("Koopa Trooper");
+    setStates();
+    setForces(-0.25, DOWN_FORCE);    
+    setImpulseCoefficients(DAMPENING, DAMPENING);
+    setPosition(x,y);
+  }
+  
+  // And we use states.
+  void setStates() {
+    // walking state
+    State walking = new State("idle", "graphics/enemies/Red-koopa-walking.gif", 1, 2);
+    walking.setAnimationSpeed(0.12);
+    addState(walking);
+  }
+}
+</textarea>
+
+    <p>And then we add it just like we add everything else:</p>
+
+<textarea>
+class MarioLayer extends LevelLayer {
+  [...]
+  MarioLayer(Level owner) {
+    [...]
+  
+    Koopa koopa = new Koopa(264, height-178);
+    addInteractor(koopa);
+  }
+}
+</textarea>
+
+    <p>That's pretty good, but it's a bit incomplete. Let's try to play this:</p>
 
     <figure>
-      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch11.pde"></canvas>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch11-safe.pde"></canvas>
        <figcaption>A challenger appears...</figcaption>
     </figure> 
     
+    <p>We don't get hurt! This enemy is not dangerous! And he's a bit dumb, after walking into
+    that wall on the left he just triest to keep walking left. So clearly, we need to teach it
+    some more things. First, let's fix that "I have no idea what a wall is" problem. When actors
+    (players or NPCs) hit something, a special function called <code>gotBlocked</code> is called
+    by the game library. Normally, this function does "nothing", so when you hit a wall, nothing
+    actually happens, other than that you stop. But, for our Koopa trooper, we want it to realise
+    that it can't walk any further, and has to turn around. No problem:</p>
+
+<textarea>
+class Koopa extends Interactor {
+  [...]
+  
+  void gotBlocked(Boundary b, float[] intersection) {
+    // is the boundary vertical?
+    if (b.x == b.xw) {
+      // yes it is. Reverse direction!
+      fx = -fx;
+      setHorizontalFlip(fx > 0);
+    }
+  }
+}
+</textarea>
+
+    <p>There, nice and simple. The <code>if (b.x == b.xw)</code> code checks whether a boundary
+    is vertical or not: for vertical lines, the <code>x</code> start and end coordinate is the
+    same value, with only the heights at the start and end being different, so we simply check
+    "is the starting x value (<code>b.x</code>) the same as the ending x value <code>b.xw</code>)?
+    If so, reverse direction". And we reverse direction by changing the uniform force that acts
+    on our Koopa trooper. To make it get 'pushed' left we use -0.25 as a horizontal force,
+    so to make the Koopa trooper get 'pushed' right, we can reverse it to 0.25 instead,
+    and flip the Koopa trooper's sprite. Job done!</p>
+    
+    <p>And now, let's make our enemies dangerous. This requires adding in the interaction
+    between Mario and the Koopa trooper: Mario should be able to squish them, and Koopa troopers
+    should be able to defeat Mario. So we'll be changing both classes.<p>
+
+    <h3>Making Koopa troopers dangerous for Mario</h3>
+
+    <p>In order to make Koopa troopers dangerous for Mario, we need to make sure "something"
+    has to happen when Mario and a Koopa trooper touch. Luckily, the game library already
+    has a function in place for that, we just need to fill it in.</p>
+
+<textarea>
+class Mario extends Player {
+  [...]
+  
+  void setupStates() {
+    [...]
+
+    State dead = new State("dead", "graphics/mario/small/Dead-mario.gif", 1, 2);
+    dead.setAnimationSpeed(0.25);
+    dead.setDuration(15);
+    addState(dead);
+    
+    [...]
+  }
+  
+  // what happens when we touch another player or NPC?
+  void overlapOccurredWith(Actor other, float[] direction) {
+    // for the moment, we only care about what happens
+    // when we touch Koopa troopers
+    if (other instanceof Koopa) {
+      // if we touch a koopa trooper, we die! O_O
+      die();
+    }
+  }
+  
+  void die() {
+    // switch to dead state
+    setCurrentState("dead");
+    // turn off interaction, so we don't flag more touching koopas or pickups or walls, etc.
+    setInteracting(false);
+    // make up jump up in an "oh no!" fashion
+    addImpulse(0,-30);
+    // and turn up gravity so we fall down quicker than usual.
+    setForces(0,3);
+  }
+}
+</textarea>
+    
+    <p>This is the start of the changes we'll have to make, but a good one: if we touch
+    a Koopa trooper, we die.</p>
+
+    <h3>Making sure we restart the game</h3>
+    
+    <p>Of course while Koopa troopers dying and leaving the game's not that
+    big a problem, if we die we want to restart the game. Right now, that doesn't
+    happen, so we'll need to add in one more bit of code to make everything work
+    the way we want:</p>
+    
+<textarea>
+[...]
+
+void reset() {
+  clearLevels();
+  addLevel("level", new MarioLevel(4*width, height));
+}
+
+[...]
+
+class Mario extends Player {
+  [...]
+
+  void handleStateFinished(State which) {
+    if(which.name == "dead") {
+      removeActor();
+      reset();
+    } else {
+      setCurrentState("idle");
+    }
+  }
+  
+  [...]
+}
+</textarea>
+
+    <p>We introduce a new global ("callable from anywhere in the code") function called
+    <code>reset()</code>, which basically wipes everything, and then rebuilds our level,
+    with a new mario, koopa trooper, coins, and everything else we say should get built
+    when we make our MarioLevel.</p> 
+
+    <p>So now if we touch a Koopa trooper, we will lose, and then the game restarts. Let's test:</p>
+ 
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch11-mario-can-die.pde"></canvas>
+       <figcaption>Part one done: Mario can die</figcaption>
+    </figure> 
+
+    <p>That works pretty well, but it's pretty unfair. Koopas can kill us, but we can't kill them. Let's
+    level the playing field.</p>
+ 
+    <h3>Making Mario dangerous for Koopa troopers</h3>
+
+    <p>In the classic Mario games, most enemies can be defeated by jumping on top of them. So
+    this requires two changes: Mario needs to know from which direction he's hitting a Koopa
+    trooper, and Koopa troopers need to be squishable. Let's get cracking:</p>
+    
+<textarea>
+class Mario extends Player {
+  [...]
+
+  void overlapOccurredWith(Actor other, float[] direction) {
+    if (other instanceof Koopa) {
+      // get a reference to this Koopa trooper
+      Koopa koopa = (Koopa) other;
+      
+      // get the angle at which we've impacted with this koopa trooper
+      float angle = direction[2];
+
+      // Now to find out whether we bopped a koopa on the head!
+      float tolerance = radians(75);
+      if (PI/2 - tolerance &lt;= angle && angle &lt;= PI/2 + tolerance) {
+        // we hit it from above!
+        // 1) squish the koopa trooper
+        koopa.squish();
+        // Stop moving in whichever direction we were moving in
+        stop(0,0);
+        // instead, jump up!
+        setImpulse(0, -30);
+        setCurrentState("jumping");
+      }
+
+      // if we didn't hit it at the correct angle, we still die =(
+      else { die(); }
+    }
+  }
+  
+  [...]
+}
+</textarea>
+
+    <p>Here we see some math. Rather than just telling us which of the four directions 
+    left, right, top, or bottom we hit something at, the game library gives us the actual
+    angle at which we hit another actor. That's really useful, but also makes it a little
+    hard to figure out what "real" direction we're coming in on. If you don't understand
+    what happens in the above code, that's okay. I'll try to explain it here:</p>
+    
+    <p>For most things, angles don't go from zero degrees to 360 degrees, like you might
+    be used to, but they use "radians". Using degrees, there are 360 degrees to a full circle.
+    Using Radians, there are 2×π "degrees". π is actually a number, but it's impossible to
+    write without using a million billion decimal numbers, so we use a letter for it instead.
+    Its value is roughly 3.14, and is the value you get if you draw a circle with a diameter
+    of one half. (one half meter, one half foot, doesn't really matter). If you measure how
+    long the actual circle is, the answer is π. For angle measurement, we actually use a
+    special circle called the "unit circle", which has a diameter of two. (again, two meters
+    or two feet, or two inches, doesn't matter). This circle has a diameter of two times π.</p>
+    
+    <p>If we look at this unit circle, and mark the values around the outline of the circle,
+    then at the far right, the value is 0. Moving clockwise along the circle, the bottom-most
+    value is half π, the far left is π, the top is one and a half π, and then when we get back
+    to where we started, we get to two π, which is the same as zero. This may sound odd, but
+    think of it as doing the same as a clock. Once we get travel along the clock's numbers,
+    we end up at the start and the numbers "reset". That happens here too.</p>
+    
+    <p>So, if we want to come jumping in from "the top", expressed in this idea of radians,
+    we want to come in with an angle somewhere between π and two π (somewhere between "left"
+    and "right"). That's what the above code does.</p>
+    
+    <p>But, if we use that code, we still need to make the Koopa trooper actually get squishes.</p>
+    
+<textarea>
+class Koopa extends Interactor {
+  [...]
+
+  void setStates() {
+    // walking state
+    State walking = new State("idle", "graphics/enemies/Red-koopa-walking.gif", 1, 2);
+    walking.setAnimationSpeed(0.12);
+    addState(walking);
+    
+    // if we get squished, we first lose our shell.
+    State noshell = new State("noshell", "graphics/enemies/Naked-koopa-walking.gif", 1, 2);
+    noshell.setAnimationSpeed(0.12);
+    addState(noshell);
+    
+    setCurrentState("idle");
+  }
+
+  [...]
+  
+  void squish() {
+    // do we have our shell? Then we only get half-squished.
+    if (active.name != "noshell") {
+      setCurrentState("noshell");
+      return;
+    }
+    // no shell... this koopa is toast.
+    removeActor();
+  }
+}
+</textarea>
+
+    <p>Getting squished will do two things. First, if we are a normal Koopa trooper,
+    our shell protects us. Rather than being squished dead, we only lose our shell.
+    No biggie. But, if Mario squishes us again, we're toast. So the code does this too:</p>
+    
+    <p><code>if (active.name != "noshell")</code> checks whether we already lost
+    our shell or not. The <code>!=</code> means "is not", so if our active state
+    is not the "no shell" state, we simple set the current state to "no shell",
+    and exit the squish function. We don't need to do more.</p>
+    
+    <p>However, if we ARE in the "no shell" state, we die. As an actor in
+    the game, that means we need to be taken out of the game, so that's what the
+    <code>removeActor()</code> function does for us. Any actor (player, NPC, pickup, etc)
+    that calls this function gets taken out of the game, and for all intents and
+    purposes no longer exists. That's what I call being dead! O_O</p>
+    
+    <p>Let's play this game!</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch11.pde"></canvas>
+       <figcaption>Now we're playing a real game</figcaption>
+    </figure> 
+    
     <p>So far we've been so caught up in adding cool things that we completely forgot that the point
-    of a game is to win it. So how do we win at this Mario game? Let's add a goal post that we need
-    to run through. With the goal line rope that goes up and down.</p>
+    of a game is to win it. So how do we win at this Mario game? Different Mario games have different
+    ways to win or exit a level, so let's use the old school solution: a goal post that we need
+    to run through, with a goal line rope that goes up and down.</p>
+    
+    <p>To make this happen, we'll combine some of the things we've already to make our game:</p>
+    
+    <ol>
+      <li>a goal post "close to the screen",</li>
+      <li>a goal post "in the distance", and</li>
+      <li>a rope that goes up and down between them.</li>
+    </ol>
+    
+    <p>We'll use three images for this:</p>
+    
+    <figure>
+      <img src="graphics/assorted/Goal-back.gif" alt="back goal post">
+      <img src="graphics/assorted/Goal-slider.gif" alt="goal post line" style="position:relative; top: -40px;">
+      <img src="graphics/assorted/Goal-front.gif" alt="front goal post">
+      <figcaption>The back post, goal line, and front post</figcaption>
+    </figure>
+    
+    <p>As you may have guessed, we'll add the back goal post to the list of many
+    background images we're already using, and hopefully predictably, we can add
+    the frong post to the list of "foreground" images:</p>
+
+<textarea>
+class MarioLayer extends LevelLayer {
+  [...]
+  
+  MarioLayer(Level owner) {
+    [...]
+
+    // and let's add the thing that makes us win!
+    addGoal(1920, height-48);
+  }
+
+  void addGoal(float xpos, float hpos) {
+    // add the back post to the background images
+    Sprite back_post = new Sprite("graphics/assorted/Goal-back.gif");
+    back_post.align(CENTER, BOTTOM);
+    back_post.setPosition(xpos, hpos);
+    addStaticSpriteBG(back_post);
+
+    // and add the front post ot the foreground images
+    Sprite front_post = new Sprite("graphics/assorted/Goal-front.gif");
+    front_post.align(CENTER, BOTTOM);
+    front_post.setPosition(xpos+32, hpos);
+    addStaticSpriteFG(front_post);
+
+    // the finish line rope
+    addForPlayerOnly(new Rope(xpos, hpos-16));
+  }
+}
+</textarea>
+
+    <p>So far so good, except for that last line. It says we're adding a <code>Rope</code>
+    to the list of for-player-only things... is it a Pickup? Well, if you remember the description
+    of pickups, they are things that players can walk into, to make "something" happen,
+    and that's exactly what we want! When Mario runs into the rope, we want him to win
+    the game, so we're going to make a new pickup that looks like our rope:</p>
+    
+<textarea>
+class Rope extends MarioPickup {
+  Rope(float x, float y) {
+    // use the right picture for our rope
+    super("Finish line", "graphics/assorted/Goal-slider.gif", 1, 1, x, y, true);
+    
+    // now, set up the "up and down" animation for this pickup
+    Sprite rope_sprite = getState("Finish line").sprite;
+    rope_sprite.align(LEFT, TOP);
+    
+    // there are two paths: up, and down. First, up: we move 116 pixels up, over 50 frames
+    rope_sprite.addPathLine(0, 0,      1,1,0,   0, -116,   1,1,0,    50);
+
+    // and then down: we move the same 116 pixels down, over 50 frames
+    rope_sprite.addPathLine(0, -116,   1,1,0,   0, 0,      1,1,0,    50);
+
+    // then, make sure that we keep "playing" this
+    // animation, and make sure we don't try to 
+    // "drive along the path", because that would
+    // look really weird.
+    rope_sprite.setNoRotation(true);
+    rope_sprite.setLooping(true);
+  }
+}
+</textarea>
+
+    <p>You might have noticed that this is a bit more work than the other pickups, because
+    we want this rope to move up and down. We do this by giving the sprite "path lines"
+    over which it can travel. The code above shows how to make it move up and down,
+    but we can also scale and rotate over paths. Those "1,1,0," that you see four times
+    (twice for up, and twice for down) mean "scale horizontally by 1.0, scale vertically
+    by 1.0, and rotate by 0 degrees", so our sprite will look the same at the start
+    of its path as it does at the end of its path, for both the up and down paths.</p>
+    
+    <p>So the last bit of the puzzle is: what happens when Mario picks up this rope?
+    Well... he should win the game! So let's add that last bit to Mario's code and
+    see what our game is like now that we can win:</p>
+
+<textarea>
+class Mario extends Player {
+  [...]
+
+  void setupStates() {
+    [...]
+
+    // add a winning state for Mario. We'll make his victory last 15 frames.
+    State won = new State("won", "graphics/mario/small/Standing-mario.gif");
+    won.setDuration(15);
+    addState(won);
+
+    setCurrentState("idle");    
+  }
+
+  void handleStateFinished(State which) {
+    // we reset the game not just if Mario dies, but
+    // also if he's won and his winning state is "done":
+    if(which.name == "dead" || which.name == "won") {
+      removeActor();
+      reset();
+    } else {
+      setCurrentState("idle");
+    }
+  }
+
+  [...]
+
+  void pickedUp(Pickup pickup) {
+    // when we pick up a rope, win!
+    if (pickup.name=="Finish line") {
+      setCurrentState("won");
+    }
+  }
+
+  [...]
+}
+</textarea>
+
+    <p>Pretty straight-forward at this point, right? Add a winning state, make sure that we reset the
+    game so we can play again when we're done with our winning state, and make sure to change to
+    our winning state if we pick up the rope. Let's play!</p>
  
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch12.pde"></canvas>
        <figcaption>Hey, we can actually win now!</figcaption>
     </figure> 
 
+
+    <h1>Finishing up our game</h1>
     
-    <p>We need more enemies to make this challenging. But let's not add everything at
-    once - let's learn about "triggers".</p>
+    <p>At this point we have all the major elements in place. We have a hero, we have a bad guy,
+    we have treasures, we can die or we can win. These are all crucial to a fun game to play.
+    However, there's still some work left to do.</p>
+    
+    <h2>More enemies</h2>
+    
+    <p>First off, we need more enemies. If we jump over that Koopa trooper, or squish it,
+    the rest of the level is danger-free. That's not very interesting or exciting, so let's
+    start putting some more Koopa troopers into our level.</p>
+    
+    <p>We could simply add more Koopas in the same way as we did before, but this is a good
+    time to talk about "triggers". Imagine walking through the level, and there are no Koopa
+    troopers at all. But, when you walk over a specific bit of the ground, a Koopa trooper
+    gets added just outside the screen. To the player, it's as if the level is filled with
+    Koopa troopers, but behind the scenes, we only drop them in at the last moment.</p>
+    
+    <p>Why would we do this? Why not just add them all at the start? Well, if we do that,
+    they will also be walking around the level from the first second. That makes it very
+    hard to control what Mario sees them do when they come into view, since we need to
+    take into account all the time that Mario didn't see them. If we drop them in at the
+    very last moment just before Mario "should" see them, we can much better control 
+    where they are when they come into view.</p>
+    
+    <p>It also means we can add in seemingly more enemies than normally. If we add
+    a hundred Koopa troopers at the start, and Mario only sees three or four at a time,
+    we'll be wasting a lot of the computer's time making it calculate where to put
+    those other 96 or 97 Koopa troopers because they're walking around. For most of
+    those, it'll be seconds or even minutes before they come into view... why waste
+    the computer's time when we can drop in enemies at the very last moment, instead?</p>
+    
+    <h3>Triggers</h3>
+    
+    <p>In order to make a "Koopa trooper trigger", we can use the game library's built
+    in "Trigger", and just like before when we made actors or pickups, extend from this
+    Trigger class:</p>
+
+
+<textarea>
+class KoopaTrigger extends Trigger {
+  // these values will let us position a new Koopa trooper when triggered 
+  float koopa_x, koopa_y;
+  
+  // our constructor is pretty straight forward. The first four values
+  // are where the trigger is in the left, the last two where a new koopa
+  // should be made, relative to trigger.
+  KoopaTrigger(float x, float y, float w, float h, float _kx, float _ky) {
+    super("koopa", x, y, w, h);
+    koopa_x = _kx;
+    koopa_y = _ky;
+  }
+  
+  // when Mario runs through the trigger, this function is automatically
+  // called by the game engine, and the instructions in it are run.
+  void run(LevelLayer layer, Actor actor, float[] intersection) {
+    // make a new Koopa trooper, relative to the trigger's position
+    Koopa k = new Koopa(x+koopa_x, koopa_y);
+    // add this Koopa trooper to the list of enemies for the layer the trigger is in
+    layer.addInteractor(k);
+    // and remove this trigger so that it's not repeated. Unless we want infinite Koopas!
+    removeTrigger();
+  }
+}
+</textarea>
+    
+    <p>So this particular trigger is relatively simple: it occupies some rectangular
+    bit of space in a level layer, and when an actor walks through it, the code
+    in the <code>run(...,...,...)</code> function is executed. In this case,
+    make a koopa, add it to the layer, and then kill off the trigger so it doesn't
+    get triggered a second (or third, fourth, etc.) time.</p>
+    
+    <p>Of course, we still need to actually add these triggers to our game,
+    so let's do so:</p> 
+    
+<textarea>
+class MarioLayer extends LevelLayer {
+  [...]
+  
+  MarioLayer(Level owner) {
+    [...]
+    
+    addTrigger(new KoopaTrigger(412,0, 5,height, 350, height-64));
+    addTrigger(new KoopaTrigger(562,0, 5,height, 350, height-64));
+    addTrigger(new KoopaTrigger(916,0, 5,height, 350, height-64));
+    
+    // temporarily show triggers in our game:
+    showTriggers = true;
+  }
+}
+</textarea>
+
+    <p>We place three triggers for koopas, all of them the height of the entire screen,
+    the first at 412 pixels from the left of the level, the second at 562 and the third
+    at 916 pixels from the left of the level. These triggers are 5 pixels wide, and all
+    of them will pop a new Koopa trooper into the level 350 pixels to the right of where
+    the trigger is, at the height of the level's ground layer, 64 pixels above the bottom
+    of the screen.</p>
+    
+    <p>Normally, triggers are invisible, but because we're making our game at the moment,
+    and we want to see where they are, we can show where they are by explicitly turning
+    on drawing for triggers, using <code>showTriggers = true</code>. When we do, our
+    game will now look like this:</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch13.pde"></canvas>
        <figcaption>More challengers appear... if we're close enough</figcaption>
     </figure> 
 
+    <p>That's better. Now the game is a little more challenging. But we can do better</p>
+    
+    <h2>Making even the level itself a challenge!</h2>
+
     <p>Let's make the world a little more hazardous by introducing the bane of many
     Mario players: munchers! In a pit!</p>
+    
+    <p>Munchers are annoying little plants that try to munch you when you touch them:</p>
+    
+    <figure>
+      <img src="graphics/enemies/Muncher.gif" alt="munchers">
+      <figcaption>Very dangerous little plants</figcaption>
+    </figure>
+
+    <p>What makes these plants particularly dangerous is that there is no safe direction
+    from which we can approach them. If we touch them, we die. To make things a little
+    easier, let's put them in a pit, so that if we jump over the pit, we're safe from
+    the munchers, and if we fall in the pit, then whether or not we have munchers we
+    die anyway. That way, the munchers look really scary to people playing our game,
+    but they're actually not any more or less dangerous than the pit they're in.</p>
+    
+    <p>We can make a pit by turning our ground from one continuous stretch of ground
+    to two stretches, with a gap in between:</p>
+
+<textarea>
+class MarioLayer extends LevelLayer {
+  [...]
+  
+  MarioLayer(Level owner) {
+    [...]
+    
+    mario = new Mario(32, height-64);
+    addPlayer(mario);
+
+    // add one half of the ground, rather than all of it in one go:
+    addGround("ground", -32,height-48, -32 + 17*32,height);
+    
+    // make sure there's a boundary on the "exposed" side!
+    addBoundary(new Boundary(-32 + 17*32,height-48,-32 + 17*32,height));
+
+    // and then add the second half, so that there's a gap in between
+    addGround("ground", -32 + 19*32,height-48, width+32,height);
+
+    // make sure there's a boundary on the "exposed" side here, too!
+    addBoundary(new Boundary(-32 + 19*32,height,-32 + 19*32,height-48));
+
+    [...]
+  }
+  
+  [...]
+}
+</textarea>
+
+    <p>And then let's fill that hole up with munchers!</p>
+
+<textarea>
+class Muncher extends Interactor {
+  // constructing a Muncher is the same as Mario or Koopas
+  Muncher(float x, float y) {
+    super("Muncher");
+    setPosition(x,y);
+    setupStates();
+  }
+
+  void setupStates() {
+    // Munchers only do one thing... munch!
+    State munch = new State("munch","graphics/enemies/Muncher.gif", 1, 2);
+    munch.setAnimationSpeed(0.20);
+    addState(munch);
+  }
+
+  void overlapOccurredWith(Actor other, float[] overlap) {
+    // If someone runs into us... and that someone is Mario... he dies! O_O
+    if (other instanceof Mario) {
+      ((Mario)other).die();
+    }
+  }
+}
+</textarea>
+
+    <p>Here we made the Muncher responsible for making Mario die. If
+    he runs into a Muncher, bad things happen. But, the game library
+    doesn't know about "Mario", it only knows about Actors, so we need
+    to first check whether Mario is involved, and if so, we need to
+    tell the game library that we're going to call a function that only
+    exists for Actors of the "Mario" type, which is what that 
+    <code>((Mario)other).die()</code> is about. The <code>(Mario)other</code>
+    but tells the library to consider 'other' a kind of Mario,
+    and the <code>(...).die()</code> means "call the function die() on
+    whatever is inside those parentheses".</p>
+    
+    <p>So now all that is left is to add our cute, little, terrible,
+    horrendous Muncher plants to our pit of despair~~!</p>
+    
+<textarea>
+class MarioLayer extends LevelLayer {
+  [...]
+  
+  MarioLayer(Level owner) {
+    [...]
+    
+    addGround("ground", -32,height-48, -32 + 17*32,height);
+    addBoundary(new Boundary(-32 + 17*32,height-48,-32 + 17*32,height));
+
+    addInteractor(new Muncher(521, height-8));
+    addInteractor(new Muncher(536, height-8));
+    addInteractor(new Muncher(552, height-8));
+    addInteractor(new Muncher(567, height-8));
+
+    addBoundary(new Boundary(-32 + 19*32,height,-32 + 19*32,height-48));
+    addGround("ground", -32 + 19*32,height-48, width+32,height);
+
+    [...]
+  }
+  
+  [...]
+}
+</textarea>
+
+    <p>Pit of despair completed! Let's turn off the trigger and boundary drawing,
+    and play our new, more challenging game!</p> 
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch14.pde"></canvas>
@@ -798,26 +1658,180 @@ class MarioLayer extends LevelLayer {
     </figure> 
   
     <p>We've gotten pretty far, but something is still missing. Something big. Sounds!</p>
+    
+    <h2>Adding music and sound effects to our game</h2>
+    
+    <p>up to this point, we've been playing silently. However, I don't know any game that
+    doesn't have at least a background music track, or sound effects for certain things. And our
+    game is missing those things! Since we're almost done, I think it's time we add that in,
+    because it's a bit silly to play with the sound turned off, don't you?</p>
+
+    <h3>The SoundManager: loading, playing, and stopping</h3>
+    
+    <p>The game library offers us a single object to handle all our audio needs, the <code>SoundManager</code>
+    object. This object can load, play, pause, and stop audio files for us, as long as we can tie
+    those files to things. So let's look at how we can use the SoundManager for playing background
+    music. Usually you want to associate one background music track with each level, so let's give
+    our MarioLevel some music:</p>
+
+<textarea>
+class MainLevel extends Level {
+  MainLevel(float levelWidth, float levelHeight) {
+    super(levelWidth, levelHeight);
+    addLevelLayer("background layer", new MainBackgroundLayer(this));
+    addLevelLayer("main layer", new MainLevelLayer(this));
+    setViewBox(0,0,screenWidth,screenHeight);
+    // Add some background music!
+    SoundManager.load(this, "audio/bg/Overworld.mp3");
+    SoundManager.play(this);
+  }
+}
+</textarea>
+
+    <p>Everything's still the same as before except for the <code>SoundManager</code> code:
+    First we load a file, and make sure to "tie" it to the level itself (remember the
+    <code>this</code> keyword from the last tutorial?). Then, we immediately start
+    playing it.</p>
+    
+    <p>Everywhere else, the idea is pretty much the same: we associate sound files
+    with "things", using <code>SoundManager.load(thing, "path to sound file")</code>,
+    and then when we need to play them, we call <code>SoundManager.play(thing)</code>.
+    So, for instance, let's give Mario all his sound effects:</p>
+    
+<textarea>
+class Mario extends Player {
+  [...]
+
+  void setStates() {
+    [...]
+
+    State dead = new State("dead", "graphics/mario/small/Dead-mario.gif", 1, 2);
+    dead.setAnimationSpeed(0.25);
+    dead.setDuration(100);
+    addState(dead);   
+    // sound effect associated with this state:
+    SoundManager.load(dead, "audio/Dead mario.mp3");
+    
+    State jumping = new State("jumping", "graphics/mario/small/Jumping-mario.gif");
+    jumping.setDuration(15);
+    addState(jumping);
+    // sound effect associated with this state:
+    SoundManager.load(jumping, "audio/Jump.mp3");
+
+    [...]
+  }
+  
+  void handleInput() {
+    [...]
+    
+    if(isKeyDown('W') && active.name!="jumping" && boundaries.size()>0) {
+      addImpulse(0,-35);
+      setCurrentState("jumping");
+      // play our jump sound when we jump:
+      SoundManager.play(active);
+    }
+    
+    [...]
+  }
+
+  [...]
+
+  void die() {
+    setCurrentState("dead");
+    setInteracting(false);
+    addImpulse(0,-30);
+    setForces(0,3);
+    // when we die, stop the background music
+    SoundManager.stop(getLevelLayer().getLevel());
+    // and then play the sad music =(
+    SoundManager.play(active);
+  }
+
+  [...]
+}
+</textarea>
+
+    <p>Note that we changed the duration for Mario's "dead" state to 100 frames, rather than 15, now.
+    That's because the music that plays takes 100 frames to play out.</p>
+    
+    <p>Koopa troopers are modified in a similar fashion:</p>
+
+<textarea>
+class Koopa extends Interactor {
+  [...]
+  
+  void setStates() {
+    State walking = new State("idle", "graphics/enemies/Red-koopa-walking.gif", 1, 2);
+    walking.setAnimationSpeed(0.12);
+    // the only sound koopas can make while walking is the "getting squished" sound
+    SoundManager.load(walking, "audio/Squish.mp3");
+    addState(walking);
+
+    State noshell = new State("no shell", "graphics/enemies/Naked-koopa-walking.gif", 1, 2);
+    noshell.setAnimationSpeed(0.12);
+    // we make the same sound when we're squished a second time.
+    SoundManager.load(noshell, "audio/Squish.mp3");
+    addState(noshell);
+    
+    setCurrentState("idle");
+  }
+  
+  [...]
+  
+  void squish() {
+    // play the squish sound, regardless of whether we lose our shell, or die
+    SoundManager.play(active);
+    
+    [...]
+  }
+}
+</textarea>
+
+    <p>For pickups, we load the file in the constructor, and play it when we get picked up:</p>
+
+<textarea>
+class Coin extends MarioPickup {
+  Coin(float x, float y) {
+    super("Regular coin", "graphics/assorted/Regular-coin.gif", 1, 4, x, y, true);
+    // set up the clip to play when we get picked up
+    SoundManager.load(this, "audio/Coin.mp3");
+  }
+  void pickedUp() {
+    // play our "picked up" sound clip
+    SoundManager.play(this);
+  }
+}
+</textarea>
+
+    <p>So if we all the sound effects everywhere we want them, we finally get a game that feels
+    like a real, full, game:</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch15.pde"></canvas>
        <figcaption>Oh my gosh, we have audio!</figcaption>
     </figure> 
- 
-    <p>The details are what make games really great. Let's add a little detail: some foreground bushes.</p>
-
-    <figure>
-      <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch16.pde"></canvas>
-       <figcaption>Adding some final polish</figcaption>
-    </figure> 
     
-    <p>And we're done! well, almost. I just had an idea. Wouldn't it be sneaky if people
-    could almost see the goal line, but then suddenly a huge monster pops up and they
-    have to avoid it to win? Let's add a giant bullet that flies across the screen!</p>
+    <p>And there we have it, a full game. And in less than a day!</p>
+    
+    <p>If you want to see the full code we ended up writing as one big file, click
+    <a href="sketches/mario/sketch15.pde">here</a> - it should look pretty close to what
+    you have in Processing if you've been programming along!</p>
+
+    <h1>Hack all the games!</h1>
+    
+    <p>So at this point we've made a game, <strong>and</strong> we can fiddle with all
+    sorts of values to see what it does, and if we want to add new pickups, or enemies
+    we can, and we learned things about triggers and audio, and other things that we can
+    use to make our game do many more things.</p>
+    
+    <p>If you want to take this game, and add more things to it, go for it! I decided
+    to add some foreground bushes, and put in a sneaky new enemy at the end of the
+    level -- see if you can find it, and hopefully you're excited enough to start
+    hacking up your own games!</p>
 
     <figure>
       <canvas data-processing-sources="codebase.pde preloads.pde sketches/mario/sketch17.pde"></canvas>
-       <figcaption>Our final game. Do we rock or what?</figcaption>
+       <figcaption>My very own remix of the game we've been making</figcaption>
     </figure> 
     
   </body>

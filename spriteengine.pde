@@ -41,7 +41,7 @@ class TestLayer extends LevelLayer {
     
     int v = 10;
 
-    t1 = new TestObject(width/2+v/2, height/2-200);
+    t1 = new TestObject(width/2+v/2, height/2-210);
     t1.setForces(5,0);
     
     t1.setForces(0,0.01);
@@ -54,7 +54,7 @@ class TestLayer extends LevelLayer {
     addBoundary(new Boundary(width,height/2-200,0,height/2-120));
     addBoundary(new Boundary(0,height/2+200,width,height/2+120));
 
-    addBoundary(new Boundary(width/2,height/2,width/2 + v,height/2));
+    //addBoundary(new Boundary(width/2,height/2,width/2 + v,height/2));
   }
 
   void draw() {
