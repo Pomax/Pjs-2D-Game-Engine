@@ -38,7 +38,8 @@ class MarioBlock extends BoundedInteractor {
   // generate something
   void overlapOccurredWith(Actor other, float[] overlap) {
     if (other instanceof Player) {
-      if (content>0) {
+      float angle = overlap[2];
+      if (content>0 && -1.2*PI > angle && angle > -2*1.2*PI) {
         content--;
         generate();
         if (content == 0) {

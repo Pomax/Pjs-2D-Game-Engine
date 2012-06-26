@@ -2,11 +2,12 @@
  * Our dapper hero
  */
 class Mario extends Player {
-  
+
   int score = 0;
   float speed = 2;
   boolean canShoot = false;
   String spriteSet = "mario";
+  TilingSprite rtypeBG = null;
 
   Mario() {
     super("Mario");
@@ -17,9 +18,9 @@ class Mario extends Player {
     handleKey('D');
     setImpulseCoefficients(DAMPENING, DAMPENING);
     setForces(0, DOWN_FORCE);
-    setAcceleration(0, ACCELERATION);    
+    setAcceleration(0, ACCELERATION);
   }
-  
+
   /**
    * Set up our states
    */
@@ -36,7 +37,7 @@ class Mario extends Player {
     dead.setDuration(100);
     addState(dead);   
     SoundManager.load(dead, "audio/Dead mario.mp3");
-    
+
     // jumping state
     State jumping = new State("jumping", "graphics/mario/small/Jumping-mario.gif");
     jumping.setDuration(15);
@@ -54,24 +55,25 @@ class Mario extends Player {
     // default: just stand around doing nothing
     setCurrentState("idle");
   }
-  
+
   /**
    * Handle input
    */
   void handleInput() {
     if (spriteSet == "mario") {
       handleMarioInput();
-    } else if (spriteSet == "rtype") {
+    } 
+    else if (spriteSet == "rtype") {
       handleRTypeInput();
     }
   }
-  
+
   void handleMarioInput() {
     // we don't handle any input when we're dead~
-    if(active.name=="dead" || active.name=="won") return;
-    
+    if (active.name=="dead" || active.name=="won") return;
+
     // what do we "do"? (i.e. movement wise)
-    if(isKeyDown('A') || isKeyDown('D')) {
+    if (isKeyDown('A') || isKeyDown('D')) {
       if (isKeyDown('A')) {
         // when we walk left, we need to flip the sprite
         setHorizontalFlip(true);
@@ -89,26 +91,26 @@ class Mario extends Player {
         setViewDirection(1, 0);
       }
     }
-    
+
     // if the jump key is pressed, and we're standing on something,
     // let's jump! 
-    if(isKeyDown('W') && active.name!="jumping" && boundaries.size()>0) {
+    if (isKeyDown('W') && active.name!="jumping" && boundaries.size()>0) {
       // generate a massive impulse upward
-      addImpulse(0,-35);
+      addImpulse(0, -35);
       // and make sure we look like we're jumping, too
       setCurrentState("jumping");
       SoundManager.play(active);
     }
-    
+
     // and what do we look like when we do this?
     if (active.mayChange())
     {
       // if we're not jumping, but left or right is pressed,
       // make sure we're using the "running" state.
-      if(isKeyDown('A') || isKeyDown('D')) {
+      if (isKeyDown('A') || isKeyDown('D')) {
         setCurrentState("running");
       }
-      
+
       // if we're not actually doing anything,
       // then we change the state to "idle"
       else {
@@ -116,27 +118,36 @@ class Mario extends Player {
       }
     }
   }
-  
+
   void handleRTypeInput() {
-    if(isKeyDown('W')) { addImpulse(0,-5); }
-    if(isKeyDown('A')) { addImpulse(-5,0); }
-    if(isKeyDown('S')) { addImpulse(0,5); }
-    if(isKeyDown('D')) { addImpulse(5,0); }
+    if (isKeyDown('W')) { 
+      addImpulse(0, -5);
+    }
+    if (isKeyDown('A')) { 
+      addImpulse(-5, 0);
+    }
+    if (isKeyDown('S')) { 
+      addImpulse(0, 5);
+    }
+    if (isKeyDown('D')) { 
+      addImpulse(5, 0);
+    }
   }
-  
+
   /**
    * When 'fixed frame count' animations end
    * such as the jump animation, what should we do?
    */
   void handleStateFinished(State which) {
-    if(which.name == "dead" || which.name == "won") {
+    if (which.name == "dead" || which.name == "won") {
       removeActor();
       reset();
-    } else {
+    } 
+    else {
       setCurrentState("idle");
     }
   }
-  
+
   /**
    * What happens when we touch another actor?
    */
@@ -149,15 +160,17 @@ class Mario extends Player {
       float tolerance = radians(75);
       if (PI/2 - tolerance <= angle && angle <= PI/2 + tolerance) {
         koopa.squish();
-        stop(0,0);
+        stop(0, 0);
         setImpulse(0, -30);
-        if(spriteSet == "mario") {
+        if (spriteSet == "mario") {
           setCurrentState("jumping");
         }
       }
 
       // Oh no! We missed and touched a koopa!
-      else { die(); }
+      else { 
+        die();
+      }
     }
   }
 
@@ -167,8 +180,8 @@ class Mario extends Player {
   void die() {
     setCurrentState("dead");
     setInteracting(false);
-    addImpulse(0,-30);
-    setForces(0,3);
+    addImpulse(0, -30);
+    setForces(0, 3);
     // stop background music!
     SoundManager.stop(getLevelLayer().getLevel());
     // play sad music =(
@@ -194,6 +207,9 @@ class Mario extends Player {
         setAcceleration(0, ACCELERATION);
       }
       spriteSet = "mario";
+      Level level = layer.getLevel();
+      LevelLayer bg = level.getLevelLayer("background layer");      
+      bg.removeStaticSpriteBG(rtypeBG);
       setCurrentState("won");
     }
     // oh my god, R-Type! O_O
@@ -205,33 +221,38 @@ class Mario extends Player {
       spriteSet = "rtype";
       setCurrentState("rtype");
       setHorizontalFlip(false);
-      SoundManager.stop(getLevelLayer().getLevel());
-      SoundManager.load(getLevelLayer().getLevel(),"audio/bg/Airwolf.mp3");
-      SoundManager.play(getLevelLayer().getLevel());
+      Level level = layer.getLevel();
+      LevelLayer bg = level.getLevelLayer("background layer");
+      SoundManager.stop(layer.getLevel());
+      SoundManager.load(layer.getLevel(), "audio/bg/Airwolf.mp3");
+      SoundManager.play(layer.getLevel());
+      rtypeBG = new TilingSprite(new Sprite("graphics/backgrounds/bonus_2.gif"), 0, 0, bg.width, bg.height);
+      bg.addStaticSpriteBG(rtypeBG);
     }
   }
-  
+
   void mousePressed(int mx, int my, int mb) {
-    if(canShoot) {
+    if (canShoot) {
       if (spriteSet == "rtype") {
-        shoot(10,0);
-      } else {
+        shoot(10, 0);
+      } 
+      else {
         float[] mi = layer.getMouseInformation(getX(), getY(), mx, my);
-        float speed = 10,
-              dx = mi[0],
-              dy = mi[1],
-              len = sqrt(dx*dx + dy*dy);
+        float speed = 10, 
+        dx = mi[0], 
+        dy = mi[1], 
+        len = sqrt(dx*dx + dy*dy);
         dx/=len;
         dy/=len;
         shoot(speed*dx, speed*dy);
       }
     }
   }
-  
+
   void shoot(float dx, float dy) {
     FireBlob fb = new FireBlob(getX(), getY());
     fb.addImpulse(dx, dy);
     layer.addForInteractorsOnly(fb);
   }
-  
 }
+
