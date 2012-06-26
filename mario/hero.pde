@@ -6,6 +6,7 @@ class Mario extends Player {
   int score = 0;
   float speed = 2;
   boolean canShoot = false;
+  String spriteSet = "mario";
 
   Mario() {
     super("Mario");
@@ -16,7 +17,7 @@ class Mario extends Player {
     handleKey('D');
     setImpulseCoefficients(DAMPENING, DAMPENING);
     setForces(0, DOWN_FORCE);
-    setAcceleration(0, ACCELERATION);
+    setAcceleration(0, ACCELERATION);    
   }
   
   /**
@@ -47,6 +48,9 @@ class Mario extends Player {
     won.setDuration(240);
     addState(won);
 
+    State rtype = new State("rtype", "graphics/mario/rtype/Flying-ship.gif", 1, 2);
+    addState(rtype);
+
     // default: just stand around doing nothing
     setCurrentState("idle");
   }
@@ -55,6 +59,14 @@ class Mario extends Player {
    * Handle input
    */
   void handleInput() {
+    if (spriteSet == "mario") {
+      handleMarioInput();
+    } else if (spriteSet == "rtype") {
+      handleRTypeInput();
+    }
+  }
+  
+  void handleMarioInput() {
     // we don't handle any input when we're dead~
     if(active.name=="dead" || active.name=="won") return;
     
@@ -105,6 +117,13 @@ class Mario extends Player {
     }
   }
   
+  void handleRTypeInput() {
+    if(isKeyDown('W')) { addImpulse(0,-5); }
+    if(isKeyDown('A')) { addImpulse(-5,0); }
+    if(isKeyDown('S')) { addImpulse(0,5); }
+    if(isKeyDown('D')) { addImpulse(5,0); }
+  }
+  
   /**
    * When 'fixed frame count' animations end
    * such as the jump animation, what should we do?
@@ -132,7 +151,9 @@ class Mario extends Player {
         koopa.squish();
         stop(0,0);
         setImpulse(0, -30);
-        setCurrentState("jumping");
+        if(spriteSet == "mario") {
+          setCurrentState("jumping");
+        }
       }
 
       // Oh no! We missed and touched a koopa!
@@ -168,28 +189,48 @@ class Mario extends Player {
     }
     // we won!
     else if (pickup.name=="Finish line") {
+      if (spriteSet == "rtype") {
+        setForces(0, DOWN_FORCE);
+        setAcceleration(0, ACCELERATION);
+      }
       setCurrentState("won");
     }
-    // oh my god, Contra O_O
+    // oh my god, R-Type! O_O
     else if (pickup.name=="Fire flower") {
       // we could effect a full sprite swap here
       canShoot = true;
+      setForces(0, 0);
+      setAcceleration(0, 0);
+      spriteSet = "rtype";
+      setCurrentState("rtype");
+      setHorizontalFlip(false);
+      SoundManager.stop(getLevelLayer().getLevel());
+      SoundManager.load(getLevelLayer().getLevel(),"audio/bg/Airwolf.mp3");
+      SoundManager.play(getLevelLayer().getLevel());
     }
   }
   
   void mousePressed(int mx, int my, int mb) {
     if(canShoot) {
-      float[] mi = layer.getMouseInformation(getX(), getY(), mx, my);
-      float speed = 10,
-            dx = mi[0],
-            dy = mi[1],
-            len = sqrt(dx*dx + dy*dy);
-      dx/=len;
-      dy/=len;
-      FireBlob fb = new FireBlob(getX(), getY());
-      fb.addImpulse(speed*dx, speed*dy);
-      layer.addForInteractorsOnly(fb);
-    }    
+      if (spriteSet == "rtype") {
+        shoot(10,0);
+      } else {
+        float[] mi = layer.getMouseInformation(getX(), getY(), mx, my);
+        float speed = 10,
+              dx = mi[0],
+              dy = mi[1],
+              len = sqrt(dx*dx + dy*dy);
+        dx/=len;
+        dy/=len;
+        shoot(speed*dx, speed*dy);
+      }
+    }
+  }
+  
+  void shoot(float dx, float dy) {
+    FireBlob fb = new FireBlob(getX(), getY());
+    fb.addImpulse(dx, dy);
+    layer.addForInteractorsOnly(fb);
   }
   
 }
