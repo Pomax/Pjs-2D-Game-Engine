@@ -120,18 +120,11 @@ class Mario extends Player {
   }
 
   void handleRTypeInput() {
-    if (isKeyDown('W')) { 
-      addImpulse(0, -5);
-    }
-    if (isKeyDown('A')) { 
-      addImpulse(-5, 0);
-    }
-    if (isKeyDown('S')) { 
-      addImpulse(0, 5);
-    }
-    if (isKeyDown('D')) { 
-      addImpulse(5, 0);
-    }
+    int speed = 2;
+    if (isKeyDown('W')) { addImpulse(0, -speed); }
+    if (isKeyDown('A')) { addImpulse(-speed, 0); }
+    if (isKeyDown('S')) { addImpulse(0, speed); }
+    if (isKeyDown('D')) { addImpulse(speed, 0); }
   }
 
   /**
@@ -143,9 +136,7 @@ class Mario extends Player {
       removeActor();
       reset();
     } 
-    else {
-      setCurrentState("idle");
-    }
+    else { setCurrentState("idle"); }
   }
 
   /**
@@ -168,9 +159,7 @@ class Mario extends Player {
       }
 
       // Oh no! We missed and touched a koopa!
-      else { 
-        die();
-      }
+      else { die(); }
     }
   }
 
@@ -234,7 +223,7 @@ class Mario extends Player {
   void mousePressed(int mx, int my, int mb) {
     if (canShoot) {
       if (spriteSet == "rtype") {
-        shoot(10, 0);
+        shoot(20, 0);
       } 
       else {
         float[] mi = layer.getMouseInformation(getX(), getY(), mx, my);
