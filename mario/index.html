@@ -3,16 +3,43 @@
   <head>
     <title>2D gaming using Processing.js</title>
     <meta charset="utf-8">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" src="../processing.js"></script>
     <script type="text/javascript" src="../minim.js"></script>
+    <script type="text/javascript" src="editor.js"></script>
+    <script type="text/javascript" src="canvasFocus.js"></script>
     <script type="text/javascript">
+      var sketch;
+
+      function bindSketch() {
+        sketch = Processing.getInstanceById("testcanvas");
+        if(!sketch || !sketch.bindJavaScript) {
+          setTimeout(bindSketch, 250);
+        } else { sketch.bindJavaScript(this); }
+      }
+      
+    
       function init() {
         document.removeEventListener("DOMContentLoaded",init,false);
         var canvas = document.getElementById("testcanvas");
         canvas.focus();
+        bindSketch();
       }
+
       document.addEventListener("DOMContentLoaded",init,false);
     </script>
+    <style>
+      canvas {
+        display: inline-block;
+      }
+      #editor {
+        display: inline-block;
+        vertical-align: top;
+      }
+      .tab {
+        display: inline-block;
+      }
+    </style>
   </head>
   <body>
     <h2>Let's Make This game</h2>
@@ -22,17 +49,26 @@
                                       banzaibill.pde
                                       block.pde
                                       codebase.pde
+                                      colorlayer.pde
+                                      darklevel.pde
+                                      darklevellayer.pde
                                       hero.pde
                                       koopa.pde
                                       mainlayer.pde
                                       mainlevel.pde
                                       mario.pde
+                                      mariolayer.pde
+                                      mariolevel.pde
                                       muncher.pde
                                       pickups.pde
                                       preloads.pde
-                                      triggers.pde"
+                                      triggers.pde
+                                      tubes.pde"
             style="border: 1px solid black;"
             tabindex="1"></canvas>
+            
+    <div id="editor">
+    </div>
 
   </body>
 </html>

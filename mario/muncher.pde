@@ -1,12 +1,13 @@
 /**
  * The muncher plant. To touch it is to lose.
  */
-class Muncher extends Interactor {
+class Muncher extends BoundedInteractor {
 
   Muncher(float x, float y) {
     super("Muncher");
     setPosition(x,y);
     setupStates();
+    addBoundary(new Boundary(x-width/2,y+2-height/2,x+width/2,y+2-height/2));
   }
 
   void setupStates() {

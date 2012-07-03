@@ -14,10 +14,13 @@ class MarioPickup extends Pickup {
   MarioPickup(String name, String spritesheet, int rows, int columns, float x, float y, boolean visible) {
     super(name, spritesheet, rows, columns, x, y, visible);
   }
-  void gotBlocked(Boundary b, float[] intersection) {
-    if (intersection[0]-x==0 && intersection[1]-y==0) {
+  // default horizontal bounce
+  void gotBlocked(Boundary b, float[] intersection, float[] original) {
+    if (b.x==b.xw) {
+      ix = -original[0];
       fx = -fx;
       active.sprite.flipHorizontal();
+      detachFrom(b);
     }
   }
 }
@@ -49,7 +52,21 @@ class DragonCoin extends MarioPickup {
 }
 
 /**
- * A fire flower
+ * A mushroom powerup
+ */
+class Mushroom extends MarioPickup {
+  Mushroom(float x, float y) {
+    super("Mushroom", "graphics/assorted/Mushroom.gif", 1, 1, x, y, true);
+    SoundManager.load(this, "audio/Powerup.mp3");
+    setAcceleration(0,0);
+  }
+  void pickedUp() { 
+    SoundManager.play(this);
+  }
+}
+
+/**
+ * A fire flower powerup
  */
 class FireFlower extends MarioPickup {
   FireFlower(float x, float y) {
@@ -68,7 +85,7 @@ class FireBlob extends MarioPickup {
   FireBlob(float x, float y) {
     super("Fire blob", "graphics/assorted/Flowerpower.gif", 1, 4, x, y, false);
     SoundManager.load(this, "audio/Squish.mp3");
-    
+    persistent = false;
   }
   void pickedUp() { 
     SoundManager.play(this);
@@ -77,8 +94,22 @@ class FireBlob extends MarioPickup {
     super.overlapOccurredWith(other);
     other.removeActor();
   }
-  void gotBlocked(Boundary b, float[] intersection) {
+  void gotBlocked(Boundary b, float[] intersection, float[] original) {
     removeActor();
+  }
+}
+
+/**
+ * Star power
+ */
+class Special extends MarioPickup {
+  Special(float x, float y) {
+    super("Star", "graphics/assorted/Special.gif", 1, 1, x, y, true);
+    SoundManager.load(this, "audio/Powerup.mp3");
+    setForces(0,DOWN_FORCE);
+  }
+  void pickedUp() { 
+    SoundManager.play(this);
   }
 }
 

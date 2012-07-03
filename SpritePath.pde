@@ -30,7 +30,6 @@ class SpritePath {
    */
   SpritePath() {
     data = new ArrayList<FrameInformation>();
-    Computer.arraylists("FrameInformation");
   }
 
   /**

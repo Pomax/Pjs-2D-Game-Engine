@@ -7,53 +7,78 @@ class Mario extends Player {
   float speed = 2;
   boolean canShoot = false;
   String spriteSet = "mario";
+  String type = "small";
   TilingSprite rtypeBG = null;
 
   Mario() {
     super("Mario");
-    setStates();
+    setupStates(spriteSet, type);
+    setCurrentState("idle");
+    // input handling
     handleKey('W');
     handleKey('A');
     handleKey('S');
     handleKey('D');
+    // forces that act on Mario
     setImpulseCoefficients(DAMPENING, DAMPENING);
     setForces(0, DOWN_FORCE);
     setAcceleration(0, ACCELERATION);
   }
 
+  void setSpriteSet(String setName) {
+    spriteSet = setName;
+    setupStates(spriteSet,type);
+  }
+
+  void setSpriteType(String typeName) {
+    type = typeName;
+    setupStates(spriteSet,type);
+  }
+  
+  // make sure all states are center/bottom anchored
+  void addState(State st) {
+    st.sprite.anchor(CENTER, BOTTOM);
+    super.addState(st);
+  }
+
   /**
    * Set up our states
    */
-  void setStates() {
+  void setupStates(String spriteSet, String type) {
     // idling state
-    addState(new State("idle", "graphics/mario/small/Standing-mario.gif"));
+    addState(new State("idle", "graphics/"+spriteSet+"/"+type+"/Standing-mario.gif"));
+
+    // crouching state
+    addState(new State("crouching", "graphics/"+spriteSet+"/"+type+"/Crouching-mario.gif"));
 
     // running state
-    addState(new State("running", "graphics/mario/small/Running-mario.gif", 1, 4));
+    addState(new State("running", "graphics/"+spriteSet+"/"+type+"/Running-mario.gif", 1, 4));
 
     // dead state O_O
-    State dead = new State("dead", "graphics/mario/small/Dead-mario.gif", 1, 2);
-    dead.setAnimationSpeed(0.25);
-    dead.setDuration(100);
-    addState(dead);   
-    SoundManager.load(dead, "audio/Dead mario.mp3");
+    if(type == "small") {
+      State dead = new State("dead", "graphics/"+spriteSet+"/"+type+"/Dead-mario.gif", 1, 2);
+      dead.setAnimationSpeed(0.25);
+      dead.setDuration(100);
+      addState(dead);   
+      SoundManager.load(dead, "audio/Dead mario.mp3");
+    }
 
     // jumping state
-    State jumping = new State("jumping", "graphics/mario/small/Jumping-mario.gif");
+    State jumping = new State("jumping", "graphics/"+spriteSet+"/"+type+"/Jumping-mario.gif");
     jumping.setDuration(15);
     addState(jumping);
     SoundManager.load(jumping, "audio/Jump.mp3");
 
+    // crouchjumping state
+    State crouchjumping = new State("crouchjumping", "graphics/"+spriteSet+"/"+type+"/Crouching-mario.gif");
+    crouchjumping.setDuration(15);
+    addState(crouchjumping);
+    SoundManager.load(crouchjumping, "audio/Jump.mp3");
+
     // victorious state!
-    State won = new State("won", "graphics/mario/small/Standing-mario.gif");
+    State won = new State("won", "graphics/"+spriteSet+"/"+type+"/Standing-mario.gif");
     won.setDuration(240);
     addState(won);
-
-    State rtype = new State("rtype", "graphics/mario/rtype/Flying-ship.gif", 1, 2);
-    addState(rtype);
-
-    // default: just stand around doing nothing
-    setCurrentState("idle");
   }
 
   /**
@@ -62,9 +87,6 @@ class Mario extends Player {
   void handleInput() {
     if (spriteSet == "mario") {
       handleMarioInput();
-    } 
-    else if (spriteSet == "rtype") {
-      handleRTypeInput();
     }
   }
 
@@ -73,7 +95,7 @@ class Mario extends Player {
     if (active.name=="dead" || active.name=="won") return;
 
     // what do we "do"? (i.e. movement wise)
-    if (isKeyDown('A') || isKeyDown('D')) {
+    if (active.name!="crouching" && (isKeyDown('A') || isKeyDown('D'))) {
       if (isKeyDown('A')) {
         // when we walk left, we need to flip the sprite
         setHorizontalFlip(true);
@@ -92,39 +114,47 @@ class Mario extends Player {
       }
     }
 
-    // if the jump key is pressed, and we're standing on something,
-    // let's jump! 
-    if (isKeyDown('W') && active.name!="jumping" && boundaries.size()>0) {
+    // if the jump key is pressed, and we're standing on something, let's jump! 
+    if (active.mayChange() && isKeyDown('W') && boundaries.size()>0) {
+      ignore('W');
       // generate a massive impulse upward
       addImpulse(0, -35);
       // and make sure we look like we're jumping, too
-      setCurrentState("jumping");
+      if (active.name!="crouching") {
+        setCurrentState("jumping");
+      } else {
+        setCurrentState("crouchjumping");
+      }
       SoundManager.play(active);
+    }
+
+    // if we're not jumping, but left or right is pressed,
+    // make sure we're using the "running" state.
+    if (isKeyDown('S')) {
+      if (boundaries.size()==1 && boundaries.get(0) instanceof PipeBoundary) {
+        PipeBoundary lid = ((PipeBoundary)boundaries.get(0));
+        lid.trigger();
+      }
+      if (active.name=="jumping") {
+        setCurrentState("crouchjumping");
+      } else {
+        setCurrentState("crouching");
+      }
     }
 
     // and what do we look like when we do this?
     if (active.mayChange())
     {
-      // if we're not jumping, but left or right is pressed,
-      // make sure we're using the "running" state.
-      if (isKeyDown('A') || isKeyDown('D')) {
-        setCurrentState("running");
+      if (active.name!="crouching" && (isKeyDown('A') || isKeyDown('D'))) {
+       setCurrentState("running");
       }
 
       // if we're not actually doing anything,
       // then we change the state to "idle"
-      else {
+      else if (noKeysDown()) {
         setCurrentState("idle");
       }
     }
-  }
-
-  void handleRTypeInput() {
-    int speed = 2;
-    if (isKeyDown('W')) { addImpulse(0, -speed); }
-    if (isKeyDown('A')) { addImpulse(-speed, 0); }
-    if (isKeyDown('S')) { addImpulse(0, speed); }
-    if (isKeyDown('D')) { addImpulse(speed, 0); }
   }
 
   /**
@@ -167,6 +197,11 @@ class Mario extends Player {
    * When we die, we need to go in the funky "oh no we lost~" dance dive.
    */
   void die() {
+    if(type != "small") {
+      setSpriteType("small");
+      disableInteractionFor(30);
+      return;
+    }
     setCurrentState("dead");
     setInteracting(false);
     addImpulse(0, -30);
@@ -200,23 +235,18 @@ class Mario extends Player {
       LevelLayer bg = level.getLevelLayer("background layer");      
       bg.removeStaticSpriteBG(rtypeBG);
       setCurrentState("won");
+      layer.parent.finish();
     }
-    // oh my god, R-Type! O_O
+    // big mario
+    else if (pickup.name=="Mushroom") {
+      setSpriteType("big");
+      disableInteractionFor(30);
+    }
+    // fire mario
     else if (pickup.name=="Fire flower") {
       // we could effect a full sprite swap here
       canShoot = true;
-      setForces(0, 0);
-      setAcceleration(0, 0);
-      spriteSet = "rtype";
-      setCurrentState("rtype");
-      setHorizontalFlip(false);
-      Level level = layer.getLevel();
-      LevelLayer bg = level.getLevelLayer("background layer");
-      SoundManager.stop(layer.getLevel());
-      SoundManager.load(layer.getLevel(), "audio/bg/Airwolf.mp3");
-      SoundManager.play(layer.getLevel());
-      rtypeBG = new TilingSprite(new Sprite("graphics/backgrounds/bonus_2.gif"), 0, 0, bg.width, bg.height);
-      bg.addStaticSpriteBG(rtypeBG);
+     setSpriteType("fire");
     }
   }
 

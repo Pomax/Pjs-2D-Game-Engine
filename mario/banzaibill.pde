@@ -22,6 +22,7 @@ class BanzaiBill extends Interactor {
     setupStates();
     // Banzai Bills do not care about boundaries or NPCs!
     setPlayerInteractionOnly(true);
+    persistent = false;
   }
 
   /**

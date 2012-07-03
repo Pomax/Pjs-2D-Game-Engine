@@ -134,6 +134,23 @@ class Boundary extends Positionable {
     // if the thing's not out of bounds, it's supported.
     return !outOfBounds;
   }
+  
+  /**
+   * by how much should an actor be pushed back in order
+   * not to be colliding with the boundary.
+   */
+  float[] pushBack(Actor a) {
+    float pv=PI/2.0, dx = xw-x, dy = yh-y,
+          rdx = dx*cos(pv) - dy*sin(pv),
+          rdy = dx*sin(pv) + dy*cos(pv);
+
+    float[] current = a.getBoundingBox(), previous = new float[current.length];
+    for(int i=0, last=current.length; i<last; i+=2) {
+      previous[i]   = current[i] + 100*rdx;
+      previous[i+1] = current[i+1] + 100*rdx; }
+    float[] boundary = {x,y,xw,yh};
+    return CollisionDetection.getLineRectIntersection(boundary, previous, current);
+  }
 
   /**
    * If our direction of travel goes through the boundary in

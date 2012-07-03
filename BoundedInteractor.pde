@@ -16,7 +16,6 @@ abstract class BoundedInteractor extends Interactor {
   BoundedInteractor(String name, float dampening_x, float dampening_y) {
     super(name, dampening_x, dampening_y);
     boundaries = new ArrayList<Boundary>();
-    Computer.arraylists("Boundary");
   }
 
   // add a boundary

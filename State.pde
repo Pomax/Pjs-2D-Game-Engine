@@ -26,7 +26,6 @@ class State {
     name = _name;
     sprite = new Sprite(spritesheet, rows, cols);
     sprite.setState(this);
-    Computer.states();
   }
 
   /**
@@ -65,7 +64,7 @@ class State {
    * Make this state last X frames.
    */
   void setDuration(float _duration) {
-    looping = false;
+    setLooping(false);
     duration = (int) _duration;
   }
 
@@ -113,12 +112,20 @@ class State {
   }
 
   // drawing the state means draw the sprite
-  void draw() { 
-    sprite.draw();
+  void draw(boolean disabled) {
+    // if disabled, only draw every other frame
+    if(disabled && frameCount%2==0) {}
+    //otherwise, draw all frames
+    else { sprite.draw(); }
     served++; 
     if(served == duration) {
       finished();
     }
+  }
+  
+  // check if coordinate is in sprite
+  boolean over(float _x, float _y) {
+    return sprite.over(_x,_y);
   }
   
   // set sprite's animation

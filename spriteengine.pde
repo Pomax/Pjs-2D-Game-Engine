@@ -17,7 +17,7 @@
 final int screenWidth = 512;
 final int screenHeight = 432;
 void initialize() { 
-  addLevel("test", new TestLevel(width,height)); 
+  addScreen("test", new TestLevel(width,height)); 
 }
 
 class TestLevel extends Level {
@@ -34,7 +34,8 @@ class TestLevel extends Level {
 }
 
 class TestLayer extends LevelLayer {
-  TestObject t1, t2, t3, t4;
+  TestObject t1;
+  
   TestLayer(Level p) {
     super(p,p.width,p.height); 
     showBoundaries = true;

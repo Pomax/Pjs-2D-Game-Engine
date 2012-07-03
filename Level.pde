@@ -5,15 +5,11 @@
  * For top-down games, these slices yield pseudo-height,
  * whereas for side-view games they yield pseudo-depth.
  */
-abstract class Level {
+abstract class Level extends Screen {
   boolean finished  = false;
-  boolean swappable = false;
 
   ArrayList<LevelLayer> layers;
   HashMap<String, Integer> layerids;
-
-  // level dimensions
-  float width, height;
 
   // current viewbox
   ViewBox viewbox;
@@ -22,12 +18,9 @@ abstract class Level {
    * Levels have dimensions!
    */
   Level(float _width, float _height) {
-    width = _width;
-    height = _height; 
+    super(_width,_height);
     layers = new ArrayList<LevelLayer>();
-    Computer.arraylists("LevelLayer");
     layerids = new HashMap<String, Integer>();
-    Computer.hashmaps("String","Integer");
     viewbox = new ViewBox(_width, _height);
   }
 
@@ -52,6 +45,12 @@ abstract class Level {
     return layers.get(layerids.get(name));
   }
   
+  void cleanUp() {
+    for(LevelLayer l: layers) {
+      l.cleanUp();
+    }
+  }
+  
   // FIXME: THIS IS A TEST FUNCTION. KEEP? REJECT?
   void updatePlayer(Player oldPlayer, Player newPlayer) {
     for(LevelLayer l: layers) {
@@ -62,17 +61,12 @@ abstract class Level {
   /**
    * Change the behaviour when the level finishes
    */
-  void finish() { finished = true; }
+  void finish() { setSwappable(); finished = true; }
 
   /**
-   * premature finish
+   * What to do on a premature level finish (for instance, a reset-warranting death)
    */
-  void end() { finished = true; swappable = true; }
-  
-  /**
-   * Allow this level to be swapped out
-   */
-  void setSwappable() { swappable = true; } 
+  void end() { finish(); }
 
   /**
    * draw the level, as seen from the viewbox

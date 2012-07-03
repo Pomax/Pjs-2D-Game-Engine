@@ -16,7 +16,10 @@ static class CollisionDetection {
    */
   static void interact(Boundary b, Actor a)
   {
+    // no interaction if actor was removed from the game.
     if (a.remove) return;
+    // no interaction if actor has not moved.
+    if (a.x == a.previous.x && a.y == a.previous.y) return;
     float[] correction = blocks(b,a);
     if(correction != null) {
       a.attachTo(b, correction);

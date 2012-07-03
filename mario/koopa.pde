@@ -34,8 +34,9 @@ class Koopa extends Interactor {
    * when we hit a vertical wall, we want our
    * koopa to reverse direction
    */
-  void gotBlocked(Boundary b, float[] intersection) {
+  void gotBlocked(Boundary b, float[] intersection, float[] original) {
     if (b.x==b.xw) {
+      ix = -ix;
       fx = -fx;
       setHorizontalFlip(fx > 0);
     }

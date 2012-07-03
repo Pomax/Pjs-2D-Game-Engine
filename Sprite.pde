@@ -12,11 +12,17 @@ class Sprite extends Positionable {
   SpritePath path;
   float halign=0, valign=0;
   float halfwidth, halfheight;
+  
+  // Sprites have a specific coordinate that acts as "anchor" when multiple
+  // sprites are used for a single actor. When swapping sprite A for sprite
+  // B, the two coordinates A(h/vanchor) and B(h/vanchor) line up to the
+  // same screen pixel.
+  float hanchor=0, vanchor=0;
 
   // frame data
-  PImage[] frames;         // sprite frames
-  int numFrames=0;         // frames.length cache
-  float frameFactor=1;     // determines that frame serving compression/dilation
+  PImage[] frames;          // sprite frames
+  int numFrames=0;          // frames.length cache
+  float frameFactor=1;      // determines that frame serving compression/dilation
 
   boolean hflip = false;   // draw horizontall flipped?
   boolean vflip = false;   // draw vertically flipped?
@@ -54,7 +60,6 @@ class Sprite extends Positionable {
    */
   private Sprite(PImage[] _frames, float _xpos, float _ypos, boolean _visible) {
     path = new SpritePath();
-    Computer.sprites();
     setFrames(_frames);
     visible = _visible;
   }
@@ -109,15 +114,46 @@ class Sprite extends Positionable {
    * center point.
    */
   void align(int _halign, int _valign) {
-    if(_halign==LEFT)        { halign=width/2; }
-    else if(_halign==CENTER) { halign=0; }
-    else if(_halign==RIGHT)  { halign=-width/2; }
+    if(_halign == LEFT)        { halign = halfwidth; }
+    else if(_halign == CENTER) { halign = 0; }
+    else if(_halign == RIGHT)  { halign = -halfwidth; }
     ox = halign;
 
-    if(_valign==TOP)         { valign=height/2; }
-    else if(_valign==CENTER) { valign=0; }
-    else if(_valign==BOTTOM) { valign=-height/2; }
+    if(_valign == TOP)         { valign = halfheight; }
+    else if(_valign == CENTER) { valign = 0; }
+    else if(_valign == BOTTOM) { valign = -halfheight; }
     oy = valign;
+  }
+
+  /**
+   * explicitly set the alignment
+   */
+  void setAlignment(float x, float y) {
+    halign = x;
+    valign = y;
+    ox = x;
+    oy = y;
+  }  
+  
+  /**
+   * Indicate the sprite's anchor point
+   */
+  void anchor(int _hanchor, int _vanchor) {
+    if(_hanchor == LEFT)       { hanchor = 0; }
+    else if(_hanchor == CENTER) { hanchor = halfwidth; }
+    else if(_hanchor == RIGHT)  { hanchor = width; }
+
+    if(_vanchor == TOP)        { vanchor = 0; }
+    else if(_vanchor == CENTER) { vanchor = halfheight; }
+    else if(_vanchor == BOTTOM) { vanchor = height; }
+  }
+  
+  /**
+   * explicitly set the anchor point
+   */
+  void setAnchor(float x, float y) {
+    hanchor = x;
+    vanchor = y;
   }
 
   /**
@@ -133,7 +169,16 @@ class Sprite extends Positionable {
    */
   void flipHorizontal() {
     hflip = !hflip;
-    ox = -ox;
+    for(PImage img: frames) {
+      img.loadPixels();
+      int[] pxl = new int[img.pixels.length];
+      int w = int(width), h = int(height);
+      for(int x=0; x<w; x++) {
+        for(int y=0; y<h; y++) {
+          pxl[x + y*w] = img.pixels[((w-1)-x) + y*w]; }}
+      img.pixels = pxl;
+      img.updatePixels();
+    }
   }
 
   /**
@@ -141,7 +186,16 @@ class Sprite extends Positionable {
    */
   void flipVertical() {
     vflip = !vflip;
-    oy = -oy;
+    for(PImage img: frames) {
+      img.loadPixels();
+      int[] pxl = new int[img.pixels.length];
+      int w = int(width), h = int(height);
+      for(int x=0; x<w; x++) {
+        for(int y=0; y<h; y++) {
+          pxl[x + y*w] = img.pixels[x + ((h-1)-y)*w]; }}
+      img.pixels = pxl;
+      img.updatePixels();
+    }
   }
 
 // -- draw methods
@@ -232,6 +286,13 @@ class Sprite extends Positionable {
   boolean drawableFor(float _a, float _b, float _c, float _d) { return true; }
   void draw(float _a, float _b, float _c, float _d) { this.draw(); }
   void drawObject() { println("ERROR: something called Sprite.drawObject instead of Sprite.draw."); }
+
+  // check if coordinate overlaps the sprite.
+  boolean over(float _x, float _y) {
+    _x -= ox - halfwidth;
+    _y -= oy - halfheight;
+    return x <= _x && _x <= x+width && y <= _y && _y <= y+height;
+  }
   
 // -- pathing informmation
 

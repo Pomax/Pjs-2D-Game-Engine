@@ -10,12 +10,10 @@ interface JSConsole { void log(String msg); }
  */
 abstract class JavaScript {
   JSConsole console;
-  abstract void setCoordinate(float x, float y);
-  abstract void setPaths(ArrayList<ShapePrimitive> segments);
-  abstract void recordFramerate(float frameRate);
-  abstract void addActor();
-  abstract void removeActor();
-  abstract void resetActorCount();
+  abstract void loadInEditor(Positionable thing);
+  abstract boolean shouldMonitor();
+  abstract void updatedPositionable(Positionable thing);
+  abstract void reset();
 }
 
 /**
@@ -29,8 +27,5 @@ JavaScript javascript;
  */
 void bindJavaScript(JavaScript js) {
   javascript = js;
-  // how do we prevent IE9 from not-running-without-debugger-open?
-  if(js.console != null) {
-    // js.console.log("JavaScript bound to sketch");
-  }
 }
+

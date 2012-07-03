@@ -26,6 +26,9 @@ abstract class LevelLayer {
           showForeground = true,
           showTriggers = false;
 
+  // master component list
+  ArrayList<Actor> all_things;
+
   // The various layer components
   ArrayList<Boundary> boundaries;
   ArrayList<Drawable> fixed_background, fixed_foreground;
@@ -67,7 +70,7 @@ abstract class LevelLayer {
   void removeStaticSpriteFG(Drawable fixed) { fixed_foreground.remove(fixed); }
 
   // The list of decals (pure graphic visuals)
-  void addDecal(Decal decal)    { decals.add(decal);   }
+  void addDecal(Decal decal)    { decals.add(decal);    }
   void removeDecal(Decal decal) { decals.remove(decal); }
 
   // event triggers
@@ -79,51 +82,61 @@ abstract class LevelLayer {
   void addForPlayerOnly(Pickup pickup) {
     pickups.add(pickup);
     bind(pickup);
-    if(javascript!=null) { javascript.addActor(); }}
+    all_things.add(pickup);
+  }
 
   void removeForPlayerOnly(Pickup pickup) {
     pickups.remove(pickup);
-    if(javascript!=null) { javascript.removeActor(); }}
+    all_things.remove(pickup);
+  }
 
   // The list of sprites that may only interact with non-players(s) (and boundaries)
   void addForInteractorsOnly(Pickup pickup) {
     npcpickups.add(pickup);
     bind(pickup);
-    if(javascript!=null) { javascript.addActor(); }}
+    all_things.add(pickup);
+  }
 
   void removeForInteractorsOnly(Pickup pickup) {
     npcpickups.remove(pickup);
-    if(javascript!=null) { javascript.removeActor(); }}
+    all_things.remove(pickup);
+  }
 
   // The list of fully interacting non-player sprites
   void addInteractor(Interactor interactor) {
     interactors.add(interactor);
     bind(interactor);
-    if(javascript!=null) { javascript.addActor(); }}
+    all_things.add(interactor);
+  }
 
   void removeInteractor(Interactor interactor) {
     interactors.remove(interactor);
-    if(javascript!=null) { javascript.removeActor(); }}
+    all_things.remove(interactor);
+  }
 
   // The list of fully interacting non-player sprites that have associated boundaries
   void addBoundedInteractor(BoundedInteractor bounded_interactor) {
     bounded_interactors.add(bounded_interactor);
     bind(bounded_interactor);
-    if(javascript!=null) { javascript.addActor(); }}
+    all_things.add(bounded_interactor);
+  }
 
   void removeBoundedInteractor(BoundedInteractor bounded_interactor) {
     bounded_interactors.remove(bounded_interactor);
-    if(javascript!=null) { javascript.removeActor(); }}
+    all_things.remove(bounded_interactor);
+  }
 
   // The list of player sprites
   void addPlayer(Player player) {
     players.add(player);
     bind(player);
-    if(javascript!=null) { javascript.addActor(); }}
+    all_things.add(player);
+  }
 
   void removePlayer(Player player) {
     players.remove(player);
-    if(javascript!=null) { javascript.removeActor(); }}
+    all_things.remove(player); 
+  }
 
   void updatePlayer(Player oldPlayer, Player newPlayer) {
     int pos = players.indexOf(oldPlayer);
@@ -134,6 +147,23 @@ abstract class LevelLayer {
 
   // private actor binding
   void bind(Actor actor) { actor.setLevelLayer(this); }
+  
+  // clean up all transient things
+  void cleanUp() {
+    cleanUpActors(interactors);
+    cleanUpActors(bounded_interactors);
+    cleanUpActors(pickups);
+    cleanUpActors(npcpickups);
+  }
+  
+  // cleanup an array list
+  void cleanUpActors(ArrayList<? extends Actor> list) {
+    for(int a = list.size()-1; a>=0; a--) {
+      if(!list.get(a).isPersistent()) {
+        list.remove(a);
+      }
+    }
+  }
 
   // =============================== //
   //   MAIN CLASS CODE STARTS HERE   //
@@ -164,26 +194,17 @@ abstract class LevelLayer {
     this.width = w;
     this.height = h;
     
+    all_things = new ArrayList<Actor>();
     boundaries = new ArrayList<Boundary>();
-    Computer.arraylists("Boundary");
     fixed_background = new ArrayList<Drawable>();
-    Computer.arraylists("Drawable");
     fixed_foreground = new ArrayList<Drawable>();
-    Computer.arraylists("Drawable");
     pickups = new ArrayList<Pickup>();
-    Computer.arraylists("Pickup");
     npcpickups = new ArrayList<Pickup>();
-    Computer.arraylists("Pickup");
     decals = new ArrayList<Decal>();
-    Computer.arraylists("Decal");
     interactors = new ArrayList<Interactor>();
-    Computer.arraylists("Interactor");
     bounded_interactors = new ArrayList<BoundedInteractor>();
-    Computer.arraylists("BoundedInteractor");
     players  = new ArrayList<Player>();
-    Computer.arraylists("Player");
     triggers = new ArrayList<Trigger>();
-    Computer.arraylists("Trigger");
   }
 
   /**
@@ -195,6 +216,8 @@ abstract class LevelLayer {
     yTranslate = oy;
     xScale = sx;
     yScale = sy;
+    if(sx!=1) { width /= sx; width -= screenWidth; }
+    if(sy!=1) { height /= sy; }
     nonstandard = (xScale!=1 || yScale!=1 || xTranslate!=0 || yTranslate!=0);
   }
   
@@ -307,11 +330,10 @@ abstract class LevelLayer {
         Pickup p = pickups.get(i);
         if(p.remove) {
           pickups.remove(i);
-          if(javascript!=null) { javascript.removeActor(); }
           continue; }
 
         // boundary interference?
-        if(p.interacting && !p.onlyplayerinteraction) {
+        if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
             CollisionDetection.interact(b,p); }
           for(BoundedInteractor o: bounded_interactors) {
@@ -339,11 +361,10 @@ abstract class LevelLayer {
         Pickup p = npcpickups.get(i);
         if(p.remove) {
           npcpickups.remove(i);
-          if(javascript!=null) { javascript.removeActor(); }
           continue; }
 
         // boundary interference?
-        if(p.interacting && !p.onlyplayerinteraction) {
+        if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
             CollisionDetection.interact(b,p); }
           for(BoundedInteractor o: bounded_interactors) {
@@ -370,11 +391,10 @@ abstract class LevelLayer {
         Interactor a = interactors.get(i);
         if(a.remove) {
           interactors.remove(i);
-          if(javascript!=null) { javascript.removeActor(); }
           continue; }
 
         // boundary interference?
-        if(a.interacting && !a.onlyplayerinteraction) {
+        if(a.interacting && a.inMotion && !a.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
               CollisionDetection.interact(b,a); }
           // boundary interference from bounded interactors?
@@ -392,10 +412,9 @@ abstract class LevelLayer {
         Interactor a = bounded_interactors.get(i);
         if(a.remove) {
           bounded_interactors.remove(i);
-          if(javascript!=null) { javascript.removeActor(); }
           continue; }
         // boundary interference?
-        if(a.interacting && !a.onlyplayerinteraction) {
+        if(a.interacting && a.inMotion && !a.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
               CollisionDetection.interact(b,a); }}
         // draw interactor
@@ -410,20 +429,20 @@ abstract class LevelLayer {
 
         if(a.remove) {
           players.remove(i);
-          if(javascript!=null) { javascript.removeActor(); }
           continue; }
 
         if(a.interacting) {
 
           // boundary interference?
-          for(Boundary b: boundaries) {
-            CollisionDetection.interact(b,a); }
-
-          // boundary interference from bounded interactors?
-          for(BoundedInteractor o: bounded_interactors) {
-            if(o.bounding) {
-              for(Boundary b: o.boundaries) {
-                CollisionDetection.interact(b,a); }}}
+          if(a.inMotion) {
+            for(Boundary b: boundaries) {
+              CollisionDetection.interact(b,a); }
+  
+            // boundary interference from bounded interactors?
+            for(BoundedInteractor o: bounded_interactors) {
+              if(o.bounding) {
+                for(Boundary b: o.boundaries) {
+                  CollisionDetection.interact(b,a); }}}}
 
           // collisions with other sprites?
           if(!a.isDisabled()) {
@@ -521,7 +540,22 @@ abstract class LevelLayer {
     for(Player a: players) {
       a.mouseMoved(mx,my); }}
 
+/*
   void mousePressed(int mx, int my, int button) {
+    for(Player a: players) {
+      a.mousePressed(mx,my,button); }}
+*/
+
+  void mousePressed(int mx, int my, int button) {
+    if(javascript!=null && javascript.shouldMonitor()) {
+      float[] mapped = getMouseInformation(0,0,mx,my);
+      float x = mapped[0], y = mapped[1];
+      for(Actor thing: all_things) {
+        if(thing.over(x,y)) {
+          javascript.loadInEditor(thing);
+        }
+      }
+    }
     for(Player a: players) {
       a.mousePressed(mx,my,button); }}
 

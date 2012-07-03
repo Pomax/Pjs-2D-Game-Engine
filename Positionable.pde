@@ -2,7 +2,6 @@
  * Manipulable object: translate, rotate, scale, flip h/v
  */
 abstract class Positionable extends Position implements Drawable {
-
   /**
    * We track two frames for computational purposes,
    * such as performing boundary collision detection.
@@ -14,13 +13,17 @@ abstract class Positionable extends Position implements Drawable {
    */
   ArrayList<Boundary> boundaries;
 
+  
+  // shortcut variable that tells us whether
+  // or not this positionable needs to perform
+  // boundary collision checks
+  boolean inMotion = false;
+
   /**
    * Cheap constructor
    */
   Positionable() {
-    Computer.positionables();
     boundaries = new ArrayList<Boundary>();
-    Computer.arraylists("Boundary");
   }
 
   /**
@@ -46,6 +49,14 @@ abstract class Positionable extends Position implements Drawable {
     previous.y = y;
     aFrameCount = 0;
     direction = -1;
+    jsupdate();
+  }
+
+  // HELPER FUNCTION  
+  void jsupdate() {
+    if(monitoredByJavaScript && javascript != null) {
+      javascript.updatedPositionable(this);
+    }  
   }
 
   void attachTo(Boundary b) {
@@ -67,6 +78,7 @@ abstract class Positionable extends Position implements Drawable {
   
   void rewind() {
     copyFrom(previous);
+    jsupdate();
   }
 
   /**
@@ -78,6 +90,15 @@ abstract class Positionable extends Position implements Drawable {
     previous.x = x;
     previous.y = y;
     aFrameCount = 0;
+    jsupdate();
+  }
+  
+  /**
+   * check whether this Positionable is moving. If it's not,
+   * it will not be boundary-collision-evalutated.
+   */
+  void verifyInMotion() {
+    inMotion = (ix!=0 || iy!=0 || fx!=0 || fy!=0 || ixA!=0 || iyA !=0);
   }
 
   /**
@@ -86,6 +107,8 @@ abstract class Positionable extends Position implements Drawable {
   void setImpulse(float x, float y) {
     ix = x;
     iy = y;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -94,6 +117,8 @@ abstract class Positionable extends Position implements Drawable {
   void setImpulseCoefficients(float fx, float fy) {
     ixF = fx;
     iyF = fy;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -102,6 +127,8 @@ abstract class Positionable extends Position implements Drawable {
   void addImpulse(float _ix, float _iy) {
     ix += _ix;
     iy += _iy;
+    jsupdate();
+    verifyInMotion();
   }
   
   /**
@@ -121,6 +148,7 @@ abstract class Positionable extends Position implements Drawable {
   void stop() {
     ix = 0;
     iy = 0;
+    jsupdate();
   }
 
   /**
@@ -129,6 +157,8 @@ abstract class Positionable extends Position implements Drawable {
   void setForces(float _fx, float _fy) {
     fx = _fx;
     fy = _fy;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -137,6 +167,8 @@ abstract class Positionable extends Position implements Drawable {
   void addForces(float _fx, float _fy) {
     fx += _fx;
     fy += _fy;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -146,6 +178,8 @@ abstract class Positionable extends Position implements Drawable {
     ixA = ax;
     iyA = ay;
     aFrameCount = 0;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -154,6 +188,8 @@ abstract class Positionable extends Position implements Drawable {
   void addAccelleration(float ax, float ay) {
     ixA += ax;
     iyA += ay;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -162,6 +198,7 @@ abstract class Positionable extends Position implements Drawable {
   void setTranslation(float x, float y) {
     ox = x;
     oy = y;
+    jsupdate();
   }
 
   /**
@@ -170,6 +207,7 @@ abstract class Positionable extends Position implements Drawable {
   void setScale(float s) {
     sx = s;
     sy = s;
+    jsupdate();
   }
 
   /**
@@ -178,6 +216,7 @@ abstract class Positionable extends Position implements Drawable {
   void setScale(float x, float y) {
     sx = x;
     sy = y;
+    jsupdate();
   }
 
   /**
@@ -185,6 +224,7 @@ abstract class Positionable extends Position implements Drawable {
    */
   void setRotation(float _r) {
     r = _r % (2*PI);
+    jsupdate();
   }
 
   /**
@@ -193,6 +233,7 @@ abstract class Positionable extends Position implements Drawable {
   void setHorizontalFlip(boolean _hflip) {
     if(hflip!=_hflip) { ox = -ox; }
     hflip = _hflip;
+    jsupdate();
   }
 
   /**
@@ -201,6 +242,7 @@ abstract class Positionable extends Position implements Drawable {
   void setVerticalFlip(boolean _vflip) {
     if(vflip!=_vflip) { oy = -oy; }
     vflip = _vflip;
+    jsupdate();
   }
 
   /**
@@ -208,6 +250,7 @@ abstract class Positionable extends Position implements Drawable {
    */
   void setVisibility(boolean _visible) {
     visible = _visible;
+    jsupdate();
   }
 
   /**
@@ -215,6 +258,7 @@ abstract class Positionable extends Position implements Drawable {
    */
   void setAnimated(boolean _animated) {
     animated = _animated;
+    jsupdate();
   }
 
   /**
@@ -289,7 +333,7 @@ abstract class Positionable extends Position implements Drawable {
       float[] redirected = new float[]{_dx, _dy};
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
-        if(!boundary.supports(this)) {
+        if(boundary.disabled || !boundary.supports(this)) {
           detachFrom(boundary);
           continue;
         }

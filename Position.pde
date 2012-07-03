@@ -5,7 +5,13 @@
  * that requires multi-frame information
  */
 class Position {
-
+  /**
+   * A monitoring object for informing JavaScript
+   * about the current state of this Positionable.
+   */
+  boolean monitoredByJavaScript = false;
+  void setMonitoredByJavaScript(boolean monitored) { monitoredByJavaScript = monitored; }
+  
 // ==============
 //   variables
 // ==============

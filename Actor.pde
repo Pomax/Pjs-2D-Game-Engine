@@ -32,6 +32,7 @@ abstract class Actor extends Positionable {
   
   // is this actor persistent with respect to viewbox draws?
   boolean persistent = true;
+  boolean isPersistent() { return persistent; }
 
   // the layer this actor is in
   LevelLayer layer;
@@ -47,10 +48,8 @@ abstract class Actor extends Positionable {
   
   // simple constructor
   Actor(String _name) {
-    Computer.actors();
     name = _name;
     states = new HashMap<String, State>();
-    Computer.hashmaps("String","State");
   }
 
   // full constructor
@@ -64,9 +63,25 @@ abstract class Actor extends Positionable {
    */
   void addState(State state) {
     state.setActor(this);
+    boolean replaced = (states.get(state.name) != null);
     states.put(state.name, state);
-    active = state;
-    updatePositioningInformation();
+    // Move actor if this state changes
+    // makes the actor bigger than before,
+    // and we're attached to boundaries.
+    if (boundaries.size()>0) {
+      for(int idx=boundaries.size()-1; idx>=0; idx--) {
+        Boundary b = boundaries.get(idx);
+        float[] pushBack = b.pushBack(this);
+        if(pushBack != null) {
+          moveBy(pushBack[0], pushBack[1]);
+        }
+      }
+    }
+    if(!replaced || (replaced && state.name == active.name)) {
+      if (active == null) { active = state; }
+      else { swapStates(state); }
+      updatePositioningInformation();
+    }
   } 
 
   /**
@@ -103,15 +118,44 @@ abstract class Actor extends Positionable {
    */
   void setCurrentState(String name) {
     State tmp = states.get(name);
-    if (tmp!=active) {
+    if (active != null && tmp != active) {
       tmp.reset();
-      boolean hflip = (active.sprite!=null ? active.sprite.hflip : false),
-               vflip = (active.sprite!=null ? active.sprite.vflip : false);
-      active = tmp;
-      if(active.sprite!=null) {
-        if(hflip) active.sprite.flipHorizontal();
-        if(vflip) active.sprite.flipVertical();
-        updatePositioningInformation();
+      swapStates(tmp);
+    } else { active = tmp; }
+  }
+  
+  void swapStates(State tmp) {
+    // get pertinent information
+    Sprite osprite = active.sprite;
+    float ox=0,oy=0;
+    boolean hflip = false, vflip = false;
+    if (osprite != null) {
+      ox = osprite.hanchor;
+      oy = osprite.vanchor;
+      hflip = osprite.hflip;
+      vflip = osprite.vflip;
+    }
+
+    // upate state to new state
+
+    active = tmp;
+    Sprite nsprite = tmp.sprite;
+    if (nsprite != null) {
+      if (hflip) nsprite.flipHorizontal();
+      if (vflip) nsprite.flipVertical();
+      updatePositioningInformation();
+
+      // if both old and new states had sprites,
+      // make sure the anchors line up.
+      if (osprite != null) {
+        float nx = nsprite.hanchor,
+              ny = nsprite.vanchor;
+        
+        // FIXME: the following code does not work
+        //        correctly, and so has been commented out
+
+//        float mx = (ox - nx)/2, my = (oy - ny)/2;
+//        moveBy(mx, my);
       }
     }
   }
@@ -204,22 +248,21 @@ abstract class Actor extends Positionable {
     boundaries.add(boundary);
 
     // stop the actor
-    float ix = this.ix - (fx*ixF),
-          iy = this.iy - (fy*iyF);
+    float[] original = {this.ix - (fx*ixF), this.iy - (fy*iyF)};
     stop(correction[0], correction[1]);
 
     // then impart a new impulse, as redirected by the boundary.
-    float[] rdf = boundary.redirectForce(ix, iy);
+    float[] rdf = boundary.redirectForce(original[0], original[1]);
     addImpulse(rdf[0], rdf[1]);
 
     // finally, call the blocked handler
-    gotBlocked(boundary, correction);
+    gotBlocked(boundary, correction, original);
   }
   
   /**
    * This boundary blocked our path.
    */
-  void gotBlocked(Boundary b, float[] intersection) {
+  void gotBlocked(Boundary b, float[] intersection, float[] original) {
     // subclasses can implement, but don't have to
   }
 
@@ -255,7 +298,9 @@ abstract class Actor extends Positionable {
 
   /**
    * Does this actor temporary not interact
-   * with any Interactors?
+   * with any Interactors? This function
+   * is called by the layer level code,
+   * and should not be called by anything else.
    */
   boolean isDisabled() {
     if(disabledCounter > 0) {
@@ -264,7 +309,7 @@ abstract class Actor extends Positionable {
     }
     return false;
   }
-  
+
   /**
    * Sometimes we need to bypass interaction for
    * a certain number of frames.
@@ -306,7 +351,7 @@ abstract class Actor extends Positionable {
    */
   void drawObject() {
     if(active!=null) {
-      active.draw();
+      active.draw(disabledCounter>0);
       /*
       if(debug) {
         pushMatrix();
@@ -367,6 +412,12 @@ abstract class Actor extends Positionable {
     int keyCode = int(key);
     return keyDown[keyCode];
   }
+  
+  protected boolean noKeysDown() {
+    boolean nkd = true;
+    for(boolean b: keyDown) { nkd = nkd & !b; }
+    return nkd;
+  }
 
   // handle key presses
   void keyPressed(char key, int keyCode) {
@@ -377,6 +428,14 @@ abstract class Actor extends Positionable {
   void keyReleased(char key, int keyCode) {
     for(int i: keyCodes) {
       unsetIfTrue(keyCode, i); }}
+
+  /**
+   * Does the indicated x/y coordinate fall inside this drawable thing's region?
+   */
+  boolean over(float _x, float _y) {
+    if (active == null) return false;
+    return active.over(_x - getX(), _y - getY());
+  }
 
   void mouseMoved(int mx, int my) {}
   void mousePressed(int mx, int my, int button) {}

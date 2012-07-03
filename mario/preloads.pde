@@ -2,6 +2,8 @@
         font="fonts/acmesa.ttf";
         preload=" graphics/mute.gif,
                   graphics/unmute.gif,
+                  
+                  graphics/mario/rtype/Flying-ship.gif,
 
                   graphics/assorted/Block.gif,
                   graphics/assorted/Coin-block.gif,
@@ -17,8 +19,9 @@
                   graphics/assorted/Pipe-body.gif,
                   graphics/assorted/Pipe-head.gif,
                   graphics/assorted/Regular-coin.gif,
+                  graphics/assorted/Sky-block.gif,
+                  graphics/assorted/Special.gif,
 
-                  graphics/backgrounds/bonus.gif,
                   graphics/backgrounds/bush-01.gif,
                   graphics/backgrounds/bush-02.gif,
                   graphics/backgrounds/bush-03.gif,
@@ -42,6 +45,8 @@
 
                   graphics/backgrounds/sky.gif,
                   graphics/backgrounds/sky_2.gif,
+                  graphics/backgrounds/bonus.gif,
+                  graphics/backgrounds/bonus_2.gif,
 
                   graphics/decals/100.gif,
                   graphics/decals/200.gif,

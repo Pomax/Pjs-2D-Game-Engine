@@ -1,23 +1,23 @@
 /**
  * This encodes all the boilerplate code
- * necessary for level drawing and input
+ * necessary for screen drawing and input
  * handling.
  */
 
-// global levels container
-HashMap<String, Level> levelSet;
+// global screens container
+HashMap<String, Screen> screenSet;
 
-// global 'currently active' level
-Level activeLevel = null;
+// global 'currently active' screen
+Screen activeScreen = null;
 
-// setup sets up the screen size, and level container,
+// setup sets up the screen size, and screen container,
 // then calls the "initialize" method, which you must
 // implement yourself.
 void setup() {
   size(screenWidth, screenHeight);
   noLoop();
 
-  levelSet = new HashMap<String, Level>();
+  screenSet = new HashMap<String, Screen>();
   SpriteMapHandler.init(this);
   SoundManager.init(this);
   CollisionDetection.init(this);
@@ -25,16 +25,16 @@ void setup() {
 }
 
 // draw loop
-void draw() { activeLevel.draw(); }
+void draw() { activeScreen.draw(); }
 
 // event handling
-void keyPressed()    { activeLevel.keyPressed(key, keyCode); }
-void keyReleased()   { activeLevel.keyReleased(key, keyCode); }
-void mouseMoved()    { activeLevel.mouseMoved(mouseX, mouseY); }
-void mousePressed()  { activeLevel.mousePressed(mouseX, mouseY, mouseButton); }
-void mouseDragged()  { activeLevel.mouseDragged(mouseX, mouseY, mouseButton); }
-void mouseReleased() { activeLevel.mouseReleased(mouseX, mouseY, mouseButton); }
-void mouseClicked()  { activeLevel.mouseClicked(mouseX, mouseY, mouseButton); }
+void keyPressed()    { activeScreen.keyPressed(key, keyCode); }
+void keyReleased()   { activeScreen.keyReleased(key, keyCode); }
+void mouseMoved()    { activeScreen.mouseMoved(mouseX, mouseY); }
+void mousePressed()  { activeScreen.mousePressed(mouseX, mouseY, mouseButton); }
+void mouseDragged()  { activeScreen.mouseDragged(mouseX, mouseY, mouseButton); }
+void mouseReleased() { activeScreen.mouseReleased(mouseX, mouseY, mouseButton); }
+void mouseClicked()  { activeScreen.mouseClicked(mouseX, mouseY, mouseButton); }
 
 /**
  * Mute the game
@@ -47,50 +47,55 @@ void mute() { SoundManager.mute(true); }
 void unmute() { SoundManager.mute(false); }
 
 /**
- * Levels are added to the game through this function.
+ * Screens are added to the game through this function.
  */
-void addLevel(String name, Level level) {
-  levelSet.put(name, level);
-  if (activeLevel == null) {
-    activeLevel = level;
+void addScreen(String name, Screen screen) {
+  screenSet.put(name, screen);
+  if (activeScreen == null) {
+    activeScreen = screen;
     loop();
-  }
+  } else { SoundManager.stop(activeScreen); }
 }
 
 /**
- * We switch between levels with this function.
+ * We switch between screens with this function.
  *
  * Because we might want to move things from the
- * old level to the new level, this function gives
- * you a reference to the old level after switching.
+ * old screen to the new screen, this function gives
+ * you a reference to the old screen after switching.
  */
-Level setActiveLevel(String name) {
-  Level oldLevel = activeLevel;
-  activeLevel = levelSet.get(name);
-  return oldLevel;
+Screen setActiveScreen(String name) {
+  Screen oldScreen = activeScreen;
+  activeScreen = screenSet.get(name);
+  if (oldScreen != null) {
+    oldScreen.cleanUp();
+    SoundManager.stop(oldScreen);
+  }
+  SoundManager.play(activeScreen);
+  return oldScreen;
 }
 
 /**
- * Levels can be removed to save memory, etc.
- * as long as they are not the active level.
+ * Screens can be removed to save memory, etc.
+ * as long as they are not the active screen.
  */
-void removeLevel(String name) {
-  if (levelSet.get(name) != activeLevel) {
-    levelSet.remove(name);
+void removeScreen(String name) {
+  if (screenSet.get(name) != activeScreen) {
+    screenSet.remove(name);
   }
 }
 
 /**
- * Get a specific level (for debug purposes)
+ * Get a specific screen (for debug purposes)
  */
-Level getLevel(String name) {
-  return levelSet.get(name);
+Screen getScreen(String name) {
+  return screenSet.get(name);
 }
 
 /**
- * clear all levels
+ * clear all screens
  */
-void clearLevels() {
-  levelSet = new HashMap<String, Level>();
-  activeLevel = null;
+void clearScreens() {
+  screenSet = new HashMap<String, Screen>();
+  activeScreen = null;
 }
