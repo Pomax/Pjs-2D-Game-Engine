@@ -586,7 +586,11 @@ class Boundary extends Positionable {
    */
   // FIXME: this is not the correct implementation
   boolean supports(Positionable thing) {
-    float[] bbox = thing.getBoundingBox(), nbox = new float[8];
+    float[] bbox = thing.getBoundingBox(),
+            nbox = new float[8];
+
+    // shortcut the process if the thing has no box
+    if(bbox==null) return false;
 
     // First, translate all coordinates so that they're
     // relative to the boundary's (x,y) coordinate.
@@ -2732,7 +2736,7 @@ abstract class Positionable extends Position implements Drawable {
    * we just attached to, and we cannot detach
    * from it on the same frame.
    */
-  void update(Boundary fixed) {
+  void update() {
     // cache frame information
     previous.copyFrom(this);
 

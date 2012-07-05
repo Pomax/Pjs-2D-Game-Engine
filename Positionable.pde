@@ -313,7 +313,7 @@ abstract class Positionable extends Position implements Drawable {
    * we just attached to, and we cannot detach
    * from it on the same frame.
    */
-  void update(Boundary fixed) {
+  void update() {
     // cache frame information
     previous.copyFrom(this);
 
