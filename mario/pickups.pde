@@ -104,7 +104,7 @@ class FireBlob extends MarioPickup {
  */
 class Special extends MarioPickup {
   Special(float x, float y) {
-    super("Star", "graphics/assorted/Special.gif", 1, 1, x, y, true);
+    super("Special", "graphics/assorted/Special.gif", 1, 1, x, y, true);
     SoundManager.load(this, "audio/Powerup.mp3");
     setForces(0,DOWN_FORCE);
   }

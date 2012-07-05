@@ -15,6 +15,7 @@ class TeleportTrigger extends Trigger {
   }
   void run(LevelLayer layer, Actor actor, float[] intersection) {
     // spit mario back out
+    actor.stop();
     actor.setPosition(tx, ty);
     actor.setImpulse(0, popup_speed);
     if (lid != null) {
@@ -57,7 +58,7 @@ class LevelTeleportTrigger extends TeleportTrigger {
     super.run(layer, actor, intersection);
     if(actor instanceof Player) {
       Player p = (Player) actor;
-      MarioLevel l = (MarioLevel) setActiveScreen(levelName);
+      setActiveScreen(levelName);
       MarioLevel a = (MarioLevel) activeScreen;
       a.updateMario(p);
     }

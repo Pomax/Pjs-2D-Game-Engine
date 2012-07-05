@@ -52,7 +52,7 @@ class Mario extends Player {
     addState(new State("crouching", "graphics/"+spriteSet+"/"+type+"/Crouching-mario.gif"));
 
     // running state
-    addState(new State("running", "graphics/"+spriteSet+"/"+type+"/Running-mario.gif", 1, 4));
+    addState(new State("running", "graphics/"+spriteSet+"/"+type+"/Running-mario.gif", 1, (type=="megaman" ? 8 : 4)));
 
     // dead state O_O
     if(type == "small") {
@@ -131,9 +131,12 @@ class Mario extends Player {
     // if we're not jumping, but left or right is pressed,
     // make sure we're using the "running" state.
     if (isKeyDown('S')) {
-      if (boundaries.size()==1 && boundaries.get(0) instanceof PipeBoundary) {
-        PipeBoundary lid = ((PipeBoundary)boundaries.get(0));
-        lid.trigger();
+      if (boundaries.size()>0) {
+        for(Boundary b: boundaries) {
+          if(b instanceof PipeBoundary) {
+            ((PipeBoundary)b).trigger();
+          }
+        }
       }
       if (active.name=="jumping") {
         setCurrentState("crouchjumping");
@@ -247,6 +250,10 @@ class Mario extends Player {
       // we could effect a full sprite swap here
       canShoot = true;
      setSpriteType("fire");
+    }
+    // megaman...?
+    else if (pickup.name=="Special") {
+      setSpriteType("megaman");
     }
   }
 

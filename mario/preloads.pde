@@ -73,6 +73,13 @@
                   graphics/mario/big/Spinning-mario.gif,
                   graphics/mario/big/Standing-mario.gif,
 
+                  graphics/mario/megaman/Crouching-mario.gif,
+                  graphics/mario/megaman/Jumping-mario.gif,
+                  graphics/mario/megaman/Looking-mario.gif,
+                  graphics/mario/megaman/Running-mario.gif,
+                  graphics/mario/megaman/Spinning-mario.gif,
+                  graphics/mario/megaman/Standing-mario.gif,
+
                   graphics/mario/fire/Crouching-mario.gif,
                   graphics/mario/fire/Jumping-mario.gif,
                   graphics/mario/fire/Looking-mario.gif,
