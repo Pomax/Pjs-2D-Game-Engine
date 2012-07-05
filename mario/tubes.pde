@@ -2,7 +2,7 @@
  * Tube trigger - teleports between locations
  */
 class TeleportTrigger extends Trigger {
-  float popup_speed = -50;
+  float popup_speed = -40;
   float tx, ty;
   Boundary lid;
   TeleportTrigger(float x, float y, float w, float h, float tx, float ty) {
@@ -35,7 +35,7 @@ class LayerTeleportTrigger extends TeleportTrigger {
   void run(LevelLayer layer, Actor actor, float[] intersection) {
     super.run(layer, actor, intersection);
     if(actor instanceof Player) {
-      Player p = (Player) actor;
+      Player p = (Player) actor;      
       LevelLayer current = p.layer;
       current.removePlayer(p);
       LevelLayer next = current.parent.getLevelLayer(layerName);
@@ -60,8 +60,6 @@ class LevelTeleportTrigger extends TeleportTrigger {
       MarioLevel l = (MarioLevel) setActiveScreen(levelName);
       MarioLevel a = (MarioLevel) activeScreen;
       a.updateMario(p);
-      a.mario.setPosition(tx,ty);
-      a.mario.setImpulse(0, popup_speed);
     }
   }
 }

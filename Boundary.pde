@@ -127,6 +127,9 @@ class Boundary extends Positionable {
   // FIXME: this is not the correct implementation
   boolean supports(Positionable thing) {
     float[] bbox = thing.getBoundingBox(), nbox = new float[8];
+    
+    // shortcut on "this thing has already been removed"
+    if (bbox == null) return false;
 
     // First, translate all coordinates so that they're
     // relative to the boundary's (x,y) coordinate.
