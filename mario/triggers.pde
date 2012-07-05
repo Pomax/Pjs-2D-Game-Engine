@@ -15,6 +15,7 @@ abstract class MarioTrigger extends Trigger {
   }
 }
 
+
 /**
  * triggers a koopa trooper 350px to the right
  */

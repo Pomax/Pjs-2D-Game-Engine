@@ -65,25 +65,13 @@ abstract class Actor extends Positionable {
     state.setActor(this);
     boolean replaced = (states.get(state.name) != null);
     states.put(state.name, state);
-    // Move actor if this state changes
-    // makes the actor bigger than before,
-    // and we're attached to boundaries.
-    if (boundaries.size()>0) {
-      for(int idx=boundaries.size()-1; idx>=0; idx--) {
-        Boundary b = boundaries.get(idx);
-        float[] pushBack = b.pushBack(this);
-        if(pushBack != null) {
-          moveBy(pushBack[0], pushBack[1]);
-        }
-      }
-    }
     if(!replaced || (replaced && state.name == active.name)) {
       if (active == null) { active = state; }
       else { swapStates(state); }
       updatePositioningInformation();
     }
-  } 
-
+  }
+  
   /**
    * Get a state by name.
    */
@@ -124,20 +112,19 @@ abstract class Actor extends Positionable {
     } else { active = tmp; }
   }
   
+  /**
+   * Swap the current state for a different one.
+   */
   void swapStates(State tmp) {
     // get pertinent information
     Sprite osprite = active.sprite;
-    float ox=0,oy=0;
     boolean hflip = false, vflip = false;
     if (osprite != null) {
-      ox = osprite.hanchor;
-      oy = osprite.vanchor;
       hflip = osprite.hflip;
       vflip = osprite.vflip;
     }
 
     // upate state to new state
-
     active = tmp;
     Sprite nsprite = tmp.sprite;
     if (nsprite != null) {
@@ -148,16 +135,24 @@ abstract class Actor extends Positionable {
       // if both old and new states had sprites,
       // make sure the anchors line up.
       if (osprite != null) {
-        float nx = nsprite.hanchor,
-              ny = nsprite.vanchor;
-        
-        // FIXME: the following code does not work
-        //        correctly, and so has been commented out
-
-//        float mx = (ox - nx)/2, my = (oy - ny)/2;
-//        moveBy(mx, my);
+        handleSpriteSwap(osprite, nsprite);
       }
     }
+  }
+
+  /**
+   * Move actor if this state changes
+   * makes the actor bigger than before,
+   * and we're attached to boundaries.
+   */
+  void handleSpriteSwap(Sprite osprite, Sprite nsprite) {
+    float ax1 = osprite.hanchor,
+          ay1 = osprite.vanchor,
+          ax2 = nsprite.hanchor,
+          ay2 = nsprite.vanchor;
+    float dx = (ax2-ax1)/2.0, dy = (ay2-ay1)/2.0;
+    x -= dx;
+    y -= dy;
   }
 
   /**
@@ -244,6 +239,9 @@ abstract class Actor extends Positionable {
    * surfaces.
    */  
   void attachTo(Boundary boundary, float[] correction) {
+    // don't add boundaries we're already attached to
+    if(boundaries.contains(boundary)) return;
+    
     // record attachment
     boundaries.add(boundary);
 

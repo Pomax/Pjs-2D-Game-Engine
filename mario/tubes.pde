@@ -2,7 +2,7 @@
  * Tube trigger - teleports between locations
  */
 class TeleportTrigger extends Trigger {
-  float popup_speed = -40;
+  float popup_speed = -50;
   float tx, ty;
   Boundary lid;
   TeleportTrigger(float x, float y, float w, float h, float tx, float ty) {

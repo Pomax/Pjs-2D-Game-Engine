@@ -65,10 +65,27 @@ class TestLayer extends LevelLayer {
 }
 
 class TestObject extends Player {
+  boolean small = true;
+  
   TestObject(float x, float y) {
     super("test");
     addState(new State("test","docs/tutorial/graphics/mario/small/Standing-mario.gif"));
     setPosition(x,y);
+  }
+  
+  void addState(State s) {
+    s.sprite.anchor(CENTER, BOTTOM);
+    super.addState(s);
+  }
+  
+  void keyPressed(char key, int keyCode) {
+    if(small) {
+      addState(new State("test","docs/tutorial/graphics/mario/big/Standing-mario.gif"));
+    }
+    else {
+      addState(new State("test","docs/tutorial/graphics/mario/small/Standing-mario.gif"));
+    }
+    small = !small; 
   }
 }
 

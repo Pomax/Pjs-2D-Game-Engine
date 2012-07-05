@@ -29,8 +29,7 @@ abstract class Decal extends Sprite {
    * Once expired, decals are cleaned up in Level
    */
   void draw(float vx, float vy, float vw, float vh) {
-    if(duration-->0) { 
-      //super.draw(vx,vy,vw,vh);  // breaks in Pjs
+    if(duration-->0) {
       super.draw(); 
     }
     else { remove = true; }

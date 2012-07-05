@@ -25,13 +25,16 @@ void setup() {
 }
 
 // draw loop
-void draw() { activeScreen.draw(); }
+void draw() { 
+  activeScreen.draw(); 
+  SoundManager.draw();
+}
 
 // event handling
 void keyPressed()    { activeScreen.keyPressed(key, keyCode); }
 void keyReleased()   { activeScreen.keyReleased(key, keyCode); }
 void mouseMoved()    { activeScreen.mouseMoved(mouseX, mouseY); }
-void mousePressed()  { activeScreen.mousePressed(mouseX, mouseY, mouseButton); }
+void mousePressed()  { SoundManager.clicked(mouseX,mouseY); activeScreen.mousePressed(mouseX, mouseY, mouseButton); }
 void mouseDragged()  { activeScreen.mouseDragged(mouseX, mouseY, mouseButton); }
 void mouseReleased() { activeScreen.mouseReleased(mouseX, mouseY, mouseButton); }
 void mouseClicked()  { activeScreen.mouseClicked(mouseX, mouseY, mouseButton); }
@@ -71,7 +74,7 @@ Screen setActiveScreen(String name) {
     oldScreen.cleanUp();
     SoundManager.stop(oldScreen);
   }
-  SoundManager.play(activeScreen);
+  SoundManager.loop(activeScreen);
   return oldScreen;
 }
 

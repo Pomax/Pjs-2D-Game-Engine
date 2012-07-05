@@ -78,7 +78,7 @@ class MainLevelLayer extends MarioLayer {
     addTrigger(new KoopaTrigger(562,0,5,height, 350, height-64, -0.2, 0));
     addTrigger(new KoopaTrigger(916,0,5,height, 350, height-64, -0.2, 0));
     // when tripped, release a banzai bill!
-    addTrigger(new BanzaiBillTrigger(1446,310,5,74, 400, height-84, -6, 0));
+    addTrigger(new BanzaiBillTrigger(1446,310,5,74, 400, height-96, -6, 0));
   }
   
   // some tubes for transport

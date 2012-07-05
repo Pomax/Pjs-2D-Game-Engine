@@ -65,25 +65,13 @@ abstract class Actor extends Positionable {
     state.setActor(this);
     boolean replaced = (states.get(state.name) != null);
     states.put(state.name, state);
-    // Move actor if this state changes
-    // makes the actor bigger than before,
-    // and we're attached to boundaries.
-    if (boundaries.size()>0) {
-      for(int idx=boundaries.size()-1; idx>=0; idx--) {
-        Boundary b = boundaries.get(idx);
-        float[] pushBack = b.pushBack(this);
-        if(pushBack != null) {
-          moveBy(pushBack[0], pushBack[1]);
-        }
-      }
-    }
     if(!replaced || (replaced && state.name == active.name)) {
       if (active == null) { active = state; }
       else { swapStates(state); }
       updatePositioningInformation();
     }
-  } 
-
+  }
+  
   /**
    * Get a state by name.
    */
@@ -124,20 +112,19 @@ abstract class Actor extends Positionable {
     } else { active = tmp; }
   }
   
+  /**
+   * Swap the current state for a different one.
+   */
   void swapStates(State tmp) {
     // get pertinent information
     Sprite osprite = active.sprite;
-    float ox=0,oy=0;
     boolean hflip = false, vflip = false;
     if (osprite != null) {
-      ox = osprite.hanchor;
-      oy = osprite.vanchor;
       hflip = osprite.hflip;
       vflip = osprite.vflip;
     }
 
     // upate state to new state
-
     active = tmp;
     Sprite nsprite = tmp.sprite;
     if (nsprite != null) {
@@ -148,16 +135,24 @@ abstract class Actor extends Positionable {
       // if both old and new states had sprites,
       // make sure the anchors line up.
       if (osprite != null) {
-        float nx = nsprite.hanchor,
-              ny = nsprite.vanchor;
-        
-        // FIXME: the following code does not work
-        //        correctly, and so has been commented out
-
-//        float mx = (ox - nx)/2, my = (oy - ny)/2;
-//        moveBy(mx, my);
+        handleSpriteSwap(osprite, nsprite);
       }
     }
+  }
+
+  /**
+   * Move actor if this state changes
+   * makes the actor bigger than before,
+   * and we're attached to boundaries.
+   */
+  void handleSpriteSwap(Sprite osprite, Sprite nsprite) {
+    float ax1 = osprite.hanchor,
+          ay1 = osprite.vanchor,
+          ax2 = nsprite.hanchor,
+          ay2 = nsprite.vanchor;
+    float dx = (ax2-ax1)/2.0, dy = (ay2-ay1)/2.0;
+    x -= dx;
+    y -= dy;
   }
 
   /**
@@ -244,6 +239,9 @@ abstract class Actor extends Positionable {
    * surfaces.
    */  
   void attachTo(Boundary boundary, float[] correction) {
+    // don't add boundaries we're already attached to
+    if(boundaries.contains(boundary)) return;
+    
     // record attachment
     boundaries.add(boundary);
 
@@ -586,11 +584,7 @@ class Boundary extends Positionable {
    */
   // FIXME: this is not the correct implementation
   boolean supports(Positionable thing) {
-    float[] bbox = thing.getBoundingBox(),
-            nbox = new float[8];
-
-    // shortcut the process if the thing has no box
-    if(bbox==null) return false;
+    float[] bbox = thing.getBoundingBox(), nbox = new float[8];
 
     // First, translate all coordinates so that they're
     // relative to the boundary's (x,y) coordinate.
@@ -621,23 +615,6 @@ class Boundary extends Positionable {
     
     // if the thing's not out of bounds, it's supported.
     return !outOfBounds;
-  }
-  
-  /**
-   * by how much should an actor be pushed back in order
-   * not to be colliding with the boundary.
-   */
-  float[] pushBack(Actor a) {
-    float pv=PI/2.0, dx = xw-x, dy = yh-y,
-          rdx = dx*cos(pv) - dy*sin(pv),
-          rdy = dx*sin(pv) + dy*cos(pv);
-
-    float[] current = a.getBoundingBox(), previous = new float[current.length];
-    for(int i=0, last=current.length; i<last; i+=2) {
-      previous[i]   = current[i] + 100*rdx;
-      previous[i+1] = current[i+1] + 100*rdx; }
-    float[] boundary = {x,y,xw,yh};
-    return CollisionDetection.getLineRectIntersection(boundary, previous, current);
   }
 
   /**
@@ -1281,8 +1258,7 @@ abstract class Decal extends Sprite {
    * Once expired, decals are cleaned up in Level
    */
   void draw(float vx, float vy, float vw, float vh) {
-    if(duration-->0) { 
-      //super.draw(vx,vy,vw,vh);  // breaks in Pjs
+    if(duration-->0) {
       super.draw(); 
     }
     else { remove = true; }
@@ -1326,13 +1302,16 @@ void setup() {
 }
 
 // draw loop
-void draw() { activeScreen.draw(); }
+void draw() { 
+  activeScreen.draw(); 
+  SoundManager.draw();
+}
 
 // event handling
 void keyPressed()    { activeScreen.keyPressed(key, keyCode); }
 void keyReleased()   { activeScreen.keyReleased(key, keyCode); }
 void mouseMoved()    { activeScreen.mouseMoved(mouseX, mouseY); }
-void mousePressed()  { activeScreen.mousePressed(mouseX, mouseY, mouseButton); }
+void mousePressed()  { SoundManager.clicked(mouseX,mouseY); activeScreen.mousePressed(mouseX, mouseY, mouseButton); }
 void mouseDragged()  { activeScreen.mouseDragged(mouseX, mouseY, mouseButton); }
 void mouseReleased() { activeScreen.mouseReleased(mouseX, mouseY, mouseButton); }
 void mouseClicked()  { activeScreen.mouseClicked(mouseX, mouseY, mouseButton); }
@@ -1372,7 +1351,7 @@ Screen setActiveScreen(String name) {
     oldScreen.cleanUp();
     SoundManager.stop(oldScreen);
   }
-  SoundManager.play(activeScreen);
+  SoundManager.loop(activeScreen);
   return oldScreen;
 }
 
@@ -2976,22 +2955,35 @@ class Curve extends ShapePrimitive {
  * JavaScript written by Daniel Hodgin that emulates an
  * AudioPlayer object so that the code looks the same.
  */
+
 import ddf.minim.*;
 import ddf.minim.signals.*;
 import ddf.minim.analysis.*;
 import ddf.minim.effects.*;
+
 static class SoundManager {
-  private static boolean muted = true;
+  private static PApplet sketch;
   private static Minim minim;
+
   private static HashMap<Object,AudioPlayer> owners;
   private static HashMap<String,AudioPlayer> audioplayers;
-  public static PImage mute_overlay;
-  public static PImage unmute_overlay;
-  public static PImage volume_overlay;
 
-  static void init(PApplet sketch) { 
+  private static boolean muted = true, draw_controls = false;
+  private static float draw_x, draw_y;
+  private static PImage mute_overlay, unmute_overlay, volume_overlay;
+  
+  public static void setDrawPosition(float x, float y) {
+    draw_controls = true;
+    draw_x = x-volume_overlay.width/2;
+    draw_y = y-volume_overlay.height/2;
+  }
+
+  /**
+   * Set up the sound manager
+   */
+  static void init(PApplet _sketch) { 
+    sketch = _sketch;
     owners = new HashMap<Object,AudioPlayer>();
-    audioplayers = new HashMap<String,AudioPlayer>();
     mute_overlay = sketch.loadImage("mute.gif");
     unmute_overlay = sketch.loadImage("unmute.gif");
     volume_overlay = (muted ? unmute_overlay : mute_overlay);
@@ -2999,10 +2991,40 @@ static class SoundManager {
     reset();
   }
 
+  /**
+   * reset list of owners and audio players
+   */
   static void reset() {
     owners = new HashMap<Object,AudioPlayer>();
+    audioplayers = new HashMap<String,AudioPlayer>();
+  }
+  
+  /**
+   * if a draw position was specified,
+   * draw the sound manager's control(s)
+   */
+  static void draw() {
+    if(!draw_controls) return;
+    sketch.pushMatrix();
+    sketch.resetMatrix();
+    sketch.image(volume_overlay, draw_x, draw_y);
+    sketch.popMatrix();
+  }
+  
+  /**
+   * if a draw position was specified,
+   * clicking on the draw region effects mute/unmute.
+   */
+  static void clicked(int mx, int my) {
+    if(!draw_controls) return;
+    if(draw_x<=mx && mx <=draw_x+volume_overlay.width && draw_y<=my && my <=draw_y+volume_overlay.height) {
+      mute(!muted);
+    }
   }
 
+  /**
+   * load an audio file, bound to a specific object.
+   */
   static void load(Object identifier, String filename) {
     // We recycle audio players to keep the
     // cpu and memory footprint low.
@@ -3014,6 +3036,11 @@ static class SoundManager {
     owners.put(identifier, player);
   }
 
+  /**
+   * play an object-boud audio file. Note that
+   * play() does NOT loop the audio. It will play
+   * once, then stop.
+   */
   static void play(Object identifier) {
     rewind(identifier);
     AudioPlayer ap = owners.get(identifier);
@@ -3024,6 +3051,12 @@ static class SoundManager {
     ap.play();
   }
 
+  /**
+   * play an object-boud audio file. Note that
+   * loop() plays an audio file indefinitely,
+   * rewinding and starting from the start of
+   * the file until stopped.
+   */
   static void loop(Object identifier) {
     rewind(identifier);
     AudioPlayer ap = owners.get(identifier);
@@ -3034,6 +3067,9 @@ static class SoundManager {
     ap.loop();
   }
 
+  /**
+   * Pause an audio file that is currently being played.
+   */
   static void pause(Object identifier) {
     AudioPlayer ap = owners.get(identifier);
     if(ap==null) {
@@ -3043,6 +3079,9 @@ static class SoundManager {
     ap.pause();
   }
 
+  /**
+   * Explicitly set playback position to 0 for an audio file.
+   */
   static void rewind(Object identifier) {
     AudioPlayer ap = owners.get(identifier);
     if(ap==null) {
@@ -3052,6 +3091,9 @@ static class SoundManager {
     ap.rewind();
   }
 
+  /**
+   * stop a currently playing or looping audio file.
+   */
   static void stop(Object identifier) {
     AudioPlayer ap = owners.get(identifier);
     if(ap==null) {
@@ -3062,6 +3104,11 @@ static class SoundManager {
     ap.rewind();
   }
   
+  /**
+   * mute or unmute all audio. Note that this does
+   * NOT pause any of the audio files, it simply
+   * sets the volume to zero.
+   */
   static void mute(boolean _muted) {
     muted = _muted;
     for(AudioPlayer ap: audioplayers.values()) {
@@ -4354,10 +4401,27 @@ class TestLayer extends LevelLayer {
 }
 
 class TestObject extends Player {
+  boolean small = true;
+  
   TestObject(float x, float y) {
     super("test");
     addState(new State("test","docs/tutorial/graphics/mario/small/Standing-mario.gif"));
     setPosition(x,y);
+  }
+  
+  void addState(State s) {
+    s.sprite.anchor(CENTER, BOTTOM);
+    super.addState(s);
+  }
+  
+  void keyPressed(char key, int keyCode) {
+    if(small) {
+      addState(new State("test","docs/tutorial/graphics/mario/big/Standing-mario.gif"));
+    }
+    else {
+      addState(new State("test","docs/tutorial/graphics/mario/small/Standing-mario.gif"));
+    }
+    small = !small; 
   }
 }
 
