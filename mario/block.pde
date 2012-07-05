@@ -32,34 +32,33 @@ abstract class MarioBlock extends BoundedInteractor {
     xb = (getX() + width/2), 
     ya = (getY() - height/2), 
     yb = (getY() + height/2);
+    addBoundary(new Boundary(xa, yb-1, xa, ya+1));
     addBoundary(new Boundary(xa+1, ya, xb-1, ya));
     addBoundary(new Boundary(xb, ya+1, xb, yb-1));
-    addBoundary(new Boundary(xb-1, yb, xa+1, yb));
-    addBoundary(new Boundary(xa, yb-1, xa, ya+1));
+    // the bottom boundary is special, because we want
+    // to know whether things collide with it.
+    addBoundary(new Boundary(xb-1, yb, xa+1, yb), true);
   }
 
   // generate something
-  void overlapOccurredWith(Actor other, float[] overlap) {
+  void collisionOccured(Boundary boundary, Actor other, float[] intersectionInformation) {
     // do nothing if we can't generate anything (anymore)
     if (content == 0) return;
     // otherwise, see if we need to generate something.
     if (other instanceof Player) {
-      float angle = overlap[2];
-      if (content>0 && -1.25*PI > angle && angle > -1.75*PI) {
-        // generate a "something"
-        generate(angle);
-        // we can also generate 1 fewer things now
-        content--;
-        if (content == 0) {
-          // nothing left to generate: change state
-          setCurrentState("exhausted");
-        }
+      // generate a "something"
+      generate(intersectionInformation);
+      // we can also generate 1 fewer things now
+      content--;
+      if (content == 0) {
+        // nothing left to generate: change state
+        setCurrentState("exhausted");
       }
     }
   }
 
   // generate a "something". subclasses must implement this
-  abstract void generate(float angle);
+  abstract void generate(float[] intersectionInformation);
 }
 
 
@@ -71,7 +70,7 @@ class CoinBlock extends MarioBlock {
     super("Coin block", x, y);
   }
 
-  void generate(float angle) {
+  void generate(float[] intersectionInformation) {
     Coin c = new Coin(getX(), getY()-height/2);
     c.setImpulse(0, -10);
     c.setForces(0, DOWN_FORCE);
@@ -89,7 +88,7 @@ class SkyBlock extends MarioBlock {
     addState(new State("hanging", "graphics/assorted/Sky-block.gif"));
     addState(new State("exhausted", "graphics/assorted/Sky-block.gif"));
   }
-  void generate(float angle) {}
+  void generate(float[] intersectionInformation) {}
 }
 
 
@@ -104,7 +103,8 @@ class MushroomBlock extends MarioBlock {
     super("Mushroom block", x, y);
   }
 
-  void generate(float angle) {
+  void generate(float[] intersectionInformation) {
+    float angle = atan2(intersectionInformation[1],intersectionInformation[0]);
     Mushroom m = new Mushroom(getX(), getY()-height/2);
     m.setImpulse((angle<-1.5*PI ? -1:1) * mushroom_speed, -10);
     m.setImpulseCoefficients(0.75,0.75);
@@ -123,7 +123,7 @@ class FlowerBlock extends MarioBlock {
     super("Fireflower block", x, y);
   }
 
-  void generate(float angle) {
+  void generate(float[] intersectionInformation) {
     FireFlower f = new FireFlower(getX(), getY()-height/2);
     f.setImpulse(0, -10);
     f.setForces(0, DOWN_FORCE);

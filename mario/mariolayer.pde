@@ -8,7 +8,7 @@ class MarioLayer extends LevelLayer {
   MarioLayer(Level owner, float w, float h, float ox, float oy, float sx, float sy) {
     super(owner,w,h,ox,oy,sx,sy);
     //showBoundaries = true;
-    showTriggers = true;
+    //showTriggers = true;
   }
   
   /**

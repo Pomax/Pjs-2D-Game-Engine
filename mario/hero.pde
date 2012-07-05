@@ -4,7 +4,7 @@
 class Mario extends Player {
 
   int score = 0;
-  float speed = 2;
+  float speed = 2.5;
   boolean canShoot = false;
   String spriteSet = "mario";
   String type = "small";

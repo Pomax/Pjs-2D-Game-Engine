@@ -2,6 +2,7 @@
  * Tube trigger - teleports between locations
  */
 class TeleportTrigger extends Trigger {
+  float popup_speed = -40;
   float tx, ty;
   Boundary lid;
   TeleportTrigger(float x, float y, float w, float h, float tx, float ty) {
@@ -15,7 +16,7 @@ class TeleportTrigger extends Trigger {
   void run(LevelLayer layer, Actor actor, float[] intersection) {
     // spit mario back out
     actor.setPosition(tx, ty);
-    actor.setImpulse(0, -30);
+    actor.setImpulse(0, popup_speed);
     if (lid != null) {
       lid.enable();
     }
@@ -60,7 +61,7 @@ class LevelTeleportTrigger extends TeleportTrigger {
       MarioLevel a = (MarioLevel) activeScreen;
       a.updateMario(p);
       a.mario.setPosition(tx,ty);
-      a.mario.setImpulse(0, -30);
+      a.mario.setImpulse(0, popup_speed);
     }
   }
 }

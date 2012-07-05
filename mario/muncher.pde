@@ -7,7 +7,7 @@ class Muncher extends BoundedInteractor {
     super("Muncher");
     setPosition(x,y);
     setupStates();
-    addBoundary(new Boundary(x-width/2,y+2-height/2,x+width/2,y+2-height/2));
+    addBoundary(new Boundary(x-width/2,y+2-height/2,x+width/2,y+2-height/2), true);
   }
 
   void setupStates() {
@@ -16,8 +16,7 @@ class Muncher extends BoundedInteractor {
     addState(munch);
   }
 
-  void overlapOccurredWith(Actor other, float[] overlap) {
-    super.overlapOccurredWith(other, overlap);
+  void collisionOccured(Boundary boundary, Actor other, float[] correction) {
     if (other instanceof Mario) {
       ((Mario)other).die();
     }

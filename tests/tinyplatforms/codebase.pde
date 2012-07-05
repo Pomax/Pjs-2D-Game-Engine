@@ -255,12 +255,8 @@ abstract class Actor extends Positionable {
     float[] rdf = boundary.redirectForce(original[0], original[1]);
     addImpulse(rdf[0], rdf[1]);
 
-    // call the blocked handler
+    // finally, call the blocked handler
     gotBlocked(boundary, correction, original);
-    
-    // and then make sure to update the actor's position, as
-    // otherwise it looks like we've stopped for 1 frame.
-    update();
   }
   
   /**
@@ -465,28 +461,6 @@ abstract class Actor extends Positionable {
  */
 class Boundary extends Positionable {
   private float PI2 = 2*PI;
-  
-  // things can listen for collisions on this boundary
-  ArrayList<BoundaryCollisionListener> listeners;
-  
-  /**
-   * Add a collision listener to this boundary
-   */
-  void addListener(BoundaryCollisionListener l) { listeners.add(l); }
-  
-  /**
-   * remove a collision listener from this boundary
-   */
-  void removeListener(BoundaryCollisionListener l) { listeners.remove(l); }
-  
-  /**
-   * notify all listners that a collision occurred.
-   */
-  void notifyListeners(Actor actor, float[] correction) {
-    for(BoundaryCollisionListener l: listeners) {
-      l.collisionOccured(this, actor, correction);
-    }
-  }
 
   // extended adminstrative values
   float dx, dy, length;
@@ -521,7 +495,6 @@ class Boundary extends Positionable {
     updateBounds();
     updateAngle();
     glide = 1.0;
-    listeners = new ArrayList<BoundaryCollisionListener>();
   }
   
   /**
@@ -584,7 +557,6 @@ class Boundary extends Positionable {
    * Is this positionable actually
    * supported by this boundary?
    */
-  // FIXME: this is not the correct implementation
   boolean supports(Positionable thing) {
     float[] bbox = thing.getBoundingBox(), nbox = new float[8];
 
@@ -695,15 +667,10 @@ class Boundary extends Positionable {
   String toString() { return x+","+y+","+xw+","+yh; }
 }
 /**
- * Things can listen to boundary collisions for a boundary
- */
-interface BoundaryCollisionListener {
-  void collisionOccured(Boundary boundary, Actor actor, float[] intersectionInformation);
-}/**
  * A bounded interactor is a normal Interactor with
  * one or more boundaries associated with it.
  */
-abstract class BoundedInteractor extends Interactor implements BoundaryCollisionListener {
+abstract class BoundedInteractor extends Interactor {
   // the list of associated boundaries
   ArrayList<Boundary> boundaries;
 
@@ -722,13 +689,7 @@ abstract class BoundedInteractor extends Interactor implements BoundaryCollision
   // add a boundary
   void addBoundary(Boundary boundary) { 
     boundary.setImpulseCoefficients(ixF,iyF);
-    boundaries.add(boundary);
-  }
-  
-  // add a boundary, and register as listener for collisions on it
-  void addBoundary(Boundary boundary, boolean listen) {
-    addBoundary(boundary);
-    boundary.addListener(this);
+    boundaries.add(boundary); 
   }
 
   // FIXME: make this make sense, because setting 'next'
@@ -788,11 +749,6 @@ abstract class BoundedInteractor extends Interactor implements BoundaryCollision
     // no passengers
     return false;
   }
-  
-  /**
-   * listen to collisions on bounded boundaries
-   */
-  abstract void collisionOccured(Boundary boundary, Actor actor, float[] intersectionInformation);
 
   // when we update our coordinates, also
   // update our associated boundaries.
@@ -838,7 +794,6 @@ static class CollisionDetection {
     if (a.x == a.previous.x && a.y == a.previous.y) return;
     float[] correction = blocks(b,a);
     if(correction != null) {
-      b.notifyListeners(a, correction);
       a.attachTo(b, correction);
     }
   }
@@ -1740,9 +1695,8 @@ abstract class LevelLayer {
 
   void updatePlayer(Player oldPlayer, Player newPlayer) {
     int pos = players.indexOf(oldPlayer);
-    if (pos > -1) {
+    if (pos > -1) { 
       players.set(pos, newPlayer);
-      newPlayer.boundaries.clear();
       bind(newPlayer); }}
 
 
@@ -2727,31 +2681,29 @@ abstract class Positionable extends Position implements Drawable {
   abstract boolean drawableFor(float vx, float vy, float vw, float vh);
 
   /**
-   * Update all the position parameters.
-   * If fixed is not null, it is the boundary
-   * we just attached to, and we cannot detach
-   * from it on the same frame.
+   * Update all the position parameters
    */
-  void update(Boundary fixed) {
+  void update() {
     // cache frame information
     previous.copyFrom(this);
 
     // work external forces into our current impulse
     addImpulse(fx,fy);
 
-    // work in impulse coefficients (typically, drag)
-    ix *= ixF;
-    iy *= iyF;
+    float _dx = ix + (aFrameCount * ixA),
+          _dy = iy + (aFrameCount * iyA);
 
-    // not on a boundary: unrestricted motion,
-    // so make sure the acceleration factor exists.
-    if(boundaries.size()==0) {  aFrameCount++; }
+    // not on a boundary: unrestricted motion.
+    if(boundaries.size()==0) {
+      aFrameCount++;
+      x += _dx;
+      y += _dy;
+    }
 
     // we're attached to one or more boundaries, so we
     // are subject to (compound) impulse redirection.
-    else {
-      aFrameCount = 0;
-      float[] redirected = new float[]{ix, iy};
+    if(boundaries.size()>0) {
+      float[] redirected = new float[]{_dx, _dy};
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
         if(boundary.disabled || !boundary.supports(this)) {
@@ -2760,17 +2712,16 @@ abstract class Positionable extends Position implements Drawable {
         }
         redirected = boundary.redirectForce(redirected[0], redirected[1]);
       }
-      ix = redirected[0];
-      iy = redirected[1];
+      x += redirected[0];
+      y += redirected[1];
     }
 
+    ix *= ixF;
+    iy *= iyF;
+    
     // Not unimportant: cutoff resolution.
     if(abs(ix) < 0.01) { ix = 0; }
     if(abs(iy) < 0.01) { iy = 0; }
-
-    // update the physical position
-    x += ix + (aFrameCount * ixA);
-    y += iy + (aFrameCount * iyA);
   }
 
   // implemented by subclasses

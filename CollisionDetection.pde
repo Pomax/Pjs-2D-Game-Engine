@@ -22,6 +22,7 @@ static class CollisionDetection {
     if (a.x == a.previous.x && a.y == a.previous.y) return;
     float[] correction = blocks(b,a);
     if(correction != null) {
+      b.notifyListeners(a, correction);
       a.attachTo(b, correction);
     }
   }

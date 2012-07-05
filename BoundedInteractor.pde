@@ -2,7 +2,7 @@
  * A bounded interactor is a normal Interactor with
  * one or more boundaries associated with it.
  */
-abstract class BoundedInteractor extends Interactor {
+abstract class BoundedInteractor extends Interactor implements BoundaryCollisionListener {
   // the list of associated boundaries
   ArrayList<Boundary> boundaries;
 
@@ -21,7 +21,13 @@ abstract class BoundedInteractor extends Interactor {
   // add a boundary
   void addBoundary(Boundary boundary) { 
     boundary.setImpulseCoefficients(ixF,iyF);
-    boundaries.add(boundary); 
+    boundaries.add(boundary);
+  }
+  
+  // add a boundary, and register as listener for collisions on it
+  void addBoundary(Boundary boundary, boolean listen) {
+    addBoundary(boundary);
+    boundary.addListener(this);
   }
 
   // FIXME: make this make sense, because setting 'next'
@@ -81,6 +87,11 @@ abstract class BoundedInteractor extends Interactor {
     // no passengers
     return false;
   }
+  
+  /**
+   * listen to collisions on bounded boundaries
+   */
+  abstract void collisionOccured(Boundary boundary, Actor actor, float[] intersectionInformation);
 
   // when we update our coordinates, also
   // update our associated boundaries.

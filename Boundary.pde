@@ -5,6 +5,28 @@
  */
 class Boundary extends Positionable {
   private float PI2 = 2*PI;
+  
+  // things can listen for collisions on this boundary
+  ArrayList<BoundaryCollisionListener> listeners;
+  
+  /**
+   * Add a collision listener to this boundary
+   */
+  void addListener(BoundaryCollisionListener l) { listeners.add(l); }
+  
+  /**
+   * remove a collision listener from this boundary
+   */
+  void removeListener(BoundaryCollisionListener l) { listeners.remove(l); }
+  
+  /**
+   * notify all listners that a collision occurred.
+   */
+  void notifyListeners(Actor actor, float[] correction) {
+    for(BoundaryCollisionListener l: listeners) {
+      l.collisionOccured(this, actor, correction);
+    }
+  }
 
   // extended adminstrative values
   float dx, dy, length;
@@ -39,6 +61,7 @@ class Boundary extends Positionable {
     updateBounds();
     updateAngle();
     glide = 1.0;
+    listeners = new ArrayList<BoundaryCollisionListener>();
   }
   
   /**
@@ -101,6 +124,7 @@ class Boundary extends Positionable {
    * Is this positionable actually
    * supported by this boundary?
    */
+  // FIXME: this is not the correct implementation
   boolean supports(Positionable thing) {
     float[] bbox = thing.getBoundingBox(), nbox = new float[8];
 

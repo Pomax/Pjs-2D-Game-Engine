@@ -308,31 +308,29 @@ abstract class Positionable extends Position implements Drawable {
   abstract boolean drawableFor(float vx, float vy, float vw, float vh);
 
   /**
-   * Update all the position parameters.
-   * If fixed is not null, it is the boundary
-   * we just attached to, and we cannot detach
-   * from it on the same frame.
+   * Update all the position parameters
    */
-  void update(Boundary fixed) {
+  void update() {
     // cache frame information
     previous.copyFrom(this);
 
     // work external forces into our current impulse
     addImpulse(fx,fy);
 
-    // work in impulse coefficients (typically, drag)
-    ix *= ixF;
-    iy *= iyF;
+    float _dx = ix + (aFrameCount * ixA),
+          _dy = iy + (aFrameCount * iyA);
 
-    // not on a boundary: unrestricted motion,
-    // so make sure the acceleration factor exists.
-    if(boundaries.size()==0) {  aFrameCount++; }
+    // not on a boundary: unrestricted motion.
+    if(boundaries.size()==0) {
+      aFrameCount++;
+      x += _dx;
+      y += _dy;
+    }
 
     // we're attached to one or more boundaries, so we
     // are subject to (compound) impulse redirection.
-    else {
-      aFrameCount = 0;
-      float[] redirected = new float[]{ix, iy};
+    if(boundaries.size()>0) {
+      float[] redirected = new float[]{_dx, _dy};
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
         if(boundary.disabled || !boundary.supports(this)) {
@@ -341,17 +339,16 @@ abstract class Positionable extends Position implements Drawable {
         }
         redirected = boundary.redirectForce(redirected[0], redirected[1]);
       }
-      ix = redirected[0];
-      iy = redirected[1];
+      x += redirected[0];
+      y += redirected[1];
     }
 
+    ix *= ixF;
+    iy *= iyF;
+    
     // Not unimportant: cutoff resolution.
     if(abs(ix) < 0.01) { ix = 0; }
     if(abs(iy) < 0.01) { iy = 0; }
-
-    // update the physical position
-    x += ix + (aFrameCount * ixA);
-    y += iy + (aFrameCount * iyA);
   }
 
   // implemented by subclasses

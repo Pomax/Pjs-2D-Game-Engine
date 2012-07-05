@@ -140,8 +140,9 @@ abstract class LevelLayer {
 
   void updatePlayer(Player oldPlayer, Player newPlayer) {
     int pos = players.indexOf(oldPlayer);
-    if (pos > -1) { 
+    if (pos > -1) {
       players.set(pos, newPlayer);
+      newPlayer.boundaries.clear();
       bind(newPlayer); }}
 
 

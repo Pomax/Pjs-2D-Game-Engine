@@ -255,8 +255,12 @@ abstract class Actor extends Positionable {
     float[] rdf = boundary.redirectForce(original[0], original[1]);
     addImpulse(rdf[0], rdf[1]);
 
-    // finally, call the blocked handler
+    // call the blocked handler
     gotBlocked(boundary, correction, original);
+    
+    // and then make sure to update the actor's position, as
+    // otherwise it looks like we've stopped for 1 frame.
+    update();
   }
   
   /**
