@@ -6,12 +6,9 @@
     <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" src="../processing.js"></script>
     <script type="text/javascript" src="../minim.js"></script>
-    <!--
     <script type="text/javascript" src="canvasFocus.js"></script>
     <script type="text/javascript" src="editor.js"></script>
-    -->
     <script type="text/javascript">
-      /*
       var sketch;
 
       function bindSketch() {
@@ -20,13 +17,12 @@
           setTimeout(bindSketch, 250);
         } else { sketch.bindJavaScript(this); }
       }
-      */
 
       function init() {
         document.removeEventListener("DOMContentLoaded",init,false);
         var canvas = document.getElementById("testcanvas");
         canvas.focus();
-        //bindSketch();
+        bindSketch();
       }
 
       document.addEventListener("DOMContentLoaded",init,false);

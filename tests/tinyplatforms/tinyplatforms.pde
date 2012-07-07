@@ -4,7 +4,7 @@ final int screenHeight = 512;
 
 void initialize() {
   SoundManager.mute(false);
-  frameRate(10);
+//  frameRate(10);
   reset();
 }
 
@@ -26,14 +26,18 @@ class MainLayer extends LevelLayer {
     setBackgroundColor(color(0,130,255));
     
     showBoundaries = true;
-    addBoundary(new Boundary(0,height/2,12*18-2,height/2));
-    for(int i=12*18; i<width; i+=18) {
-      addBoundary(new Boundary(i,height/2, i+16, height/2));
+//    addBoundary(new Boundary(0,height/2,12*18-2,height/2));
+    int step = 1, gap = 20, full = step + gap;
+    for(int i=int(width/4); i<width; i+=full) {
+      addBoundary(new Boundary(i,height/2, i+step, height/2));
     }
+
+    addBoundary(new Boundary(0,height-20,width,height-20));
+
     
     TestPlayer tp = new TestPlayer(width/2, 0);
-    tp.setForces(0,3);
-    tp.setAcceleration(0,1.5);
+    tp.setForces(0,1);
+    tp.setAcceleration(0,1.3);
     tp.setImpulseCoefficients(0.75,0.75);
     addPlayer(tp);
   }
@@ -51,9 +55,9 @@ class TestPlayer extends Player {
   }
   
   void handleInput() {
-    if(isKeyDown('W')) { addImpulse(0,-1); }
-    if(isKeyDown('A')) { addImpulse(-1,0); }
-    if(isKeyDown('S')) { addImpulse(0, 1); }
-    if(isKeyDown('D')) { addImpulse( 1,0); }
+    if(isKeyDown('W')) { addImpulse(0,-2); }
+    if(isKeyDown('A')) { addImpulse(-2,0); }
+    if(isKeyDown('S')) { addImpulse(0, 2); }
+    if(isKeyDown('D')) { addImpulse( 2,0); }
   }
 }

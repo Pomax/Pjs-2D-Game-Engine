@@ -84,10 +84,10 @@ class MainLevelLayer extends MarioLayer {
   // some tubes for transport
   void addTubes() {
     // tube transport
-    addTube(660,height-48, new LayerTeleportTrigger("background layer", 662,height-64,28,1, 304+16,height/0.75-116));
+    addTube(660,height-48, new LayerTeleportTrigger("background layer",  304+16,height/0.75-116));
     addTube(804,height-48, null);
 
-    addTube(2020,height-48,  new LevelTeleportTrigger("Dark Level",  2022,height-65,28,1,  16, height-32));
+    addTube(2020,height-48,  new LevelTeleportTrigger("Dark Level",  2020+6,height-65,16,1,  16, height-32));
     addUpsideDownTube(2020,0);
   }
 }

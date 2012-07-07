@@ -75,28 +75,36 @@ static class CollisionDetection {
     //       complicated intersection detections checks.
 
     // determine range w.r.t. the starting point of the boundary.
-    float[] dotProducts1 = getDotProducts(x1,y1,x2,y2, previous);
+    float[] dotProducts_S_P = getDotProducts(x1,y1,x2,y2, previous);
+    float[] dotProducts_S_C = getDotProducts(x1,y1,x2,y2, current);
 
     // determine range w.r.t. the end point of the boundary.
-    float[] dotProducts2 = getDotProducts(x2,y2,x1,y1, previous);
+    float[] dotProducts_E_P = getDotProducts(x2,y2,x1,y1, previous);
+    float[] dotProducts_E_C = getDotProducts(x2,y2,x1,y1, current);
 
     // determine 'sidedness', relative to the boundary.
-    float[] dotProducts3 = getDotProducts(x1,y1,x1+rdx,y1+rdy, previous);
-    float[] dotProducts4 = getDotProducts(x1,y1,x1+rdx,y1+rdy, current);
+    float[] dotProducts_P = getDotProducts(x1,y1,x1+rdx,y1+rdy, previous);
+    float[] dotProducts_C = getDotProducts(x1,y1,x1+rdx,y1+rdy, current);
 
     // compute the relevant feature values based on the dot products:
-    int inRangeS = 4, inRangeE = 4, above = 0, aboveAfter = 0;
+    int inRangeSp = 4, inRangeSc = 4,
+        inRangeEp = 4, inRangeEc = 4,
+        abovePrevious = 0, aboveCurrent = 0;
     for(int i=0; i<8; i+=2) {
-      if (dotProducts1[i] < 0) { inRangeS--; }
-      if (dotProducts2[i] < 0) { inRangeE--; }
-      if (dotProducts3[i] <= 0) { above++; }
-      if (dotProducts4[i] <= 0) { aboveAfter++; }}
+      if (dotProducts_S_P[i] < 0) { inRangeSp--; }
+      if (dotProducts_S_C[i] < 0) { inRangeSc--; }
+      if (dotProducts_E_P[i] < 0) { inRangeEp--; }
+      if (dotProducts_E_C[i] < 0) { inRangeEc--; }
+      if (dotProducts_P[i] <= 0) { abovePrevious++; }
+      if (dotProducts_C[i] <= 0) { aboveCurrent++; }}
 
-    if(debug) sketch.println(sketch.frameCount +">    dotproduct result: "+inRangeS+"/"+inRangeE+"/"+above+"/"+aboveAfter);
+    if(debug) sketch.println(sketch.frameCount +">    dotproduct result: start="+inRangeSp+"/"+inRangeSc+", end="+inRangeEp+"/"+inRangeEc+", sided="+abovePrevious+"/"+aboveCurrent);
 
     // make sure to short-circuit if the actor cannot
     // interact with the boundary because it is out of range.
-    if (inRangeS == 0 || inRangeE == 0) {
+    boolean inRangeForStart = (inRangeSp == 0 && inRangeSc == 0);
+    boolean inRangeForEnd = (inRangeEp == 0 && inRangeEc == 0);
+    if (inRangeForStart || inRangeForEnd) {
       if(debug) sketch.println(sketch.frameCount +">   this boundary is not involved in collisions for this frame (out of range).");
       return null;
     }
@@ -104,10 +112,10 @@ static class CollisionDetection {
     // if the force goes against the border's permissible direction, but
     // both previous and current frame actor boxes are above the boundary,
     // then we don't have to bother with intersection detection.
-    if (above==4 && aboveAfter==4) {
+    if (abovePrevious==4 && aboveCurrent==4) {
       if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (inherently safe 'above' locations).");
       return null;
-    } else if(0 < above && above < 4) {
+    } else if(0 < abovePrevious && abovePrevious < 4) {
       if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (never fully went through boundary).");
       return null;
     }
@@ -119,7 +127,7 @@ static class CollisionDetection {
     // actor frame is on the blocking side of a boundary,  and
     // 'aboveAfter' is 0, meaning its current frame is on the other
     // side of the boundary, then a collision MUST have occurred.
-    if (above==4 && aboveAfter==0) {
+    if (abovePrevious==4 && aboveCurrent==0) {
       // note that in this situation, the overlap may look
       // like full containment, where the actor's bounding
       // box is fully contained by the boundary's box.

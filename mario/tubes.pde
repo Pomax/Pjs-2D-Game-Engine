@@ -5,8 +5,8 @@ class TeleportTrigger extends Trigger {
   float popup_speed = -40;
   float tx, ty;
   Boundary lid;
-  TeleportTrigger(float x, float y, float w, float h, float tx, float ty) {
-    super("teleporter", x, y, w, h);
+  TeleportTrigger(float tx, float ty) {
+    super("teleporter");
     this.tx = tx;
     this.ty = ty;
   }
@@ -29,8 +29,8 @@ class TeleportTrigger extends Trigger {
  */
 class LayerTeleportTrigger extends TeleportTrigger {
   String layerName;
-  LayerTeleportTrigger(String _layer, float x, float y, float w, float h, float tx, float ty) {
-    super(x,y,w,h,tx,ty);
+  LayerTeleportTrigger(String _layer, float tx, float ty) {
+    super(tx,ty);
     layerName = _layer;
   }
   void run(LevelLayer layer, Actor actor, float[] intersection) {
@@ -51,7 +51,7 @@ class LayerTeleportTrigger extends TeleportTrigger {
 class LevelTeleportTrigger extends TeleportTrigger {
   String levelName;
   LevelTeleportTrigger(String _level, float x, float y, float w, float h, float tx, float ty) {
-    super(x,y,w,h,tx,ty);
+    super(tx,ty);
     levelName = _level;
   }
   void run(LevelLayer layer, Actor actor, float[] intersection) {
@@ -75,7 +75,8 @@ class PipeBoundary extends Boundary {
     SoundManager.load(this, "audio/Pipe.mp3");
   }
   // used to effect "teleporting" in combination with the teleport trigger
-  void trigger() {
+  void trigger(Player p) {
+    p.setPosition((x+xw)/2, y);
     disable();
     SoundManager.play(this);
   }

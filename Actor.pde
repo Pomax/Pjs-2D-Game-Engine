@@ -274,8 +274,14 @@ abstract class Actor extends Positionable {
    * moved back by dx/dy
    */
   void stop(float dx, float dy) {
-    x += dx;
-    y += dy;
+    // we need to prevent IEEE floats polluting
+    // the position information, so even though
+    // the math is perfect in principle, round
+    // the result so that we're not going to be
+    // off by 0.0001 or something.
+    float resolution = 50;
+    x = int(resolution*(x+dx))/resolution;
+    y = int(resolution*(y+dy))/resolution;
     ix = 0;
     iy = 0;
     aFrameCount = 0;

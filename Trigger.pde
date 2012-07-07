@@ -9,9 +9,19 @@ abstract class Trigger extends Positionable {
   
   String triggername="";
   
+  Trigger(String name) {
+    triggername = name;  
+  }
+
   Trigger(String name, float x, float y, float w, float h) {
     super(x,y,w,h);
     triggername = name;
+  }
+  
+  void setArea(float x, float y, float w, float h) {
+    setPosition(x,y);
+    width = w;
+    height = h;
   }
 
   boolean drawableFor(float x, float y, float w, float h) {

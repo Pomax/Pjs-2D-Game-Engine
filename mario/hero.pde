@@ -134,7 +134,7 @@ class Mario extends Player {
       if (boundaries.size()>0) {
         for(Boundary b: boundaries) {
           if(b instanceof PipeBoundary) {
-            ((PipeBoundary)b).trigger();
+            ((PipeBoundary)b).trigger(this);
           }
         }
       }

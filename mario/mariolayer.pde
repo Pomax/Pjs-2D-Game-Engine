@@ -8,7 +8,7 @@ class MarioLayer extends LevelLayer {
   MarioLayer(Level owner, float w, float h, float ox, float oy, float sx, float sy) {
     super(owner,w,h,ox,oy,sx,sy);
     //showBoundaries = true;
-    //showTriggers = true;
+    showTriggers = true;
   }
   
   /**
@@ -188,6 +188,9 @@ class MarioLayer extends LevelLayer {
       // that actors don't fall through when the top
       // boundary is removed.
       addBoundary(new Boundary(x+1, y-16, x+30, y-16));
+      // make sure the teleport trigger has the right
+      // dimensions and positioning.
+      teleporter.setArea(x+16, y-20, 16, 4);
     }
 
     // And add side-walls, so that actors don't run

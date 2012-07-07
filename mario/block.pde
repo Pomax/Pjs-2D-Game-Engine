@@ -28,16 +28,17 @@ abstract class MarioBlock extends BoundedInteractor {
   }
 
   void setupBoundaries() {
-    float xa = (getX() - width/2), 
-    xb = (getX() + width/2), 
-    ya = (getY() - height/2), 
-    yb = (getY() + height/2);
+    float xa = (getX() - width/2),
+          xb = (getX() + width/2)-1,
+          ya = (getY() - height/2),
+          yb = (getY() + height/2)-1;
+    
     addBoundary(new Boundary(xa, yb-1, xa, ya+1));
-    addBoundary(new Boundary(xa+1, ya, xb-1, ya));
+    addBoundary(new Boundary(xa, ya, xb, ya));
     addBoundary(new Boundary(xb, ya+1, xb, yb-1));
     // the bottom boundary is special, because we want
     // to know whether things collide with it.
-    addBoundary(new Boundary(xb-1, yb, xa+1, yb), true);
+    addBoundary(new Boundary(xb, yb, xa, yb), true);
   }
 
   // generate something

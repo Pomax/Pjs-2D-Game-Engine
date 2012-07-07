@@ -23,7 +23,7 @@ class MainBackgroundLayer extends MarioLayer {
     
     addTube(304,height-100,null);
     int pos = 1914;
-    addTube(pos,height-100,new LayerTeleportTrigger("main layer", pos+2,height-120,28,2, 2020+16,32));
+    addTube(pos,height-100,new LayerTeleportTrigger("main layer", 2020+16,32));
     
     addGoal(2060,height-100);
   }

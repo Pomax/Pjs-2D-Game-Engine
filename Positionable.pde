@@ -335,11 +335,13 @@ abstract class Positionable extends Position implements Drawable {
       float[] redirected = new float[]{ix, iy};
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
+        if(!boundary.disabled) {
+          redirected = boundary.redirectForce(redirected[0], redirected[1]);
+        }
         if(boundary.disabled || !boundary.supports(this)) {
           detachFrom(boundary);
           continue;
         }
-        redirected = boundary.redirectForce(redirected[0], redirected[1]);
       }
       ix = redirected[0];
       iy = redirected[1];
