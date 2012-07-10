@@ -31,5 +31,7 @@ class DarkLevelLayer extends MarioLayer {
     // set up two tubes
     addTube(0, height-16, null);
     addTube(width-32, height-16, new LevelTeleportTrigger("Main Level",  width-30,height-34,30,2,  804+16,373));
+    
+    addKeyHole(width/2, height-28);
   }
 }

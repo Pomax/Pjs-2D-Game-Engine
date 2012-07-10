@@ -42,7 +42,7 @@ class MarioLevel extends Level {
       textFont(createFont("fonts/acmesa.ttf", 62));
       text(wintext, (512-textWidth(wintext))/2, 192);
       fill(0, 8);
-      rect(0, 0, width, height);
+      rect(-1, -1, width+2, height+2);
       if (endCount>7.5*frameRate) {
         SoundManager.stop(this);
         reset();

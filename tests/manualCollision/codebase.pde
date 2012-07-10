@@ -274,8 +274,14 @@ abstract class Actor extends Positionable {
    * moved back by dx/dy
    */
   void stop(float dx, float dy) {
-    x += dx;
-    y += dy;
+    // we need to prevent IEEE floats polluting
+    // the position information, so even though
+    // the math is perfect in principle, round
+    // the result so that we're not going to be
+    // off by 0.0001 or something.
+    float resolution = 50;
+    x = int(resolution*(x+dx))/resolution;
+    y = int(resolution*(y+dy))/resolution;
     ix = 0;
     iy = 0;
     aFrameCount = 0;
@@ -354,25 +360,19 @@ abstract class Actor extends Positionable {
   void drawObject() {
     if(active!=null) {
       active.draw(disabledCounter>0);
-      /*
-      if(debug) {
-        pushMatrix();
-        resetMatrix();
+//      /*
+//      if(debug) {
         noFill();
         stroke(255,0,0);
         float[] bounds = getBoundingBox();
         beginShape();
-        vertex(bounds[0],bounds[1]);
-        vertex(bounds[2],bounds[3]);
-        vertex(bounds[4],bounds[5]);
-        vertex(bounds[6],bounds[7]);
-        endShape(CLOSE); 
-        fill(255,0,0);
-        ellipse(bounds[0],bounds[1],5,5);
-        ellipse((bounds[0]+bounds[2]+bounds[4]+bounds[6])/4,(bounds[1]+bounds[3]+bounds[5]+bounds[7])/4,5,5);
-        popMatrix();
-      }
-      */
+        vertex(bounds[0]-x,bounds[1]-y);
+        vertex(bounds[2]-x,bounds[3]-y);
+        vertex(bounds[4]-x,bounds[5]-y);
+        vertex(bounds[6]-x,bounds[7]-y);
+        endShape(CLOSE);
+//      }
+//      */
     }
   }
 
@@ -1245,32 +1245,78 @@ static class CollisionDetection {
  * Decals run through one state, and then expire,
  * so they're basically triggered, temporary graphics.
  */
-abstract class Decal extends Sprite {
+class Decal extends Sprite {
+
+  // indicates whether to kill off this decal
   boolean remove = false;
-  protected int duration;
+  
+  // indicates whether this is an auto-expiring decal
+  boolean expiring = false;
+
+  // indicates how long this decal should live
+  protected int duration = -1;
+  
+  // decals can be owned by something
+  Positionable owner = null;
 
   /**
-   * Decals have spritesheets and position
+   * non-expiring constructor
+   */
+  Decal(String spritesheet, float x, float y) {
+    this(spritesheet, x, y, false, -1);
+  }
+  Decal(String spritesheet, int rows, int columns, float x, float y) {
+    this(spritesheet, rows, columns, x, y, false, -1);
+  }
+  /**
+   * expiring constructor
    */
   Decal(String spritesheet, float x, float y, int duration) {
-    super(spritesheet);
+    this(spritesheet, x, y, true, duration);
+  }
+  Decal(String spritesheet, int rows, int columns, float x, float y, int duration) {
+    this(spritesheet, rows, columns, x, y, true, duration);
+  }
+  
+  /**
+   * full constructor (1 x 1 spritesheet)
+   */
+  private Decal(String spritesheet, float x, float y, boolean expiring, int duration) {
+    this(spritesheet, 1, 1, x, y, expiring, duration);
+  }
+
+  /**
+   * full constructor (n x m spritesheet)
+   */
+  private Decal(String spritesheet, int rows, int columns, float x, float y, boolean expiring, int duration) {
+    super(spritesheet, rows, columns);
     setPosition(x,y);
+    this.expiring = expiring;
     this.duration = duration;
-    setPath();
+    if(expiring) { setPath(); }
   }
 
   /**
    * subclasses must implement the path on which
    * decals travel before they expire
    */
-  abstract void setPath();
+  void setPath() {}
+  
+  /**
+   * decals can be owned, in which case they inherit their
+   * position from their owner.
+   */
+  void setOwner(Positionable owner) {
+    this.owner = owner;
+  }
 
   /**
    * Once expired, decals are cleaned up in Level
    */
   void draw(float vx, float vy, float vw, float vh) {
-    if(duration-->0) {
-      super.draw(); 
+    if(!expiring || duration-->0) {
+      if(owner!=null) { super.draw(owner.getX(), owner.getY()); }
+      else super.draw();
     }
     else { remove = true; }
   }
@@ -1327,7 +1373,6 @@ void mousePressed()  { SoundManager.clicked(mouseX,mouseY); activeScreen.mousePr
 void mouseDragged()  { activeScreen.mouseDragged(mouseX, mouseY, mouseButton); }
 void mouseReleased() { activeScreen.mouseReleased(mouseX, mouseY, mouseButton); }
 void mouseClicked()  { activeScreen.mouseClicked(mouseX, mouseY, mouseButton); }
-
 */
 
 /**
@@ -2185,14 +2230,15 @@ class Pickup extends Actor {
    * Pickups are essentially Actors that mostly do nothing,
    * until a player character runs into them. Then *poof*.
    */
-  Pickup(String pun, String pus, int r, int c, float x, float y, boolean _persistent) {
-    super(pun);
-    pickup_sprite = pus;
+  Pickup(String name, String spr, int r, int c, float x, float y, boolean _persistent) {
+    super(name);
+    pickup_sprite = spr;
     rows = r;
     columns = c;
     setupStates();
     setPosition(x,y);
     persistent = _persistent;
+    alignSprite(CENTER,CENTER);
   }
 
   /**
@@ -2205,7 +2251,7 @@ class Pickup extends Actor {
   }
   
   // wrapper
-  void align(int halign, int valign) {
+  void alignSprite(int halign, int valign) {
     active.sprite.align(halign, valign);
   }
 
@@ -2238,6 +2284,9 @@ class Pickup extends Actor {
   
   // unused, but we can overwrite it
   void pickedUp() {}
+  
+  // usused, but we can overwrite it
+  void attachTo(Actor other, float x, float y) {}
 }
 
 /**
@@ -2418,6 +2467,12 @@ class Position {
  * Manipulable object: translate, rotate, scale, flip h/v
  */
 abstract class Positionable extends Position implements Drawable {
+  // HELPER FUNCTION FOR JAVASCRIPT
+  void jsupdate() {
+    if(monitoredByJavaScript && javascript != null) {
+      javascript.updatedPositionable(this); }}
+
+
   /**
    * We track two frames for computational purposes,
    * such as performing boundary collision detection.
@@ -2428,8 +2483,14 @@ abstract class Positionable extends Position implements Drawable {
    * Boundaries this positionable is attached to.
    */
   ArrayList<Boundary> boundaries;
-
   
+  /**
+   * Decals that are drawn along with this positionable,
+   * but do not contribute to any overlap or collision
+   * detection, nor explicitly interact with things.
+   */
+  ArrayList<Decal> decals;
+
   // shortcut variable that tells us whether
   // or not this positionable needs to perform
   // boundary collision checks
@@ -2440,6 +2501,7 @@ abstract class Positionable extends Position implements Drawable {
    */
   Positionable() {
     boundaries = new ArrayList<Boundary>();
+    decals = new ArrayList<Decal>();
   }
 
   /**
@@ -2468,34 +2530,59 @@ abstract class Positionable extends Position implements Drawable {
     jsupdate();
   }
 
-  // HELPER FUNCTION  
-  void jsupdate() {
-    if(monitoredByJavaScript && javascript != null) {
-      javascript.updatedPositionable(this);
-    }  
-  }
-
+  /**
+   * Attach this positionable to a boundary.
+   */
   void attachTo(Boundary b) {
     boundaries.add(b);
   }
   
+  /**
+   * Check whether this positionable is
+   * attached to a specific boundary.
+   */
   boolean isAttachedTo(Boundary b) {
-//    println("attached to b? " + boundaries.size() + " attachments found.");
     return boundaries.contains(b);
   }
 
+  /**
+   * Detach this positionable from a
+   * specific boundary.
+   */
   void detachFrom(Boundary b) {
     boundaries.remove(b);
   }
 
+  /**
+   * Detach this positionable from all
+   * boundaries that it is attached to.
+   */
   void detachFromAll() {
     boundaries.clear();
   }
-  
-  void rewind() {
-    copyFrom(previous);
-    jsupdate();
+
+  /**
+   * attach a Decal to this positionable.
+   */
+  void addDecal(Decal d) {
+    decals.add(d);
+    d.setOwner(this);
   }
+
+  /**
+   * detach a Decal from this positionable.
+   */
+  void removeDecal(Decal d) {
+    decals.remove(d);
+  }
+
+  /**
+   * detach all Decal from this positionable.
+   */
+  void removeAllDecals() {
+    decals.clear();
+  }
+
 
   /**
    * change the position, relative
@@ -2648,6 +2735,7 @@ abstract class Positionable extends Position implements Drawable {
    */
   void setHorizontalFlip(boolean _hflip) {
     if(hflip!=_hflip) { ox = -ox; }
+    for(Decal d: decals) { d.setHorizontalFlip(_hflip); }
     hflip = _hflip;
     jsupdate();
   }
@@ -2708,6 +2796,7 @@ abstract class Positionable extends Position implements Drawable {
       pushMatrix();
       applyTransforms();
       drawObject();
+      for(Decal d: decals) { d.draw(); }
       popMatrix();
     }
 
@@ -2751,11 +2840,13 @@ abstract class Positionable extends Position implements Drawable {
       float[] redirected = new float[]{ix, iy};
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
+        if(!boundary.disabled) {
+          redirected = boundary.redirectForce(redirected[0], redirected[1]);
+        }
         if(boundary.disabled || !boundary.supports(this)) {
           detachFrom(boundary);
           continue;
         }
-        redirected = boundary.redirectForce(redirected[0], redirected[1]);
       }
       ix = redirected[0];
       iy = redirected[1];
@@ -2769,6 +2860,15 @@ abstract class Positionable extends Position implements Drawable {
     x += ix + (aFrameCount * ixA);
     y += iy + (aFrameCount * iyA);
   }
+
+  /**
+   * Reset this positional to its previous state
+   */
+  void rewind() {
+    copyFrom(previous);
+    jsupdate();
+  }
+
 
   // implemented by subclasses
   abstract void drawObject();
@@ -4188,9 +4288,19 @@ abstract class Trigger extends Positionable {
   
   String triggername="";
   
+  Trigger(String name) {
+    triggername = name;  
+  }
+
   Trigger(String name, float x, float y, float w, float h) {
     super(x,y,w,h);
     triggername = name;
+  }
+  
+  void setArea(float x, float y, float w, float h) {
+    setPosition(x,y);
+    width = w;
+    height = h;
   }
 
   boolean drawableFor(float x, float y, float w, float h) {
@@ -4421,6 +4531,8 @@ class TestObject extends Player {
     super("test");
     addState(new State("test","docs/tutorial/graphics/mario/small/Standing-mario.gif"));
     setPosition(x,y);
+    Decal attachment = new Decal("static.gif",width,0);
+    addDecal(attachment);
   }
   
   void addState(State s) {

@@ -2,6 +2,12 @@
  * Manipulable object: translate, rotate, scale, flip h/v
  */
 abstract class Positionable extends Position implements Drawable {
+  // HELPER FUNCTION FOR JAVASCRIPT
+  void jsupdate() {
+    if(monitoredByJavaScript && javascript != null) {
+      javascript.updatedPositionable(this); }}
+
+
   /**
    * We track two frames for computational purposes,
    * such as performing boundary collision detection.
@@ -12,8 +18,14 @@ abstract class Positionable extends Position implements Drawable {
    * Boundaries this positionable is attached to.
    */
   ArrayList<Boundary> boundaries;
-
   
+  /**
+   * Decals that are drawn along with this positionable,
+   * but do not contribute to any overlap or collision
+   * detection, nor explicitly interact with things.
+   */
+  ArrayList<Decal> decals;
+
   // shortcut variable that tells us whether
   // or not this positionable needs to perform
   // boundary collision checks
@@ -24,6 +36,7 @@ abstract class Positionable extends Position implements Drawable {
    */
   Positionable() {
     boundaries = new ArrayList<Boundary>();
+    decals = new ArrayList<Decal>();
   }
 
   /**
@@ -52,34 +65,59 @@ abstract class Positionable extends Position implements Drawable {
     jsupdate();
   }
 
-  // HELPER FUNCTION  
-  void jsupdate() {
-    if(monitoredByJavaScript && javascript != null) {
-      javascript.updatedPositionable(this);
-    }  
-  }
-
+  /**
+   * Attach this positionable to a boundary.
+   */
   void attachTo(Boundary b) {
     boundaries.add(b);
   }
   
+  /**
+   * Check whether this positionable is
+   * attached to a specific boundary.
+   */
   boolean isAttachedTo(Boundary b) {
-//    println("attached to b? " + boundaries.size() + " attachments found.");
     return boundaries.contains(b);
   }
 
+  /**
+   * Detach this positionable from a
+   * specific boundary.
+   */
   void detachFrom(Boundary b) {
     boundaries.remove(b);
   }
 
+  /**
+   * Detach this positionable from all
+   * boundaries that it is attached to.
+   */
   void detachFromAll() {
     boundaries.clear();
   }
-  
-  void rewind() {
-    copyFrom(previous);
-    jsupdate();
+
+  /**
+   * attach a Decal to this positionable.
+   */
+  void addDecal(Decal d) {
+    decals.add(d);
+    d.setOwner(this);
   }
+
+  /**
+   * detach a Decal from this positionable.
+   */
+  void removeDecal(Decal d) {
+    decals.remove(d);
+  }
+
+  /**
+   * detach all Decal from this positionable.
+   */
+  void removeAllDecals() {
+    decals.clear();
+  }
+
 
   /**
    * change the position, relative
@@ -232,6 +270,7 @@ abstract class Positionable extends Position implements Drawable {
    */
   void setHorizontalFlip(boolean _hflip) {
     if(hflip!=_hflip) { ox = -ox; }
+    for(Decal d: decals) { d.setHorizontalFlip(_hflip); }
     hflip = _hflip;
     jsupdate();
   }
@@ -241,6 +280,7 @@ abstract class Positionable extends Position implements Drawable {
    */
   void setVerticalFlip(boolean _vflip) {
     if(vflip!=_vflip) { oy = -oy; }
+    for(Decal d: decals) { d.setVerticalFlip(_vflip); }
     vflip = _vflip;
     jsupdate();
   }
@@ -292,6 +332,7 @@ abstract class Positionable extends Position implements Drawable {
       pushMatrix();
       applyTransforms();
       drawObject();
+      for(Decal d: decals) { d.draw(); }
       popMatrix();
     }
 
@@ -355,6 +396,15 @@ abstract class Positionable extends Position implements Drawable {
     x += ix + (aFrameCount * ixA);
     y += iy + (aFrameCount * iyA);
   }
+
+  /**
+   * Reset this positional to its previous state
+   */
+  void rewind() {
+    copyFrom(previous);
+    jsupdate();
+  }
+
 
   // implemented by subclasses
   abstract void drawObject();

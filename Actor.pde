@@ -362,21 +362,15 @@ abstract class Actor extends Positionable {
       active.draw(disabledCounter>0);
       /*
       if(debug) {
-        pushMatrix();
-        resetMatrix();
         noFill();
         stroke(255,0,0);
         float[] bounds = getBoundingBox();
         beginShape();
-        vertex(bounds[0],bounds[1]);
-        vertex(bounds[2],bounds[3]);
-        vertex(bounds[4],bounds[5]);
-        vertex(bounds[6],bounds[7]);
-        endShape(CLOSE); 
-        fill(255,0,0);
-        ellipse(bounds[0],bounds[1],5,5);
-        ellipse((bounds[0]+bounds[2]+bounds[4]+bounds[6])/4,(bounds[1]+bounds[3]+bounds[5]+bounds[7])/4,5,5);
-        popMatrix();
+        vertex(bounds[0]-x,bounds[1]-y);
+        vertex(bounds[2]-x,bounds[3]-y);
+        vertex(bounds[4]-x,bounds[5]-y);
+        vertex(bounds[6]-x,bounds[7]-y);
+        endShape(CLOSE);
       }
       */
     }

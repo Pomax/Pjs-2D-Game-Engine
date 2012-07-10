@@ -116,7 +116,7 @@ class State {
     // if disabled, only draw every other frame
     if(disabled && frameCount%2==0) {}
     //otherwise, draw all frames
-    else { sprite.draw(); }
+    else { sprite.draw(0,0); }
     served++; 
     if(served == duration) {
       finished();

@@ -14,6 +14,8 @@
                   graphics/assorted/Goal-back.gif,
                   graphics/assorted/Goal-front.gif,
                   graphics/assorted/Goal-slider.gif,
+                  graphics/assorted/Key.gif,
+                  graphics/assorted/Keyhole.gif,
                   graphics/assorted/Mushroom.gif,
                   graphics/assorted/Passthrough-block.gif,
                   graphics/assorted/Pipe-body.gif,

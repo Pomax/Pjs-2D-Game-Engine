@@ -14,14 +14,15 @@ class Pickup extends Actor {
    * Pickups are essentially Actors that mostly do nothing,
    * until a player character runs into them. Then *poof*.
    */
-  Pickup(String pun, String pus, int r, int c, float x, float y, boolean _persistent) {
-    super(pun);
-    pickup_sprite = pus;
+  Pickup(String name, String spr, int r, int c, float x, float y, boolean _persistent) {
+    super(name);
+    pickup_sprite = spr;
     rows = r;
     columns = c;
     setupStates();
     setPosition(x,y);
     persistent = _persistent;
+    alignSprite(CENTER,CENTER);
   }
 
   /**
@@ -34,7 +35,7 @@ class Pickup extends Actor {
   }
   
   // wrapper
-  void align(int halign, int valign) {
+  void alignSprite(int halign, int valign) {
     active.sprite.align(halign, valign);
   }
 
@@ -44,7 +45,7 @@ class Pickup extends Actor {
   void overlapOccurredWith(Actor other) {
     removeActor();
     other.pickedUp(this);
-    pickedUp();
+    pickedUp(other);
   }
 
   /**
@@ -66,6 +67,6 @@ class Pickup extends Actor {
   final void pickedUp(Pickup pickup) {}
   
   // unused, but we can overwrite it
-  void pickedUp() {}
+  void pickedUp(Actor by) {}
 }
 

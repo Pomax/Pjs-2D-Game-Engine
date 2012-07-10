@@ -62,17 +62,20 @@ class MainLevelLayer extends MarioLayer {
     // add some tubes
     addTubes();
 
+    // layer of skyblocks
     for(int i=0; i<24; i++) {
       addBoundedInteractor(new SkyBlock(width-23.5*16+i*16,96));
     }
-    addForPlayerOnly(new Special(width-23.5*16,64));
+
+    // key!
+    addForPlayerOnly(new KeyPickup(2000,364));
   }
 
   // In order to effect "just-in-time" sprite placement,
   // we set up some trigger regions.
   void addTriggers() {
     // initial hidden mushroom
-    addTrigger(new MushroomTrigger(148,370,5,12, 406,375, 2, 0));
+    addTrigger(new MushroomTrigger(148,370,5,12, 406,373.9, 2, 0));
     // koopas
     addTrigger(new KoopaTrigger(412,0,5,height, 350, height-64, -0.2, 0));
     addTrigger(new KoopaTrigger(562,0,5,height, 350, height-64, -0.2, 0));
@@ -87,7 +90,8 @@ class MainLevelLayer extends MarioLayer {
     addTube(660,height-48, new LayerTeleportTrigger("background layer",  304+16,height/0.75-116));
     addTube(804,height-48, null);
 
-    addTube(2020,height-48,  new LevelTeleportTrigger("Dark Level",  2020+6,height-65,16,1,  16, height-32));
+    // placed on sky blocks
+    addTube(width-8-23.5*16,88,  new LevelTeleportTrigger("Dark Level",  2020+6,height-65,16,1,  16, height-32));
     addUpsideDownTube(2020,0);
   }
 }

@@ -100,20 +100,6 @@ class FireBlob extends MarioPickup {
 }
 
 /**
- * Star power
- */
-class Special extends MarioPickup {
-  Special(float x, float y) {
-    super("Special", "graphics/assorted/Special.gif", 1, 1, x, y, true);
-    SoundManager.load(this, "audio/Powerup.mp3");
-    setForces(0,DOWN_FORCE);
-  }
-  void pickedUp() { 
-    SoundManager.play(this);
-  }
-}
-
-/**
  * The finish line is also a pickup,
  * and will trigger the "clear" state
  * for the level when picked up.

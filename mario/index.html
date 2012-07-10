@@ -15,7 +15,9 @@
         sketch = Processing.getInstanceById("testcanvas");
         if(!sketch || !sketch.bindJavaScript) {
           setTimeout(bindSketch, 250);
-        } else { sketch.bindJavaScript(this); }
+        } else {
+//          sketch.bindJavaScript(this); 
+        }
       }
 
       function init() {
@@ -52,6 +54,7 @@
                                       darklevel.pde
                                       darklevellayer.pde
                                       hero.pde
+                                      keys.pde
                                       koopa.pde
                                       mainlayer.pde
                                       mainlevel.pde

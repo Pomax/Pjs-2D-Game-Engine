@@ -71,6 +71,8 @@ class TestObject extends Player {
     super("test");
     addState(new State("test","docs/tutorial/graphics/mario/small/Standing-mario.gif"));
     setPosition(x,y);
+    Decal attachment = new Decal("static.gif",width,0);
+    addDecal(attachment);
   }
   
   void addState(State s) {

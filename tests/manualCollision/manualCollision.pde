@@ -8,11 +8,12 @@ void initialize() {
   SoundManager.mute(false);
   frameRate(30);
   boundaries = new ArrayList<Boundary>();
+/*
   int xa = width/2 - 10,
       ya = height/2 - 10,
       xb = width/2 + 10,
       yb = height/2 + 10;
-      
+     
   boundaries.add( new Boundary(xa,ya, xb,ya) );
   boundaries.add( new Boundary(xb,ya, xb,yb) );
 //  boundaries.add( new Boundary(xb,yb, xa,yb) );
@@ -20,6 +21,11 @@ void initialize() {
   
   previous = makeBox(xa,ya-19.9);
   current = makeBox(width,height);
+*/
+ 
+  boundaries.add(new Boundary(-32,384,1824,384));
+  previous = new float[]{400, 367.9, 416, 367.9, 416, 383.9, 400, 383.9};
+  current = new float[]{402, 371.9, 418, 371.9, 418, 387.9, 402, 387.9};
 }
 
 float[] makeBox(float x, float y) {

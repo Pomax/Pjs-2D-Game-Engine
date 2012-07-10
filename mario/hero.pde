@@ -9,6 +9,14 @@ class Mario extends Player {
   String spriteSet = "mario";
   String type = "small";
   TilingSprite rtypeBG = null;
+  
+  /**
+   * Mario can carry keys! It's magical!
+   */
+  Decal key = null;
+  boolean hasKey = false; 
+  void getKey() { hasKey = true; key = new KeyDecal(width,0); addDecal(key); }
+  void removeKey() { hasKey = false; removeDecal(key); }
 
   Mario() {
     super("Mario");
@@ -52,7 +60,7 @@ class Mario extends Player {
     addState(new State("crouching", "graphics/"+spriteSet+"/"+type+"/Crouching-mario.gif"));
 
     // running state
-    addState(new State("running", "graphics/"+spriteSet+"/"+type+"/Running-mario.gif", 1, (type=="megaman" ? 8 : 4)));
+    addState(new State("running", "graphics/"+spriteSet+"/"+type+"/Running-mario.gif", 1, 4));
 
     // dead state O_O
     if(type == "small") {
@@ -251,12 +259,12 @@ class Mario extends Player {
       canShoot = true;
      setSpriteType("fire");
     }
-    // megaman...?
-    else if (pickup.name=="Special") {
-      setSpriteType("megaman");
+    // key?
+    else if (pickup.name=="Key") {
+      getKey();
     }
   }
-
+  
   void mousePressed(int mx, int my, int mb) {
     if (canShoot) {
       if (spriteSet == "rtype") {

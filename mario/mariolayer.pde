@@ -8,7 +8,7 @@ class MarioLayer extends LevelLayer {
   MarioLayer(Level owner, float w, float h, float ox, float oy, float sx, float sy) {
     super(owner,w,h,ox,oy,sx,sy);
     //showBoundaries = true;
-    showTriggers = true;
+    //showTriggers = true;
   }
   
   /**
@@ -221,4 +221,9 @@ class MarioLayer extends LevelLayer {
     addBoundary(new Boundary(x+32, y+16+32, x, y+16+32));
   }
 
+
+  // doors
+  void addKeyHole(float x, float y) {
+    addInteractor(new KeyHole(x,y));
+  }
 }

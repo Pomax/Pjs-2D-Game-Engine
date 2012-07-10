@@ -272,7 +272,10 @@ class Sprite extends Positionable {
    * and draw the sprite's "current" frame
    * at the correct location.
    */
-  void draw() { draw(0,0); }
+  void draw() {
+    draw(0,0); 
+  }
+
   void draw(float px, float py) {
     if (visible) {
       PImage img = getFrame();
@@ -283,9 +286,17 @@ class Sprite extends Positionable {
   }
  
   // pass-through/unused
-  boolean drawableFor(float _a, float _b, float _c, float _d) { return true; }
-  void draw(float _a, float _b, float _c, float _d) { this.draw(); }
-  void drawObject() { println("ERROR: something called Sprite.drawObject instead of Sprite.draw."); }
+  void draw(float _a, float _b, float _c, float _d) {
+    this.draw();
+  }
+
+  boolean drawableFor(float _a, float _b, float _c, float _d) { 
+    return true; 
+  }
+
+  void drawObject() {
+    println("ERROR: something called Sprite.drawObject instead of Sprite.draw."); 
+  }
 
   // check if coordinate overlaps the sprite.
   boolean over(float _x, float _y) {
