@@ -14,12 +14,17 @@ static class CollisionDetection {
   /**
    * Perform actor/boundary collision detection
    */
-  static void interact(Boundary b, Actor a)
+  static void interact(ViewBox v, Boundary b, Actor a)
   {
     // no interaction if actor was removed from the game.
     if (a.remove) return;
-    // no interaction if actor has not moved.
-    if (a.x == a.previous.x && a.y == a.previous.y) return;
+    // we don't process interaction outside the viewbox
+    // FIXME: this may need parameter widening so that
+    //        interaction occurs outside the viewbox up
+    //        to a certain distance.
+    if(!b.drawableFor(v.x, v.y, v.w, v.h)) return;
+    if(!a.drawableFor(v.x, v.y, v.w, v.h)) return;
+    // when we get here, we can do collision detection
     float[] correction = blocks(b,a);
     if(correction != null) {
       b.notifyListeners(a, correction);

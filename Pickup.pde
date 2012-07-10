@@ -49,7 +49,7 @@ class Pickup extends Actor {
   }
 
   /**
-   * Can this object be drawn in this viewbox?
+   * Can this object be drawn for this viewbox?
    */
   boolean drawableFor(float vx, float vy, float vw, float vh) {
     boolean drawable = (vx-vw <= x && x <= vx+2*vw && vy-vh <= y && y <=vy+2*vh);

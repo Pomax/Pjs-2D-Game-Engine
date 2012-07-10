@@ -336,11 +336,11 @@ abstract class LevelLayer {
         // boundary interference?
         if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-            CollisionDetection.interact(b,p); }
+            CollisionDetection.interact(viewbox,b,p); }
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,p); }}}}
+                  CollisionDetection.interact(viewbox,b,p); }}}}
 
         // player interaction?
         for(Player a: players) {
@@ -367,11 +367,11 @@ abstract class LevelLayer {
         // boundary interference?
         if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-            CollisionDetection.interact(b,p); }
+            CollisionDetection.interact(viewbox,b,p); }
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,p); }}}}
+                  CollisionDetection.interact(viewbox,b,p); }}}}
 
         // npc interaction?
         for(Interactor a: interactors) {
@@ -397,12 +397,12 @@ abstract class LevelLayer {
         // boundary interference?
         if(a.interacting && a.inMotion && !a.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-              CollisionDetection.interact(b,a); }
+              CollisionDetection.interact(viewbox,b,a); }
           // boundary interference from bounded interactors?
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,a); }}}}
+                  CollisionDetection.interact(viewbox,b,a); }}}}
 
         // draw interactor
         a.draw(x,y,w,h);
@@ -417,7 +417,7 @@ abstract class LevelLayer {
         // boundary interference?
         if(a.interacting && a.inMotion && !a.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-              CollisionDetection.interact(b,a); }}
+              CollisionDetection.interact(viewbox,b,a); }}
         // draw interactor
         a.draw(x,y,w,h);
       }
@@ -437,13 +437,13 @@ abstract class LevelLayer {
           // boundary interference?
           if(a.inMotion) {
             for(Boundary b: boundaries) {
-              CollisionDetection.interact(b,a); }
+              CollisionDetection.interact(viewbox,b,a); }
   
             // boundary interference from bounded interactors?
             for(BoundedInteractor o: bounded_interactors) {
               if(o.bounding) {
                 for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,a); }}}}
+                  CollisionDetection.interact(viewbox,b,a); }}}}
 
           // collisions with other sprites?
           if(!a.isDisabled()) {

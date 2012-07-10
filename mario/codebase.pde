@@ -814,12 +814,17 @@ static class CollisionDetection {
   /**
    * Perform actor/boundary collision detection
    */
-  static void interact(Boundary b, Actor a)
+  static void interact(ViewBox v, Boundary b, Actor a)
   {
     // no interaction if actor was removed from the game.
     if (a.remove) return;
-    // no interaction if actor has not moved.
-    if (a.x == a.previous.x && a.y == a.previous.y) return;
+    // we don't process interaction outside the viewbox
+    // FIXME: this may need parameter widening so that
+    //        interaction occurs outside the viewbox up
+    //        to a certain distance.
+    if(!b.drawableFor(v.x, v.y, v.w, v.h)) return;
+    if(!a.drawableFor(v.x, v.y, v.w, v.h)) return;
+    // when we get here, we can do collision detection
     float[] correction = blocks(b,a);
     if(correction != null) {
       b.notifyListeners(a, correction);
@@ -1981,11 +1986,11 @@ abstract class LevelLayer {
         // boundary interference?
         if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-            CollisionDetection.interact(b,p); }
+            CollisionDetection.interact(viewbox,b,p); }
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,p); }}}}
+                  CollisionDetection.interact(viewbox,b,p); }}}}
 
         // player interaction?
         for(Player a: players) {
@@ -2012,11 +2017,11 @@ abstract class LevelLayer {
         // boundary interference?
         if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-            CollisionDetection.interact(b,p); }
+            CollisionDetection.interact(viewbox,b,p); }
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,p); }}}}
+                  CollisionDetection.interact(viewbox,b,p); }}}}
 
         // npc interaction?
         for(Interactor a: interactors) {
@@ -2042,12 +2047,12 @@ abstract class LevelLayer {
         // boundary interference?
         if(a.interacting && a.inMotion && !a.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-              CollisionDetection.interact(b,a); }
+              CollisionDetection.interact(viewbox,b,a); }
           // boundary interference from bounded interactors?
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,a); }}}}
+                  CollisionDetection.interact(viewbox,b,a); }}}}
 
         // draw interactor
         a.draw(x,y,w,h);
@@ -2062,7 +2067,7 @@ abstract class LevelLayer {
         // boundary interference?
         if(a.interacting && a.inMotion && !a.onlyplayerinteraction) {
           for(Boundary b: boundaries) {
-              CollisionDetection.interact(b,a); }}
+              CollisionDetection.interact(viewbox,b,a); }}
         // draw interactor
         a.draw(x,y,w,h);
       }
@@ -2082,13 +2087,13 @@ abstract class LevelLayer {
           // boundary interference?
           if(a.inMotion) {
             for(Boundary b: boundaries) {
-              CollisionDetection.interact(b,a); }
+              CollisionDetection.interact(viewbox,b,a); }
   
             // boundary interference from bounded interactors?
             for(BoundedInteractor o: bounded_interactors) {
               if(o.bounding) {
                 for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,a); }}}}
+                  CollisionDetection.interact(viewbox,b,a); }}}}
 
           // collisions with other sprites?
           if(!a.isDisabled()) {
@@ -2268,7 +2273,7 @@ class Pickup extends Actor {
   }
 
   /**
-   * Can this object be drawn in this viewbox?
+   * Can this object be drawn for this viewbox?
    */
   boolean drawableFor(float vx, float vy, float vw, float vh) {
     boolean drawable = (vx-vw <= x && x <= vx+2*vw && vy-vh <= y && y <=vy+2*vh);
@@ -2472,7 +2477,6 @@ abstract class Positionable extends Position implements Drawable {
     if(monitoredByJavaScript && javascript != null) {
       javascript.updatedPositionable(this); }}
 
-
   /**
    * We track two frames for computational purposes,
    * such as performing boundary collision detection.
@@ -2495,6 +2499,12 @@ abstract class Positionable extends Position implements Drawable {
   // or not this positionable needs to perform
   // boundary collision checks
   boolean inMotion = false;
+  
+  // Normally, Positionables only update
+  // when they are in range of the viewbox.
+  // However, updating can be forced to "always
+  // on" by setting alwaysUpdate to true.
+  boolean alwaysUpdate = false;
 
   /**
    * Cheap constructor
@@ -2799,11 +2809,15 @@ abstract class Positionable extends Position implements Drawable {
       drawObject();
       for(Decal d: decals) { d.draw(); }
       popMatrix();
+
+      // Update position for next the frame,
+      // based on impulse and force, but only
+      // if this positionable could be drawn.
+      if(animated) { update(); }
     }
 
-    // Update position for next the frame,
-    // based on impulse and force.
-    if(animated) { update(); }
+    // Special "always update" updating
+    if(!animated && alwaysUpdate) { update(); }
   }
   
   /**

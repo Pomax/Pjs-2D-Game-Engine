@@ -7,7 +7,6 @@ abstract class Positionable extends Position implements Drawable {
     if(monitoredByJavaScript && javascript != null) {
       javascript.updatedPositionable(this); }}
 
-
   /**
    * We track two frames for computational purposes,
    * such as performing boundary collision detection.
@@ -30,6 +29,12 @@ abstract class Positionable extends Position implements Drawable {
   // or not this positionable needs to perform
   // boundary collision checks
   boolean inMotion = false;
+  
+  // Normally, Positionables only update
+  // when they are in range of the viewbox.
+  // However, updating can be forced to "always
+  // on" by setting alwaysUpdate to true.
+  boolean alwaysUpdate = false;
 
   /**
    * Cheap constructor
@@ -334,11 +339,15 @@ abstract class Positionable extends Position implements Drawable {
       drawObject();
       for(Decal d: decals) { d.draw(); }
       popMatrix();
+
+      // Update position for next the frame,
+      // based on impulse and force, but only
+      // if this positionable could be drawn.
+      if(animated) { update(); }
     }
 
-    // Update position for next the frame,
-    // based on impulse and force.
-    if(animated) { update(); }
+    // Special "always update" updating
+    if(!animated && alwaysUpdate) { update(); }
   }
   
   /**
