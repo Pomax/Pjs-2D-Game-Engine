@@ -31,11 +31,21 @@ class State {
   /**
    * add path points to a state
    */
-  void addPathPoint(float x, float y, float sx, float sy, float r, int duration) {
-    sprite.addPathPoint(x, y, sx, sy, r, duration); }
+  void addPathPoint(float x, float y, int duration) { sprite.addPathPoint(x, y, 1,1,0, duration); }
+
+  /**
+   * add path points to a state (explicit scale and rotations)
+   */
+  void addPathPoint(float x, float y, float sx, float sy, float r, int duration) { sprite.addPathPoint(x, y, sx, sy, r, duration); }
 
   /**
    * add a linear path to the state
+   */
+  void addPathLine(float x1, float y1, float x2, float y2, float duration) {
+    sprite.addPathLine(x1,y1,1,1,0,  x2,y2,1,1,0,  duration); }
+
+  /**
+   * add a linear path to the state (explicit scale and rotations)
    */
   void addPathLine(float x1, float y1, float sx1, float sy1, float r1,
                    float x2, float y2, float sx2, float sy2, float r2,
@@ -44,6 +54,12 @@ class State {
 
   /**
    * add a curved path to the state
+   */
+  void addPathCurve(float x1, float y1,  float cx1, float cy1,  float cx2, float cy2,  float x2, float y2, float duration, float slowdown_ratio) {
+    sprite.addPathCurve(x1,y1,1,1,0,  cx1,cy1,cx2,cy2,  x2,y2,1,1,0,  duration, slowdown_ratio); }
+
+  /**
+   * add a curved path to the state (explicit scale and rotations)
    */
   void addPathCurve(float x1, float y1, float sx1, float sy1, float r1,
                    float cx1, float cy1,

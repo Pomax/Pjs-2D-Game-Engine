@@ -7,7 +7,7 @@ class MainLevelLayer extends MarioLayer {
   MainLevelLayer(Level owner) {
     super(owner);
     //setBackgroundColor(color(0,130,255));
-    addStaticSpriteBG(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
 
     // we don't want mario to walk off the level,
     // so let's add some side walls

@@ -26,8 +26,8 @@ static class SoundManager {
   
   public static void setDrawPosition(float x, float y) {
     draw_controls = true;
-    draw_x = x-volume_overlay.width/2;
-    draw_y = y-volume_overlay.height/2;
+    draw_x = x - volume_overlay.width/2;
+    draw_y = y - volume_overlay.height/2;
   }
 
   /**

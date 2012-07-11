@@ -1,7 +1,7 @@
 /**
  * Our main enemy
  */
-class Koopa extends Interactor {
+class Koopa extends MarioEnemy {
 
   Koopa(float x, float y) {
     super("Koopa Trooper");
@@ -42,7 +42,7 @@ class Koopa extends Interactor {
     }
   }
   
-  void squish() {
+  void hit() {
     SoundManager.play(active);
 
     // do we have our shell? Then we only get half-squished.

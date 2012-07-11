@@ -347,7 +347,7 @@ abstract class Positionable extends Position implements Drawable {
    * visible in this viewbox.
    */
   abstract boolean drawableFor(float vx, float vy, float vw, float vh);
-
+  
   /**
    * Update all the position parameters.
    * If fixed is not null, it is the boundary

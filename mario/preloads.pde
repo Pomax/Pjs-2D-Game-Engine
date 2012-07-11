@@ -23,6 +23,7 @@
                   graphics/assorted/Regular-coin.gif,
                   graphics/assorted/Sky-block.gif,
                   graphics/assorted/Special.gif,
+                  graphics/assorted/Target.gif,
 
                   graphics/backgrounds/bush-01.gif,
                   graphics/backgrounds/bush-02.gif,
@@ -45,10 +46,11 @@
                   graphics/backgrounds/ground-slant.gif,
                   graphics/backgrounds/ground-top.gif,
 
+                  graphics/backgrounds/bonus.gif,
+                  graphics/backgrounds/nightsky_bg.gif,
+                  graphics/backgrounds/nightsky_fg.gif,
                   graphics/backgrounds/sky.gif,
                   graphics/backgrounds/sky_2.gif,
-                  graphics/backgrounds/bonus.gif,
-                  graphics/backgrounds/bonus_2.gif,
 
                   graphics/decals/100.gif,
                   graphics/decals/200.gif,

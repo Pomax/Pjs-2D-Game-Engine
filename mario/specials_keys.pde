@@ -26,6 +26,10 @@ class KeyPickup extends MarioPickup {
  */
 class KeyHole extends Interactor {
 
+  ArrayList<UnlockListener> listeners = new ArrayList<UnlockListener>();
+  void addListener(UnlockListener l) { if (!listeners.contains(l)) { listeners.add(l); }}
+  void removeListener(UnlockListener l) { listeners.remove(l); }
+
   KeyHole(float x, float y) {
     super("Keyhole");
     setPosition(x,y);
@@ -43,10 +47,19 @@ class KeyHole extends Interactor {
     if (other instanceof Mario) {
       Mario m = (Mario) other;
       if (m.hasKey) {
-        println("magic");
         m.removeKey();
+        for(UnlockListener l: listeners) {
+          l.unlocked(m, this);
+        }
       }
     }
   }
-
 }
+
+/**
+ * keyhole listeners must implement this interface
+ */
+interface UnlockListener {
+  void unlocked(Actor by, KeyHole hole);
+}
+

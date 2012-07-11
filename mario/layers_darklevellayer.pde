@@ -1,4 +1,6 @@
-class DarkLevelLayer extends MarioLayer {
+class DarkLevelLayer extends MarioLayer implements UnlockListener {
+  KeyHole keyhole;
+  
   DarkLevelLayer(Level parent) {
     super(parent);
 
@@ -6,7 +8,7 @@ class DarkLevelLayer extends MarioLayer {
     Sprite bgsprite = new Sprite("graphics/backgrounds/bonus.gif");
     bgsprite.align(RIGHT, TOP);
     TilingSprite backdrop = new TilingSprite(bgsprite, 0, 0, width, height);
-    addStaticSpriteBG(backdrop);      
+    addBackgroundSprite(backdrop);      
 
     // side walls
     addBoundary(new Boundary(-1,0, -1,height));
@@ -24,14 +26,32 @@ class DarkLevelLayer extends MarioLayer {
       addGroundPlatform("cave", x, y-16, wth, 48);
       addCoins(x, y-40, wth);
     }
-    
+
     // flower power
     addBoundedInteractor(new FlowerBlock(width/2,height/2-64));
 
-    // set up two tubes
+    // set up the tubes
     addTube(0, height-16, null);
     addTube(width-32, height-16, new LevelTeleportTrigger("Main Level",  width-30,height-34,30,2,  804+16,373));
-    
-    addKeyHole(width/2, height-28);
+
+    // conspicuous keyhole...
+    keyhole = addKeyHole(width/2, height-28);
+    keyhole.addListener(this);
+  }
+  
+  /**
+   * the bonus content was unlocked!
+   */
+  void unlocked(Actor by, KeyHole hole) {
+    removeKeyHole(keyhole);
+    // switch to bonus level
+    Player p = ((MarioLevel)activeScreen).mario;
+    setActiveScreen("Bonus Level");
+    MarioLevel a = (MarioLevel) activeScreen;
+    a.updateMario(p);
+  }
+  
+  void mousePressed() {
+    unlocked(null,null);
   }
 }

@@ -107,12 +107,13 @@ class FireBlob extends MarioPickup {
 class Rope extends MarioPickup {
   Rope(float x, float y) {
     super("Finish line", "graphics/assorted/Goal-slider.gif", 1, 1, x, y, true);
-    Sprite s = getState("Finish line").sprite;
-    s.align(LEFT, TOP);
-    s.setNoRotation(true);
-    s.addPathLine(0, 0, 1, 1, 0, 0, -116, 1, 1, 0, 50);
-    s.addPathLine(0, -116, 1, 1, 0, 0, 0, 1, 1, 0, 50);
-    s.setLooping(true);
+    State st = getState("Finish line");
+    st.addPathLine(0, 0,     0, -116, 50);
+    st.addPathLine(0, -116,  0, 0,    50);
+    st.setLooping(true);
+    Sprite spr = st.sprite;
+    spr.align(LEFT, TOP);
+    spr.setNoRotation(true);
     SoundManager.load(this, "audio/bg/Course-clear.mp3");
   }
 

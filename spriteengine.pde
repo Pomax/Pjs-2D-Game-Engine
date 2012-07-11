@@ -12,7 +12,7 @@
 
 /* @ p j s  preload="docs/tutorial/graphics/mario/small/Standing-mario.gif"; */
 
-/*
+///*
 
 final int screenWidth = 512;
 final int screenHeight = 432;
@@ -91,4 +91,4 @@ class TestObject extends Player {
   }
 }
 
-*/
+//*/

@@ -2,8 +2,8 @@
  * Plain color background layer
  */
 class BackgroundColorLayer extends LevelLayer {
-  BackgroundColorLayer(Level parent, float w, float h, color c) {
-    super(parent, w, h);
+  BackgroundColorLayer(Level parent, color c) {
+    super(parent, parent.width, parent.height);
     backgroundColor = c;
   }
 }

@@ -27,12 +27,10 @@ void initialize() {
 
 void reset() {
   clearScreens();
+  addScreen("Bonus Level", new BonusLevel(width, height));
   addScreen("Dark Level", new DarkLevel(width, height));
   addScreen("Main Level", new MainLevel(4*width, height));  
   if(javascript != null) { javascript.reset(); }
   setActiveScreen("Main Level");
 }
-
-
-
 

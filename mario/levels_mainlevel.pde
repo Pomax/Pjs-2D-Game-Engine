@@ -12,13 +12,8 @@ class MainLevel extends MarioLevel {
     // main level layer
     LevelLayer layer = new MainLevelLayer(this);
     addLevelLayer("main layer", layer);
-
-    // make sure there's a Mario
-    if (layer.players.size()==0 || mario == null) {
-      mario = new Mario();
-      mario.setPosition(32, 372);
-      layer.addPlayer(mario);
-    }
+    mario.setPosition(16, height-64);
+    layer.addPlayer(mario);
 
     // And of course some background music!
     SoundManager.load(this, "audio/bg/Overworld.mp3");

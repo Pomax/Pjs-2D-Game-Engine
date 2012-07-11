@@ -8,7 +8,7 @@
 /**
  * The big bullet that comes out of nowhere O_O
  */
-class BanzaiBill extends Interactor {
+class BanzaiBill extends MarioEnemy {
 
   /**
    * Relatively straight-forward constructor
@@ -37,12 +37,17 @@ class BanzaiBill extends Interactor {
   }
 
   /**
-   * When we hit an actor, they die.
+   * What happens when we touch another actor?
    */
-  void overlapOccurredWith(Actor other, float[] overlap) {
-    super.overlapOccurredWith(other, overlap);
+  void overlapOccurredWith(Actor other, float[] direction) {
     if (other instanceof Mario) {
-      ((Mario)other).die();
+      Mario m = (Mario) other;
+      m.hit();
     }
   }
+  
+  /**
+   * Nothing happens at the moment
+   */
+  void hit() {}
 }

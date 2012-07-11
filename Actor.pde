@@ -176,11 +176,15 @@ abstract class Actor extends Positionable {
     if (x > lw - w2) { x = lw - w2; }
   }
 
+  private int __cached_bbox_frame = -1;
+  private float[] __cached_bbox = null;
+
   /**
    * Get the bounding box for this actor
    */
   float[] getBoundingBox() {
     if(active==null) return null;
+    
     float[] bounds = active.sprite.getBoundingBox();
     
     // transform the bounds, based on local translation/scale/rotation
@@ -204,6 +208,7 @@ abstract class Actor extends Positionable {
     bounds[2] += x+ox; bounds[3] += y+oy;  // top right
     bounds[4] += x+ox; bounds[5] += y+oy;  // bottom right
     bounds[6] += x+ox; bounds[7] += y+oy;  // bottom left
+
     // done
     return bounds;
   }
@@ -232,6 +237,11 @@ abstract class Actor extends Positionable {
   void overlapOccurredWith(Actor other, float[] direction) {
     colliding = true;
   }
+  
+  /**
+   * What happens when we get hit
+   */
+  void hit() { /* can be overwritten */ }
 
   /**
    * attach an actor to a boundary, so that
@@ -255,7 +265,7 @@ abstract class Actor extends Positionable {
 
     // call the blocked handler
     gotBlocked(boundary, correction, original);
-    
+ 
     // and then make sure to update the actor's position, as
     // otherwise it looks like we've stopped for 1 frame.
     update();

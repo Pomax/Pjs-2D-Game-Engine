@@ -8,7 +8,6 @@ class Mario extends Player {
   boolean canShoot = false;
   String spriteSet = "mario";
   String type = "small";
-  TilingSprite rtypeBG = null;
   
   /**
    * Mario can carry keys! It's magical!
@@ -87,6 +86,9 @@ class Mario extends Player {
     State won = new State("won", "graphics/"+spriteSet+"/"+type+"/Standing-mario.gif");
     won.setDuration(240);
     addState(won);
+    
+    // being hit requires a sound effect too
+    SoundManager.load("mario hit", "audio/Pipe.mp3");
   }
 
   /**
@@ -184,14 +186,14 @@ class Mario extends Player {
    * What happens when we touch another actor?
    */
   void overlapOccurredWith(Actor other, float[] direction) {
-    if (other instanceof Koopa) {
-      Koopa koopa = (Koopa) other;
+    if (other instanceof MarioEnemy) {
+      MarioEnemy enemy = (MarioEnemy) other;
       float angle = direction[2];
 
       // We bopped a koopa on the head!
       float tolerance = radians(75);
       if (PI/2 - tolerance <= angle && angle <= PI/2 + tolerance) {
-        koopa.squish();
+        enemy.hit();
         stop(0, 0);
         setImpulse(0, -30);
         if (spriteSet == "mario") {
@@ -200,22 +202,29 @@ class Mario extends Player {
       }
 
       // Oh no! We missed and touched a koopa!
-      else { die(); }
+      else { hit(); }
     }
+  }
+  
+  void hit() {
+    if(isDisabled()) return; 
+    if(type != "small") {
+      setSpriteType("small");
+      disableInteractionFor(30);
+      SoundManager.play("mario hit");
+      return;
+    }
+    // else:
+    die();
   }
 
   /**
    * When we die, we need to go in the funky "oh no we lost~" dance dive.
    */
   void die() {
-    if(type != "small") {
-      setSpriteType("small");
-      disableInteractionFor(30);
-      return;
-    }
     setCurrentState("dead");
     setInteracting(false);
-    addImpulse(0, -30);
+    setImpulse(0, -30);
     setForces(0, 3);
     // stop background music!
     SoundManager.stop(getLevelLayer().getLevel());
@@ -243,8 +252,6 @@ class Mario extends Player {
       }
       spriteSet = "mario";
       Level level = layer.getLevel();
-      LevelLayer bg = level.getLevelLayer("background layer");      
-      bg.removeStaticSpriteBG(rtypeBG);
       setCurrentState("won");
       layer.parent.finish();
     }
@@ -257,7 +264,7 @@ class Mario extends Player {
     else if (pickup.name=="Fire flower") {
       // we could effect a full sprite swap here
       canShoot = true;
-     setSpriteType("fire");
+      setSpriteType("fire");
     }
     // key?
     else if (pickup.name=="Key") {

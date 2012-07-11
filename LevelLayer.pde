@@ -26,9 +26,6 @@ abstract class LevelLayer {
           showForeground = true,
           showTriggers = false;
 
-  // master component list
-  ArrayList<Actor> all_things;
-
   // The various layer components
   ArrayList<Boundary> boundaries;
   ArrayList<Drawable> fixed_background, fixed_foreground;
@@ -60,83 +57,50 @@ abstract class LevelLayer {
   // the list of "collision" regions
   void addBoundary(Boundary boundary)    { boundaries.add(boundary);    }
   void removeBoundary(Boundary boundary) { boundaries.remove(boundary); }
+  void clearBoundaries() { boundaries.clear(); }
 
   // The list of static, non-interacting sprites, building up the background
-  void addStaticSpriteBG(Drawable fixed)    { fixed_background.add(fixed);    }
-  void removeStaticSpriteBG(Drawable fixed) { fixed_background.remove(fixed); }
+  void addBackgroundSprite(Drawable fixed)    { fixed_background.add(fixed);    }
+  void removeBackgroundSprite(Drawable fixed) { fixed_background.remove(fixed); }
+  void clearBackground() { fixed_background.clear(); }
 
   // The list of static, non-interacting sprites, building up the foreground
-  void addStaticSpriteFG(Drawable fixed)    { fixed_foreground.add(fixed);    }
-  void removeStaticSpriteFG(Drawable fixed) { fixed_foreground.remove(fixed); }
+  void addForegroundSprite(Drawable fixed)    { fixed_foreground.add(fixed);    }
+  void removeForegroundSprite(Drawable fixed) { fixed_foreground.remove(fixed); }
+  void clearForeground() { fixed_foreground.clear(); }
 
   // The list of decals (pure graphic visuals)
   void addDecal(Decal decal)    { decals.add(decal);    }
   void removeDecal(Decal decal) { decals.remove(decal); }
+  void clearDecals() { decals.clear(); }
 
   // event triggers
   void addTrigger(Trigger trigger)    { triggers.add(trigger);    }
   void removeTrigger(Trigger trigger) { triggers.remove(trigger); }
-
+  void clearTriggers() { triggers.clear(); }
 
   // The list of sprites that may only interact with the player(s) (and boundaries)
-  void addForPlayerOnly(Pickup pickup) {
-    pickups.add(pickup);
-    bind(pickup);
-    all_things.add(pickup);
-  }
-
-  void removeForPlayerOnly(Pickup pickup) {
-    pickups.remove(pickup);
-    all_things.remove(pickup);
-  }
+  void addForPlayerOnly(Pickup pickup) { pickups.add(pickup); bind(pickup); }
+  void removeForPlayerOnly(Pickup pickup) { pickups.remove(pickup); }
+  void clearPickups() { pickups.clear(); npcpickups.clear(); }
 
   // The list of sprites that may only interact with non-players(s) (and boundaries)
-  void addForInteractorsOnly(Pickup pickup) {
-    npcpickups.add(pickup);
-    bind(pickup);
-    all_things.add(pickup);
-  }
-
-  void removeForInteractorsOnly(Pickup pickup) {
-    npcpickups.remove(pickup);
-    all_things.remove(pickup);
-  }
+  void addForInteractorsOnly(Pickup pickup) { npcpickups.add(pickup); bind(pickup); }
+  void removeForInteractorsOnly(Pickup pickup) { npcpickups.remove(pickup); }
 
   // The list of fully interacting non-player sprites
-  void addInteractor(Interactor interactor) {
-    interactors.add(interactor);
-    bind(interactor);
-    all_things.add(interactor);
-  }
-
-  void removeInteractor(Interactor interactor) {
-    interactors.remove(interactor);
-    all_things.remove(interactor);
-  }
+  void addInteractor(Interactor interactor) { interactors.add(interactor); bind(interactor); }
+  void removeInteractor(Interactor interactor) { interactors.remove(interactor); }
+  void clearInteractors() { interactors.clear(); bounded_interactors.clear(); }
 
   // The list of fully interacting non-player sprites that have associated boundaries
-  void addBoundedInteractor(BoundedInteractor bounded_interactor) {
-    bounded_interactors.add(bounded_interactor);
-    bind(bounded_interactor);
-    all_things.add(bounded_interactor);
-  }
-
-  void removeBoundedInteractor(BoundedInteractor bounded_interactor) {
-    bounded_interactors.remove(bounded_interactor);
-    all_things.remove(bounded_interactor);
-  }
+  void addBoundedInteractor(BoundedInteractor bounded_interactor) { bounded_interactors.add(bounded_interactor); bind(bounded_interactor); }
+  void removeBoundedInteractor(BoundedInteractor bounded_interactor) { bounded_interactors.remove(bounded_interactor); }
 
   // The list of player sprites
-  void addPlayer(Player player) {
-    players.add(player);
-    bind(player);
-    all_things.add(player);
-  }
-
-  void removePlayer(Player player) {
-    players.remove(player);
-    all_things.remove(player); 
-  }
+  void addPlayer(Player player) { players.add(player); bind(player); }
+  void removePlayer(Player player) { players.remove(player); }
+  void clearPlayers() { players.clear(); }
 
   void updatePlayer(Player oldPlayer, Player newPlayer) {
     int pos = players.indexOf(oldPlayer);
@@ -164,6 +128,23 @@ abstract class LevelLayer {
         list.remove(a);
       }
     }
+  }
+  
+  // clear everything except the player
+  void clearExceptPlayer() {
+    clearBoundaries();
+    clearBackground();
+    clearForeground();
+    clearDecals();
+    clearTriggers();
+    clearPickups();
+    clearInteractors();    
+  }
+
+  // clear everything
+  void clear() {
+    clearExceptPlayer();
+    clearPlayers();
   }
 
   // =============================== //
@@ -195,7 +176,6 @@ abstract class LevelLayer {
     this.width = w;
     this.height = h;
     
-    all_things = new ArrayList<Actor>();
     boundaries = new ArrayList<Boundary>();
     fixed_background = new ArrayList<Drawable>();
     fixed_foreground = new ArrayList<Drawable>();
@@ -245,7 +225,7 @@ abstract class LevelLayer {
   }
   
   /**
-   * map a layer coordinate to "normal"
+   * map a screen coordinate to its layer coordinate equivalent.
    */
   float[] mapCoordinateFromScreen(float x, float y) {
     float mx = map(x/xScale,  0,viewbox.w,  viewbox.x,viewbox.x + viewbox.w);
@@ -254,7 +234,7 @@ abstract class LevelLayer {
   }
 
   /**
-   * map a layer coordinate to "normal"
+   * map a layer coordinate to its screen coordinate equivalent.
    */
   float[] mapCoordinateToScreen(float x, float y) {
     float mx = (x/xScale - xTranslate);
@@ -279,7 +259,7 @@ abstract class LevelLayer {
   }
 
   /**
-   *
+   * draw this level layer.
    */
   void draw() {
     // get the level viewbox and tranform its
@@ -291,240 +271,250 @@ abstract class LevelLayer {
     w = viewbox.w / xScale;
     h = viewbox.h / yScale;
     
+    // save applied transforms so far
     pushMatrix();
-
-    // remember to transform the layer coordinates accordingly
+    // transform the layer coordinates
     translate(viewbox.x-x, viewbox.y-y);
     scale(xScale, yScale);
+    // draw all layer components
+    if (showBackground) { handleBackground(x,y,w,h); } else { debugfunctions_drawBackground((int)width, (int)height); }
+    if (showBoundaries)   handleBoundaries(x,y,w,h);
+    if (showPickups)      handlePickups(x,y,w,h);
+    if (showInteractors)  handleNPCs(x,y,w,h);
+    if (showActors)       handlePlayers(x,y,w,h);
+    if (showDecals)       handleDecals(x,y,w,h);
+    if (showForeground)   handleForeground(x,y,w,h);
+    if (showTriggers)     handleTriggers(x,y,w,h);
+    // restore saved transforms
+    popMatrix();
+  }
 
-// ----  draw fallback color
+  /**
+   * Background color/sprites
+   */
+  void handleBackground(float x, float y, float w, float h) { 
     if (backgroundColor != -1) {
       background(backgroundColor);
     }
 
-// ---- fixed background sprites
-    if(showBackground) {
-      for(Drawable s: fixed_background) {
-        s.draw(x,y,w,h);
-      }
-    } else {
-      debugfunctions_drawBackground((int)width, (int)height);
+    for(Drawable s: fixed_background) {
+      s.draw(x,y,w,h);
     }
+  }
 
-// ---- boundaries
-    if(showBoundaries) {
-      // regular boundaries
-      for(Boundary b: boundaries) {
-        b.draw(x,y,w,h);
-      }
-      // bounded interactor boundaries
-      for(BoundedInteractor b: bounded_interactors) {
-        if(b.bounding) {
-          b.drawBoundaries(x,y,w,h);
-        }
+  /**
+   * Boundaries should normally not be drawn, but
+   * a debug flag can make them get drawn anyway.
+   */
+  void handleBoundaries(float x, float y, float w, float h) { 
+    // regular boundaries
+    for(Boundary b: boundaries) {
+      b.draw(x,y,w,h);
+    }
+    // bounded interactor boundaries
+    for(BoundedInteractor b: bounded_interactors) {
+      if(b.bounding) {
+        b.drawBoundaries(x,y,w,h);
       }
     }
+  }
 
-// ---- pickups
-    if(showPickups) {
-      for(int i = pickups.size()-1; i>=0; i--) {
-        Pickup p = pickups.get(i);
-        if(p.remove) {
-          pickups.remove(i);
-          continue; }
+  /**
+   * Handle both player and NPC Pickups.
+   */
+  void handlePickups(float x, float y, float w, float h) { 
+    // player pickups
+    for(int i = pickups.size()-1; i>=0; i--) {
+      Pickup p = pickups.get(i);
+      if(p.remove) {
+        pickups.remove(i);
+        continue; }
+
+      // boundary interference?
+      if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
+        for(Boundary b: boundaries) {
+          CollisionDetection.interact(b,p); }
+        for(BoundedInteractor o: bounded_interactors) {
+          if(o.bounding) {
+            for(Boundary b: o.boundaries) {
+                CollisionDetection.interact(b,p); }}}}
+
+      // player interaction?
+      for(Player a: players) {
+        if(!a.interacting) continue;
+        float[] overlap = a.overlap(p);
+        if(overlap!=null) {
+          p.overlapOccurredWith(a);
+          break; }}
+
+      // draw pickup
+      p.draw(x,y,w,h);
+    }
+
+    // ---- npc pickups
+    for(int i = npcpickups.size()-1; i>=0; i--) {
+      Pickup p = npcpickups.get(i);
+      if(p.remove) {
+        npcpickups.remove(i);
+        continue; }
+
+      // boundary interference?
+      if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
+        for(Boundary b: boundaries) {
+          CollisionDetection.interact(b,p); }
+        for(BoundedInteractor o: bounded_interactors) {
+          if(o.bounding) {
+            for(Boundary b: o.boundaries) {
+                CollisionDetection.interact(b,p); }}}}
+
+      // npc interaction?
+      for(Interactor a: interactors) {
+        if(!a.interacting) continue;
+        float[] overlap = a.overlap(p);
+        if(overlap!=null) {
+          p.overlapOccurredWith(a);
+          break; }}
+
+      // draw pickup
+      p.draw(x,y,w,h);
+    }
+  }
+
+  /**
+   * Handle both regular and bounded NPCs
+   */
+  void handleNPCs(float x, float y, float w, float h) {
+    handleNPCs(x, y, w, h, interactors);
+    handleNPCs(x, y, w, h, bounded_interactors);
+  }
+  
+  /**
+   * helper function to prevent code duplication
+   */
+  void handleNPCs(float x, float y, float w, float h, ArrayList<? extends Interactor> interactors) {
+    for(int i = 0; i<interactors.size(); i++) {
+      Interactor a = interactors.get(i);
+      if(a.remove) {
+        interactors.remove(i);
+        continue; }
+
+      // boundary interference?
+      if(a.interacting && a.inMotion && !a.onlyplayerinteraction) {
+        for(Boundary b: boundaries) {
+            CollisionDetection.interact(b,a); }
+        // boundary interference from bounded interactors?
+        for(BoundedInteractor o: bounded_interactors) {
+          if(o == a) continue;
+          if(o.bounding) {
+            for(Boundary b: o.boundaries) {
+                CollisionDetection.interact(b,a); }}}}
+
+      // draw interactor
+      a.draw(x,y,w,h);
+    }
+  }
+
+  /**
+   * Handle player characters
+   */
+  void handlePlayers(float x, float y, float w, float h) {
+    for(int i=players.size()-1; i>=0; i--) {
+      Player a = players.get(i);
+
+      if(a.remove) {
+        players.remove(i);
+        continue; }
+
+      if(a.interacting) {
 
         // boundary interference?
-        if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
+        if(a.inMotion) {
           for(Boundary b: boundaries) {
-            CollisionDetection.interact(b,p); }
-          for(BoundedInteractor o: bounded_interactors) {
-            if(o.bounding) {
-              for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,p); }}}}
+            CollisionDetection.interact(b,a); }
 
-        // player interaction?
-        for(Player a: players) {
-          if(!a.interacting) continue;
-          float[] overlap = a.overlap(p);
-          if(overlap!=null) {
-            p.overlapOccurredWith(a);
-            break; }}
-
-        // draw pickup
-        p.draw(x,y,w,h);
-      }
-    }
-
-
-// ---- npc pickups
-    if(showPickups) {
-      for(int i = npcpickups.size()-1; i>=0; i--) {
-        Pickup p = npcpickups.get(i);
-        if(p.remove) {
-          npcpickups.remove(i);
-          continue; }
-
-        // boundary interference?
-        if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
-          for(Boundary b: boundaries) {
-            CollisionDetection.interact(b,p); }
-          for(BoundedInteractor o: bounded_interactors) {
-            if(o.bounding) {
-              for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,p); }}}}
-
-        // npc interaction?
-        for(Interactor a: interactors) {
-          if(!a.interacting) continue;
-          float[] overlap = a.overlap(p);
-          if(overlap!=null) {
-            p.overlapOccurredWith(a);
-            break; }}
-
-        // draw pickup
-        p.draw(x,y,w,h);
-      }
-    }
-
-// ----  non-player actors
-    if(showInteractors) {
-      for(int i = interactors.size()-1; i>=0; i--) {
-        Interactor a = interactors.get(i);
-        if(a.remove) {
-          interactors.remove(i);
-          continue; }
-
-        // boundary interference?
-        if(a.interacting && a.inMotion && !a.onlyplayerinteraction) {
-          for(Boundary b: boundaries) {
-              CollisionDetection.interact(b,a); }
           // boundary interference from bounded interactors?
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,a); }}}}
+                CollisionDetection.interact(b,a); }}}}
 
-        // draw interactor
-        a.draw(x,y,w,h);
-      }
-
-      // FIXME: code duplication, since it's the same as for regular interactors.
-      for(int i = bounded_interactors.size()-1; i>=0; i--) {
-        Interactor a = bounded_interactors.get(i);
-        if(a.remove) {
-          bounded_interactors.remove(i);
-          continue; }
-        // boundary interference?
-        if(a.interacting && a.inMotion && !a.onlyplayerinteraction) {
-          for(Boundary b: boundaries) {
-              CollisionDetection.interact(b,a); }}
-        // draw interactor
-        a.draw(x,y,w,h);
-      }
-    }
-    
-// ---- player actors
-    if(showActors) {
-      for(int i=players.size()-1; i>=0; i--) {
-        Player a = players.get(i);
-
-        if(a.remove) {
-          players.remove(i);
-          continue; }
-
-        if(a.interacting) {
-
-          // boundary interference?
-          if(a.inMotion) {
-            for(Boundary b: boundaries) {
-              CollisionDetection.interact(b,a); }
-  
-            // boundary interference from bounded interactors?
-            for(BoundedInteractor o: bounded_interactors) {
-              if(o.bounding) {
-                for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,a); }}}}
-
-          // collisions with other sprites?
-          if(!a.isDisabled()) {
-            for(Actor o: interactors) {
-              if(!o.interacting) continue;
-              float[] overlap = a.overlap(o);
-              if(overlap!=null) {
-                a.overlapOccurredWith(o, overlap);
-                int len = overlap.length;
-                float[] inverse = new float[len];
-                arrayCopy(overlap,0,inverse,0,len);
-                for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
-                o.overlapOccurredWith(a, inverse); 
-              }
-              else if(o instanceof Tracker) {
-                ((Tracker)o).track(a, x,y,w,h);
-              }
-            }
-
-            // FIXME: code duplication, since it's the same as for regular interactors.
-            for(Actor o: bounded_interactors) {
-              if(!o.interacting) continue;
-              float[] overlap = a.overlap(o);
-              if(overlap!=null) {
-                a.overlapOccurredWith(o, overlap);
-                int len = overlap.length;
-                float[] inverse = new float[len];
-                arrayCopy(overlap,0,inverse,0,len);
-                for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
-                o.overlapOccurredWith(a, inverse); 
-              }
-              else if(o instanceof Tracker) {
-                ((Tracker)o).track(a, x,y,w,h);
-              }
-            }
-          }
-
-          // has the player tripped any triggers?
-          for(int j = triggers.size()-1; j>=0; j--) {
-            Trigger t = triggers.get(j);
-            if(t.remove) { triggers.remove(t); continue; }
-            float[] overlap = t.overlap(a);
-            if(overlap==null && t.disabled) {
-              t.enable(); 
-            }
-            else if(overlap!=null && !t.disabled) {
-              t.run(this, a, overlap); 
-            }
-          }
+        // collisions with other sprites?
+        if(!a.isDisabled()) {
+          handleActorCollision(x,y,w,h,a,interactors);
+          handleActorCollision(x,y,w,h,a,bounded_interactors);
         }
 
-        // draw actor
-        a.draw(x,y,w,h);
+        // has the player tripped any triggers?
+        for(int j = triggers.size()-1; j>=0; j--) {
+          Trigger t = triggers.get(j);
+          if(t.remove) { triggers.remove(t); continue; }
+          float[] overlap = t.overlap(a);
+          if(overlap==null && t.disabled) {
+            t.enable(); 
+          }
+          else if(overlap!=null && !t.disabled) {
+            t.run(this, a, overlap); 
+          }
+        }
       }
-    }
 
-// ---- decals
-    if(showDecals) {
-      for(int i=decals.size()-1; i>=0; i--) {
-        Decal d = decals.get(i);
-        if(d.remove) { decals.remove(i); continue; }
-        d.draw(x,y,w,h);
-      }
+      // draw actor
+      a.draw(x,y,w,h);
     }
-
-// ---- fixed foreground sprites
-    if(showForeground) {
-      for(Drawable s: fixed_foreground) {
-        s.draw(x,y,w,h);
-      }
-    }
-
-// ---- triggerable regions
-    if(showTriggers) {
-      for(Drawable t: triggers) {
-        t.draw(x,y,w,h);
-      }
-    }
-
-    popMatrix();
   }
+  
+  /**
+   * helper function to prevent code duplication
+   */
+  void handleActorCollision(float x, float y, float w, float h, Actor a, ArrayList<? extends Interactor> interactors) {
+    for(int i = 0; i<interactors.size(); i++) {
+      Actor o = interactors.get(i);
+      if(!o.interacting) continue;
+      float[] overlap = a.overlap(o);
+      if(overlap!=null) {
+        a.overlapOccurredWith(o, overlap);
+        int len = overlap.length;
+        float[] inverse = new float[len];
+        arrayCopy(overlap,0,inverse,0,len);
+        for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
+        o.overlapOccurredWith(a, inverse); 
+      }
+      else if(o instanceof Tracker) {
+        ((Tracker)o).track(a, x,y,w,h);
+      }
+    }
+  }
+
+  /**
+   * Draw all decals.
+   */
+  void handleDecals(float x, float y, float w, float h) {
+    for(int i=decals.size()-1; i>=0; i--) {
+      Decal d = decals.get(i);
+      if(d.remove) { decals.remove(i); continue; }
+      d.draw(x,y,w,h);
+    }
+  }
+
+  /**
+   * Draw all foreground sprites
+   */
+  void handleForeground(float x, float y, float w, float h) {
+    for(Drawable s: fixed_foreground) {
+      s.draw(x,y,w,h);
+    }
+  }
+
+  /**
+   * Triggers should normally not be drawn, but
+   * a debug flag can make them get drawn anyway.
+   */
+  void handleTriggers(float x, float y, float w, float h) {
+    for(Drawable t: triggers) {
+      t.draw(x,y,w,h);
+    }
+  }
+
 
   /**
    * passthrough events
@@ -541,22 +531,7 @@ abstract class LevelLayer {
     for(Player a: players) {
       a.mouseMoved(mx,my); }}
 
-/*
   void mousePressed(int mx, int my, int button) {
-    for(Player a: players) {
-      a.mousePressed(mx,my,button); }}
-*/
-
-  void mousePressed(int mx, int my, int button) {
-    if(javascript!=null && javascript.shouldMonitor()) {
-      float[] mapped = getMouseInformation(0,0,mx,my);
-      float x = mapped[0], y = mapped[1];
-      for(Actor thing: all_things) {
-        if(thing.over(x,y)) {
-          javascript.loadInEditor(thing);
-        }
-      }
-    }
     for(Player a: players) {
       a.mousePressed(mx,my,button); }}
 

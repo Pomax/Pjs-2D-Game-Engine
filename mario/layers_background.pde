@@ -6,7 +6,7 @@ class MainBackgroundLayer extends MarioLayer {
   Mario mario;
   MainBackgroundLayer(Level owner) {
     super(owner, owner.width, owner.height, 0,0, 0.75,0.75);
-    addStaticSpriteBG(new TilingSprite(new Sprite("graphics/backgrounds/sky_2.gif"),0,0,width,height));
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky_2.gif"),0,0,width,height));
 
     addBoundary(new Boundary(-1,0, -1,height));
     addBoundary(new Boundary(width+1,height, width+1,0));

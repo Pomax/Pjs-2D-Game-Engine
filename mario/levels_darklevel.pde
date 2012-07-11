@@ -8,16 +8,12 @@ class DarkLevel extends MarioLevel
   DarkLevel(float w, float h)
   {
     super(w, h);
-    addLevelLayer("color", new BackgroundColorLayer(this, width, height, color(0, 0, 100)));
+    addLevelLayer("color", new BackgroundColorLayer(this, color(0, 0, 100)));
 
     LevelLayer layer = new DarkLevelLayer(this);
-    if (layer.players.size()==0 || mario==null) {
-      mario = new Mario();
-      mario.setPosition(16, height-32);
-      mario.setImpulse(0, -24);
-      layer.addPlayer(mario);
-    }
     addLevelLayer("main", layer);
+    mario.setPosition(16,height-80);
+    layer.addPlayer(mario);
 
     // And of course some background music.
     SoundManager.load(this, "audio/bg/Bonus.mp3");

@@ -1,7 +1,7 @@
 /**
  * The muncher plant. To touch it is to lose.
  */
-class Muncher extends BoundedInteractor {
+class Muncher extends BoundedMarioEnemy {
 
   Muncher(float x, float y) {
     super("Muncher");
@@ -18,7 +18,7 @@ class Muncher extends BoundedInteractor {
 
   void collisionOccured(Boundary boundary, Actor other, float[] correction) {
     if (other instanceof Mario) {
-      ((Mario)other).die();
+      ((Mario)other).hit();
     }
   }
 }

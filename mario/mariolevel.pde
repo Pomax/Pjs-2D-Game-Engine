@@ -10,11 +10,12 @@ class MarioLevel extends Level {
     super(w, h);
     textFont(createFont("fonts/acmesa.ttf", 8));
     setViewBox(0,0,screenWidth,screenHeight);
+    mario = new Mario();    
   }
-
-  void updateMario(Player newMario) {
-    updatePlayer(mario, newMario);
-    mario = newMario;
+  
+  void updateMario(Player mario_new) {
+    updatePlayer(mario, mario_new);
+    mario = mario_new;
   }
 
   /**
