@@ -21,7 +21,11 @@ figure {
   border: 1px solid grey;
   padding: 5px;
   text-align: center; }
-  
+
+figure.floating {
+  float: right;
+}
+
 figure canvas {
   display: block;
   border: 1px solid black; }
@@ -84,4 +88,21 @@ code:after { content: "]"; }
 
 .comment {
   color: darkgreen;
+}
+
+ol {
+  display: table;
+  border: 1px solid black;
+  margin: auto;
+  padding: 0;
+  list-style-type: none;
+}
+ol li {
+  display: table-cell;
+  padding: 0 1em;
+}
+
+a, a:hover, a:visited {
+  color: rgb(0,0,200);
+  text-decoration: none;
 }

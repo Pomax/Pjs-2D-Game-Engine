@@ -16,6 +16,12 @@
     </style>
   </head>
   <body>
+  
+    <navigation><ol>
+      <li><a href="basic.html">The Basics</a></li>
+      <li><a href="mario.html">Let's make a Mario game</a></li>
+      <li><a href="more-mario.html">Let's refine our Mario game</a></li>
+    </ol></navigation>
 
     <h1>Let's make some games</h1>
     
@@ -57,6 +63,11 @@
     
     <h2>(1) Something that wraps everything in our game as "part of the game"</h2>
     
+    <figure class="floating">
+      <img src="basics/a screen.gif">
+      <figcaption>A screen has a width and a height</figcaption>
+    </figure>
+    
     <p>In the game-making library that we're using, setting up the thing that wraps everything
     that is "part of our game" is relatively simple, requiring us to say a few things. We need to:</p>
     
@@ -84,7 +95,7 @@ void initialize() {}</textarea>
     means they are "integer" numbers, which are whole numbers like 0, 4, or 100, rather than numbers
     with a fraction, like 0.5 or 3.1415)</p>
     
-    <p>That <code>void initiaze() {}</code> code is the more important part. The <code>void</code>
+    <p>That <code>void initialize() {}</code> code is the more important part. The <code>void</code>
     part isn't very important right now, but it technically means "this is a function that can
     be called, but it just 'does things', it doesn't try to make things or calculate values
     or anything". The <code>initialize()</code> gives the name of the function ("initialize") and
@@ -110,7 +121,7 @@ void initialize() {}</textarea>
     to perform when it looks at <code>initialize</code>.</p>
     
     <h2>(2) Add at least one level</h2>
-    
+
     <p>Let's start by adding some instructions so that we actually have a level:</p>
 
     <textarea readonly style="width: 40em; height: 15em;">
@@ -126,6 +137,11 @@ class MyLevel extends Level {
     super(levelWidth, levelHeight);
   }
 }</textarea>
+
+    <figure class="floating">
+      <img src="basics/levels.gif">
+      <figcaption>A game can have many levels</figcaption>
+    </figure>
 
     <p>There are two new things in this updated code. First, we see the line <code>addLevel("mylevel",
     new MyLevel(screenWidth, screenHeight));</code> which we should read as:</p>
@@ -266,7 +282,7 @@ class MyLevelLayer extends LevelLayer {
 }</textarea>   
     
     <p>Can you identify what the different parts here do?</p>
-    
+
     <p>Like before, <code>class MyLevelLayer extends LevelLayer</code> says "pay attention! What follows
     is a desciption of a MyLevelLayer. And it's like the LeveLayer thing that you already know". Then,
     the <code>MyLevelLayer(Level parent, float w, float h)</code> bit tells the game library how we should
@@ -770,21 +786,71 @@ interface Tracker {
     that it won't catch us immediately. We want to make it fun, rather than letting the
     enemy always catch us!</P>
     
-    <p>So, with all that explained, let's pus all these instructions in place and see
+    <p>So, with all that explained, let's put all these instructions in place and see
     what it does:</p>
     
     <figure>
       <canvas data-processing-sources="codebase.pde sketches/basic/sketch09.pde"></canvas>
        <figcaption>A super-simple "game"</figcaption>
-    </figure>    
+    </figure>
+    
+    <p>Alright! NOW we have a game! Although nothing happens when we get hit. Let's
+    quickly fix that:</p>
+    
+<textarea>
+class MyEnemy extends Interactor implements Tracker {
+  [...]
+  
+  void overlapOccurredWith(Actor other, float[] direction) {
+    other.hit();
+  }
+  
+  [...]
+}
 
-    <p>Alright! NOW we have a game! Next time we're going to look at making making
-    things a bit more fun by introducing things like gravity (so we always "stick"
-    to the ground unless we're jumping), platforms to jump on and off of, and even
-    some items that we can pick up for special powers.</p>
+class MyThingy extends Player {
+  [...]
+
+  void hit() {
+    fill(255,0,0,200);
+    rect(x-10,y-10,19,19);
+  }
+
+  [...]
+}
+</textarea>
+
+    <p>We've added two things here. First, in the <code>MyEnemey</code> class we added
+    a function called <code>overlapOccurredWith</code>. This function is automatically
+    called by the game library when one actor overlaps with another, and it gets two
+    things passed long: the <code>other</code> actor that we overlap with, and a list
+    of decimal numbers (or technically, an <code>array</code> of <code>float</code>
+    numbers, written as <code>float[]</code>) to tell us the x- and y-distances.</p>
+    
+    <p>Now, when the enemy hits us, it should... well... HIT us. Conveniently the
+    game library already has a <code>hit()</code> function defined, so we can simply
+    call that, and then in <code>MyThingy</code> make sure it does something that
+    gives us a sign that we've been hit.</p>
+    
+    <p>So, in <code>MyThingy</code> you can see an implementation for the the <code>hit()</code>
+    function: the first instruction says "set up a red color, slightly transparent" (technically
+    it says "make a color with red=200 out of 255, green=0 out of 255, blue=0 out of 255, and
+    solidness=200 out of 255, so it's an almost solid color, but a little bit see-through), and
+    then the second instruction says "draw a rectangle with this color, starting 10 pixels
+    from the left, and 10 pixels above our center point, with a width and height of 19 pixels.
+    Now we can see when we get hit! So what does it look like?</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde sketches/basic/sketch10.pde"></canvas>
+       <figcaption>A super-simple "game"</figcaption>
+    </figure>
+    
+    <p>Sweet. Our very own game! I think that'll do for now, don't you? Next time we're
+    going to look at making making things a bit more fun by introducing things like gravity
+    (so we always "stick" to the ground unless we're jumping), platforms to jump on and
+    off of, and even some items that we can pick up for special powers.</p>
     
     <p>It's going to be awesome.</p>
-
 
   </body>
 </html> 
