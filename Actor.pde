@@ -176,9 +176,6 @@ abstract class Actor extends Positionable {
     if (x > lw - w2) { x = lw - w2; }
   }
 
-  private int __cached_bbox_frame = -1;
-  private float[] __cached_bbox = null;
-
   /**
    * Get the bounding box for this actor
    */
