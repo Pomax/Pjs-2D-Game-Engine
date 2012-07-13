@@ -4,8 +4,8 @@ document.addEventListener("DOMContentLoaded",function(){
     //window.console.log('focus on '+this.id);
     var sketch = Processing.getInstanceById(this.id);
     if (sketch) {
-      sketch.loop();
-      sketch.unmute();
+      if(sketch.loop) sketch.loop();
+      if(sketch.unmute) sketch.unmute();
     }
   });
   
@@ -14,8 +14,8 @@ document.addEventListener("DOMContentLoaded",function(){
     //window.console.log('focus lost by '+this.id);
     var sketch = Processing.getInstanceById(this.id);
     if (sketch) {
-      sketch.noLoop();
-      sketch.mute();
+      if(sketch.noLoop) sketch.noLoop();
+      if(sketch.mute) sketch.mute();
     }
   });
 });

@@ -184,6 +184,13 @@ class Boundary extends Positionable {
   }
 
   /**
+   * redirect a force along this boundary's surface for a specific actor
+   */
+  float[] redirectForce(Positionable p, float fx, float fy) {
+    return redirectForce(fx,fy);
+  }
+
+  /**
    * Can this object be drawn in this viewbox?
    */
   boolean drawableFor(float vx, float vy, float vw, float vh) {

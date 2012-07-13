@@ -2,7 +2,7 @@ final int screenWidth = 512;
 final int screenHeight = 432;
 
 void initialize() {
-  addLevel("level", new MarioLevel(width, height));
+  addScreen("level", new MarioLevel(width, height));
   draw();
 }
 

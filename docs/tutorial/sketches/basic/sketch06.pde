@@ -11,7 +11,7 @@ final int screenHeight = 200;
  * level, which we'll 
  */
 void initialize() {
-  addLevel("mylevel", new MyLevel(width, height));  
+  addScreen("mylevel", new MyLevel(width, height));  
 }
 
 /**

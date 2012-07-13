@@ -7,7 +7,7 @@ float DAMPENING = 0.75;
 
 void initialize() {
   frameRate(30);
-  addLevel("level", new MarioLevel(2*width, height));  
+  addScreen("level", new MarioLevel(2*width, height));  
 }
 
 class MarioLevel extends Level {
@@ -23,7 +23,7 @@ class MarioLayer extends LevelLayer {
   MarioLayer(Level owner) {
     super(owner);
     setBackgroundColor(color(0, 100, 190));
-    addStaticSpriteBG(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
     addBoundary(new Boundary(0,height-48,width,height-48));
     addBoundary(new Boundary(-1,0, -1,height));
     addBoundary(new Boundary(width+1,height, width+1,0));

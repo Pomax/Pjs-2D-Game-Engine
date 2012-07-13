@@ -61,13 +61,13 @@
     
     <p>So let's look at making this all happen!</p>
     
-    <h2>(1) Something that wraps everything in our game as "part of the game"</h2>
-    
     <figure class="floating">
       <img src="basics/a screen.gif">
       <figcaption>A screen has a width and a height</figcaption>
     </figure>
     
+    <h2>(1) Something that wraps everything in our game as "part of the game"</h2>
+       
     <p>In the game-making library that we're using, setting up the thing that wraps everything
     that is "part of our game" is relatively simple, requiring us to say a few things. We need to:</p>
     
@@ -83,7 +83,6 @@
     <textarea>
 final int screenWidth = 200;
 final int screenHeight = 200;
-
 void initialize() {}</textarea>
 
     <p>This code isn't very exciting, and it doesn't do anything yet, but it shows those things
@@ -129,7 +128,7 @@ final int screenWidth = 200;
 final int screenHeight = 200;
 
 void initialize() {
-  addLevel("mylevel", new MyLevel(screenWidth, screenHeight));  
+  addScreen("mylevel", new MyLevel(screenWidth, screenHeight));  
 }
 
 class MyLevel extends Level {
@@ -143,15 +142,15 @@ class MyLevel extends Level {
       <figcaption>A game can have many levels</figcaption>
     </figure>
 
-    <p>There are two new things in this updated code. First, we see the line <code>addLevel("mylevel",
+    <p>There are two new things in this updated code. First, we see the line <code>addScreen("mylevel",
     new MyLevel(screenWidth, screenHeight));</code> which we should read as:</p>
     
     <ul>
-      <li><code>addLevel("the name of this level", &lt;some level&gt;)</code>, and </li>
+      <li><code>addScreen("the name of this level", &lt;some level&gt;)</code>, and </li>
       <li>&lt;some level&gt; being the code <code>new MyLevel(screenWidth, screenHeight)</code>.</li>
     </ul>
     
-    <p>The <code>addLevel(name, level)</code> function is another function that is provided by the
+    <p>The <code>addScreen(name, level)</code> function is another function that is provided by the
     game library. We can call it to add levels to our game, and we can add as many as we like,
     as long as we give them all their own name. The <code>new MyLevel(...)</code> bit says "make
     a new level, of the "MyLevel" kind, and when you make it, tell it two things: the first thing
@@ -306,7 +305,7 @@ class MyLevelLayer extends LevelLayer {
 class MyLevel extends Level {
   MyLevel(float levelWidth, float levelWidth) {
     super(levelWidth, levelWidth);
-    addLevelLayer("my level layer", new MyLevelLayer(this));
+    addScreenLayer("my level layer", new MyLevelLayer(this));
   }
 }</textarea>
 
@@ -315,7 +314,7 @@ class MyLevel extends Level {
       <figcaption>Now we have a level layer!</figcaption>
     </figure>
 
-    <p>The <code>addLevelLayer</code> function is something that game library provides, which we can
+    <p>The <code>addScreenLayer</code> function is something that game library provides, which we can
     conveniently call to add level layers to the set of known layers for a level. So, we give it a 
     new level layer: <code>new MyLevelLayer(this)</code>. The <code>this</code> word refers to 
     "this MyLevel". Which makes sense, because if we pretend that we're a MyLevel ourselves, 

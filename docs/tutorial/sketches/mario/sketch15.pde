@@ -27,8 +27,8 @@ void initialize() {
  * Reset the entire game
  */
 void reset() {
-  clearLevels();
-  addLevel("MainLevel", new MainLevel(4*width, height));  
+  clearScreens();
+  addScreen("MainLevel", new MainLevel(4*width, height));  
 }
 
 
@@ -58,7 +58,7 @@ class MainBackgroundLayer extends LevelLayer {
   MainBackgroundLayer(Level owner) {
     super(owner, owner.width, owner.height, 0,0, 0.75,0.75);
     setBackgroundColor(color(0, 100, 190));
-    addStaticSpriteBG(new TilingSprite(new Sprite("graphics/backgrounds/sky_2.gif"),0,0,width,height));
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky_2.gif"),0,0,width,height));
   }
   void draw() {
     super.draw();
@@ -76,7 +76,7 @@ class MainLevelLayer extends LevelLayer {
   MainLevelLayer(Level owner) {
     super(owner);
     //setBackgroundColor(color(0,130,255));
-    addStaticSpriteBG(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
 
     // set up Mario!
     mario = new Mario();
@@ -135,9 +135,9 @@ class MainLevelLayer extends LevelLayer {
    */
   void addGround(String tileset, float x1, float y1, float x2, float y2) {
     TilingSprite groundline = new TilingSprite(new Sprite("graphics/backgrounds/"+tileset+"-top.gif"), x1,y1,x2,y1+16);
-    addStaticSpriteBG(groundline);
+    addBackgroundSprite(groundline);
     TilingSprite groundfiller = new TilingSprite(new Sprite("graphics/backgrounds/"+tileset+"-filler.gif"), x1,y1+16,x2,y2);
-    addStaticSpriteBG(groundfiller);
+    addBackgroundSprite(groundfiller);
     addBoundary(new Boundary(x1,y1,x2,y1));
   }
   
@@ -149,7 +149,7 @@ class MainLevelLayer extends LevelLayer {
     Sprite groundslant = new Sprite("graphics/backgrounds/ground-slant.gif");
     groundslant.align(LEFT, BOTTOM);
     groundslant.setPosition(x, y);
-    addStaticSpriteBG(groundslant);
+    addBackgroundSprite(groundslant);
     addBoundary(new Boundary(x, y + 48 - groundslant.height, x + 48, y - groundslant.height));
   }
 
@@ -167,18 +167,18 @@ class MainLevelLayer extends LevelLayer {
     rc.setPosition(x+w-rc.width, y);
     TilingSprite toprow = new TilingSprite(tp, x+lc.width, y, x+(w-rc.width), y+tp.height);
 
-    addStaticSpriteBG(lc);
-    addStaticSpriteBG(toprow);
-    addStaticSpriteBG(rc);
+    addBackgroundSprite(lc);
+    addBackgroundSprite(toprow);
+    addBackgroundSprite(rc);
 
     // sides/filler
     TilingSprite sideleft  = new TilingSprite(new Sprite("graphics/backgrounds/"+tileset+"-side-left.gif"),  x,            y+tp.height, x+lc.width,     y+h);
     TilingSprite filler    = new TilingSprite(new Sprite("graphics/backgrounds/"+tileset+"-filler.gif"),     x+lc.width,   y+tp.height, x+(w-rc.width), y+h);
     TilingSprite sideright = new TilingSprite(new Sprite("graphics/backgrounds/"+tileset+"-side-right.gif"), x+w-rc.width, y+tp.height, x+w,            y+h);
 
-    addStaticSpriteBG(sideleft);
-    addStaticSpriteBG(filler);
-    addStaticSpriteBG(sideright);
+    addBackgroundSprite(sideleft);
+    addBackgroundSprite(filler);
+    addBackgroundSprite(sideright);
 
     // boundary to walk on
     addBoundary(new Boundary(x, y, x+w, y));
@@ -199,12 +199,12 @@ class MainLevelLayer extends LevelLayer {
     Sprite goal_b = new Sprite("graphics/assorted/Goal-back.gif");
     goal_b.align(CENTER, BOTTOM);
     goal_b.setPosition(xpos, hpos);
-    addStaticSpriteBG(goal_b);
+    addBackgroundSprite(goal_b);
     // foreground post
     Sprite goal_f = new Sprite("graphics/assorted/Goal-front.gif");
     goal_f.align(CENTER, BOTTOM);
     goal_f.setPosition(xpos+32, hpos);
-    addStaticSpriteFG(goal_f);
+    addForegroundSprite(goal_f);
     // the finish line rope
     addForPlayerOnly(new Rope(xpos, hpos-16));
   }

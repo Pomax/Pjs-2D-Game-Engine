@@ -1,55 +1,81 @@
-document.addEventListener("DOMContentLoaded",function(){
-  // replace textareas with <pre> elements
-  $("textarea").each(function(){
-    var parent = this.parentNode,
-        lines = this.value.trim().split("\n"),
-        i, last=lines.length,
-        pre, div = document.createElement("div");
-    div.setAttribute("class","codeblock");
-    for(i=0; i<last; i++) {
-      pre = document.createElement("pre");
-      if(lines[i]==='') { pre.innerHTML = "&nbsp;"; }
-      else { pre.innerHTML = syntax_highlight(lines[i]); }
-      div.appendChild(pre);
+(function(){
+
+  document.addEventListener("DOMContentLoaded",function(){
+    // replace textareas with <pre> elements
+    $("textarea").each(function(){
+      // 1: don't convert if told not to
+      if(this.getAttribute("data-noconvert")) return;
+
+      // 2: convert otherwise
+      var parent = this.parentNode,
+          lines = this.value.replace(/[\s+\n?]$/,'').split("\n"),
+          i, last=lines.length,
+          pre, div, container = document.createElement("div");
+
+      // 4: build a new codeblock for the content
+      container.setAttribute("class","codeblock");
+      for(i=0; i<last; i++) {
+        div = document.createElement("div"),
+
+        // line number
+        pre = document.createElement("pre");
+        pre.setAttribute("class","code-linenumber");
+        pre.innerHTML = (i+1);
+        div.appendChild(pre);
+        
+        // process each line as a <pre> block
+        pre = document.createElement("pre");
+        pre.setAttribute("class","code-line");
+
+        if(lines[i]==='') { pre.innerHTML = "&nbsp;"; }
+        else { pre.innerHTML = syntax_highlight(lines[i]); }
+        div.appendChild(pre);
+        container.appendChild(div);
+      }
+
+      // 5: replace original textarea
+      parent.insertBefore(container, this);
+      parent.removeChild(this);
+    });
+  },false);
+
+  // our list of highlightable syntax - Processing/Java
+  keywords = ["abstract","continue","for","new","switch",
+              "assert","default","goto","package","synchronized",
+              "boolean","do","if","private","this",
+              "break","double","implements","protected","throw",
+              "byte","else","import","public","throws",
+              "case","enum","instanceof","return","transient",
+              "catch","extends","int","short","try",
+              "char","final","interface","static","void",
+              "class","finally","long","strictfp","volatile",
+              "const*","float","native","super","while"];
+
+  function syntax_highlight(line) {
+    // 1: process line comments
+    var parts = line.split("//");
+    var line = parts[0];
+    var comment = "";
+    if (parts[1]) { comment = "<span class=\"comment\">//" + parts[1] + "</span>"; }
+
+    // 2: process double-quoted strings (keyword safe, because "class" is a keyword)
+    line = line.replace(/"([^"]+)"/g,"<span clss=\"string\">\"$1\"</span>");
+    line = line.replace(/'([^']+)'/g,"<span clss=\"string\">'$1'</span>");
+    
+    // 3: highlight all keywords
+    var k, last=keywords.length, search, replace;
+    for(k=0; k<last; k++) {
+      search = new RegExp("\\b"+keywords[k]+"\\b","g");
+      replace = "<span clss=\"keyword\">"+keywords[k]+"</span>";
+      line = line.replace(search, replace);
     }
-    parent.insertBefore(div, this);
-    parent.removeChild(this);
-  });
-},false);
 
-keywords = ["abstract","continue","for","new","switch",
-            "assert","default","goto","package","synchronized",
-            "boolean","do","if","private","this",
-            "break","double","implements","protected","throw",
-            "byte","else","import","public","throws",
-            "case","enum","instanceof","return","transient",
-            "catch","extends","int","short","try",
-            "char","final","interface","static","void",
-            "class","finally","long","strictfp","volatile",
-            "const*","float","native","super","while"];
+    // 4: process numerals
+    line = line.replace(/([\d,.]+)/g,"<span class=\"number\">$1</span>");
 
-function syntax_highlight(line) {
-  // line comments
-  var parts = line.split("//");
-  var line = parts[0];
-  var comment = "";
-  if (parts[1]) {
-    comment = "<span class=\"comment\">//" + parts[1] + "</span>";
+    // 5: enable all classes
+    line = line.replace(/clss=/g,"class=");
+    return line + comment;
   }
 
-  // strings
-  line = line.replace(/"([^"]+)"/g,"<span clss=\"string\">\"$1\"</span>");
-  line = line.replace(/'([^']+)'/g,"<span clss=\"string\">'$1'</span>");
-
-  // keywords
-  var k, last=keywords.length;
-  for(k=0; k<last; k++) {
-    line = line.replace(new RegExp("\\b"+keywords[k]+"\\b","g"), "<span clss=\"keyword\">"+keywords[k]+"</span>");
-  }
-
-  // numbers
-  line = line.replace(/([\d,.]+)/g,"<span class=\"number\">$1</span>");
-
-  line = line.replace(/clss=/g,"class=");
-  return line + comment;
-}
+}());

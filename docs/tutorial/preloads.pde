@@ -1,8 +1,18 @@
+/**
+ * override!
+ * this disables the default "loop()" when using addScreen
+ */
+void addScreen(String name, Screen screen) {
+  screenSet.put(name, screen);
+  if (activeScreen == null) { activeScreen = screen; }
+  else { SoundManager.stop(activeScreen); }
+}
+
 /* @pjs pauseOnBlur="true";
         font="fonts/acmesa.ttf";
         preload=" graphics/mute.gif,
                   graphics/unmute.gif,
-
+                  
                   graphics/assorted/Block.gif,
                   graphics/assorted/Coin-block.gif,
                   graphics/assorted/Coin-block-exhausted.gif,
@@ -12,13 +22,18 @@
                   graphics/assorted/Goal-back.gif,
                   graphics/assorted/Goal-front.gif,
                   graphics/assorted/Goal-slider.gif,
+                  graphics/assorted/Key.gif,
+                  graphics/assorted/Keyhole.gif,
                   graphics/assorted/Mushroom.gif,
                   graphics/assorted/Passthrough-block.gif,
                   graphics/assorted/Pipe-body.gif,
                   graphics/assorted/Pipe-head.gif,
                   graphics/assorted/Regular-coin.gif,
+                  graphics/assorted/Sky-block.gif,
+                  graphics/assorted/Special.gif,
+                  graphics/assorted/Target.gif,
+                  graphics/assorted/Teleporter.gif,
 
-                  graphics/backgrounds/bonus.gif,
                   graphics/backgrounds/bush-01.gif,
                   graphics/backgrounds/bush-02.gif,
                   graphics/backgrounds/bush-03.gif,
@@ -40,6 +55,9 @@
                   graphics/backgrounds/ground-slant.gif,
                   graphics/backgrounds/ground-top.gif,
 
+                  graphics/backgrounds/bonus.gif,
+                  graphics/backgrounds/nightsky_bg.gif,
+                  graphics/backgrounds/nightsky_fg.gif,
                   graphics/backgrounds/sky.gif,
                   graphics/backgrounds/sky_2.gif,
 

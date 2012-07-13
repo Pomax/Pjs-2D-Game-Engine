@@ -42,7 +42,7 @@ final int screenWidth = 512;
 final int screenHeight = 432;
 
 void initialize() {
-  addLevel("level", new MarioLevel(width, height));  
+  addScreen("level", new MarioLevel(width, height));  
 }
 
 class MarioLevel extends Level {
@@ -303,7 +303,7 @@ float DAMPENING = 0.75;
     
 <textarea>
 void initialize() {
-  addLevel("level", new MarioLevel(width, height));  
+  addScreen("level", new MarioLevel(width, height));  
   frameRate(30);
 }
 </textarea>
@@ -413,7 +413,7 @@ class MarioLayer extends LevelLayer {
     setBackgroundColor(color(0, 100, 190));
     Sprite background_picture = new Sprite("graphics/backgrounds/sky.gif");
     TilingSprite background = new TilingSprite(background_picture,0,0,width,height);
-    addStaticSpriteBG(background);
+    addBackgroundSprite(background);
 
     addBoundary(new Boundary(0,height-48,width,height-48));
     showBoundaries = true;
@@ -423,7 +423,7 @@ class MarioLayer extends LevelLayer {
 }
 </textarea>
 
-    <p>The important line is that <code>addStaticSpriteBG(...)</code> line. This says
+    <p>The important line is that <code>addBackgroundSprite(...)</code> line. This says
     "Add something, which is inside the ( and ), to the list of background sprites." with
     the word "static" simply meaning "things that don't change". In this case we add
     what is known as a "Tiling Sprite" - a picture that is repeated to fill a certain area
@@ -464,7 +464,7 @@ class MarioLayer extends LevelLayer {
 <textarea>
 void initialize() {
   frameRate(30);
-  addLevel("level", new MarioLevel(2*width, height));  
+  addScreen("level", new MarioLevel(2*width, height));  
 }
 
 class MarioLevel extends Level {
@@ -584,11 +584,11 @@ class MarioLayer extends LevelLayer {
   void addGround(float x1, float y1, float x2, float y2) {
     Sprite grassy = new Sprite("graphics/backgrounds/ground-top.gif");
     TilingSprite groundline = new TilingSprite(grassy, x1,y1,x2,y1+16);
-    addStaticSpriteBG(groundline);
+    addBackgroundSprite(groundline);
 
     Sprite filler = new Sprite("graphics/backgrounds/ground-filler.gif");
     TilingSprite groundfiller = new TilingSprite(filler, x1,y1+16,x2,y2);
-    addStaticSpriteBG(groundfiller);
+    addBackgroundSprite(groundfiller);
 
     addBoundary(new Boundary(x1,y1,x2,y1));
   }  
@@ -673,7 +673,7 @@ class BackgroundLayer extends LevelLayer {
   BackgroundLayer(Level owner) {
     super(owner, owner.width, owner.height, 0, 0, 0.75, 0.75);
     setBackgroundColor(color(0, 100, 190));
-    addStaticSpriteBG(new TilingSprite(new Sprite("graphics/backgrounds/sky_2.gif"),0,0,width,height));
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky_2.gif"),0,0,width,height));
   }
 }
 
@@ -683,7 +683,7 @@ class MarioLayer extends LevelLayer {
   MarioLayer(Level owner) {
     super(owner);
     // we no longer have a background color in the main level layer now
-    addStaticSpriteBG(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
     [...]  
   }
 
@@ -775,7 +775,7 @@ class MarioLayer extends LevelLayer {
     Sprite groundslant = new Sprite("graphics/backgrounds/ground-slant.gif");
     groundslant.align(LEFT, BOTTOM);
     groundslant.setPosition(x, y);
-    addStaticSpriteBG(groundslant);
+    addBackgroundSprite(groundslant);
     addBoundary(new Boundary(x, y + 48 - groundslant.height, x + 48, y - groundslant.height));
   }
 }
@@ -816,9 +816,9 @@ class MarioLayer extends LevelLayer {
     rc.setPosition(x+w-rc.width, y);
     TilingSprite toprow = new TilingSprite(tp, x+lc.width, y, x+(w-rc.width), y+tp.height);
 
-    addStaticSpriteBG(lc);
-    addStaticSpriteBG(toprow);
-    addStaticSpriteBG(rc);
+    addBackgroundSprite(lc);
+    addBackgroundSprite(toprow);
+    addBackgroundSprite(rc);
 
     // sides/filler
     TilingSprite sideleft  = new TilingSprite(new Sprite("graphics/backgrounds/ground-side-left.gif"),
@@ -828,9 +828,9 @@ class MarioLayer extends LevelLayer {
     TilingSprite sideright = new TilingSprite(new Sprite("graphics/backgrounds/ground-side-right.gif"),
                                               x+w-rc.width, y+tp.height, x+w,            y+h);
 
-    addStaticSpriteBG(sideleft);
-    addStaticSpriteBG(filler);
-    addStaticSpriteBG(sideright);
+    addBackgroundSprite(sideleft);
+    addBackgroundSprite(filler);
+    addBackgroundSprite(sideright);
 
     // boundary to walk on
     addBoundary(new Boundary(x, y, x+w, y));
@@ -1117,8 +1117,8 @@ class Mario extends Player {
 [...]
 
 void reset() {
-  clearLevels();
-  addLevel("level", new MarioLevel(4*width, height));
+  clearScreens();
+  addScreen("level", new MarioLevel(4*width, height));
 }
 
 [...]
@@ -1319,13 +1319,13 @@ class MarioLayer extends LevelLayer {
     Sprite back_post = new Sprite("graphics/assorted/Goal-back.gif");
     back_post.align(CENTER, BOTTOM);
     back_post.setPosition(xpos, hpos);
-    addStaticSpriteBG(back_post);
+    addBackgroundSprite(back_post);
 
     // and add the front post ot the foreground images
     Sprite front_post = new Sprite("graphics/assorted/Goal-front.gif");
     front_post.align(CENTER, BOTTOM);
     front_post.setPosition(xpos+32, hpos);
-    addStaticSpriteFG(front_post);
+    addForegroundSprite(front_post);
 
     // the finish line rope
     addForPlayerOnly(new Rope(xpos, hpos-16));

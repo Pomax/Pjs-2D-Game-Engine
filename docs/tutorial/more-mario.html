@@ -31,11 +31,534 @@
       <li>level swapping</li>
       <li>player powers</li>
       <li>decorations (decals)</li>
+      <li>Animation trajectories and paths</li>
     </ul>
     
     <h2>Teleporting</h2>
     
-    <p></p>
+    <p>Let's start off by implementing teleporting. The concept is pretty straight
+    forward:</p>
+    
+    <ul>
+      <li>listen for a specific event to cause a teleport</li>
+      <li>call <code>actor.setPosition(...,...)</code> to effect a teleport</li>
+    </ul>
+    
+    <p>There are many ways in which to listen for teleport events,
+    including using a teleport <code>Pickup</code>, a teleport <code>Trigger</code>
+    region, or that old favourite: an actual teleporter. So let's implement one
+    of those, to get a feel for the whole thing. First we extend our previous
+    tutorial's Mario with a "crouching" state when you press 'S', so that we have
+    something to monitor for teleporting, and then we'll set up our actual teleport.</p>
+    
+<textarea>
+class Mario extends Player {
+  [...]
+
+  Mario() {
+    super("Mario");
+    setStates();
+    handleKey('W');
+    handleKey('A');
+    handleKey('S');
+    handleKey('D');
+    setImpulseCoefficients(DAMPENING, DAMPENING);
+    setForces(0, DOWN_FORCE);
+    setAcceleration(0, ACCELERATION);
+  }
+
+  // We want ot make sure all states are center/bottom anchored,
+  // so that when we switch from normal to crouch and back, the
+  // sprite will always be anchored to the floor.
+  void addState(State st) {
+    st.sprite.anchor(CENTER, BOTTOM);
+    super.addState(st);
+  }  
+  
+  // the same as before, but now with crouch and crouchjump
+  void setStates() {
+    addState(new State("idle", "graphics/mario/small/Standing-mario.gif"));
+    addState(new State("crouching", "graphics/mario/small/Crouching-mario.gif"));
+    addState(new State("running", "graphics/mario/small/Running-mario.gif", 1, 4));
+    
+    State jumping = new State("jumping", "graphics/mario/small/Jumping-mario.gif");
+    jumping.setDuration(15);
+    addState(jumping);
+    SoundManager.load(jumping, "audio/Jump.mp3");
+
+    State crouchjumping = new State("crouchjumping", "graphics/mario/small/Crouching-mario.gif");
+    crouchjumping.setDuration(15);
+    addState(crouchjumping);
+    SoundManager.load(crouchjumping, "audio/Jump.mp3");
+
+    setCurrentState("idle");
+  }
+
+  // When 'fixed frame count' animations end
+  // such as the jump animation, what should we do?
+  void handleStateFinished(State which) {
+    setCurrentState("idle");
+  }
+
+  // We add in handling of the 'S' key, too
+  void handleInput() {
+    // we can't move left/right if we're crouching!
+    if (active.name!="crouching" && (isKeyDown('A') || isKeyDown('D'))) {
+      if (isKeyDown('A')) {
+        setHorizontalFlip(true);
+        addImpulse(-speed, 0);
+      }
+      if (isKeyDown('D')) {
+        setHorizontalFlip(false);
+        addImpulse(speed, 0);
+      }
+    }
+
+    if (active.mayChange() && isKeyDown('W') && boundaries.size()>0) {
+      ignore('W');
+      addImpulse(0, -35);
+      // regular jump, or crouch jump?
+      if (active.name!="crouching") { setCurrentState("jumping"); }
+      else { setCurrentState("crouchjumping"); }
+      SoundManager.play(active);
+    }
+
+    // what to do when 'S' is pressed:
+    if (isKeyDown('S')) {
+      if (active.name=="jumping") { setCurrentState("crouchjumping"); }
+      else { setCurrentState("crouching"); }
+    }
+
+    if (active.mayChange()) {
+      // and finally, make sure we don't run if we're crouching
+      if (active.name!="crouching" && (isKeyDown('A') || isKeyDown('D'))) {
+        setCurrentState("running");
+      }
+      else if (noKeysDown()) { setCurrentState("idle"); }
+    }
+  }
+  
+  [...]
+}
+</textarea>
+
+    <p>Alright, that's a fair bit of code, but you should be able to 
+    see what's going on at this point. Two new states have been introduced,
+    the crouch and crouch-jump states, and they require input handling to
+    be extended so that we can change to them, and don't change away from
+    them when we shouldn't reasonably be able to.</p>
+    
+    <p>So let's make a teleporter.</p>
+
+    <figure>
+      <img src="graphics/assorted/Teleporter.gif" alt="a teleporter">
+       <figcaption>Something like this</figcaption>
+    </figure>     
+    
+    <p>You might recognise that as a Megaman (or Rockman if you prefer)
+    teleporter. Super convenient! we're going to turn this into an in-game
+    teleporter by setting up the following:</p>
+    
+    <ul>
+      <li>an Interactor that uses the teleporter sprite for its idle state</li>
+      <li>a special boundary that can listen to what attached actors are doing</li>
+      <li>a one-way binding to another teleporter</li>
+    </ul>
+    
+    <p>With this, we'll have a simple teleport procedure: actor jumps onto teleporter,
+    actor crouches, teleporter teleports actor to its new location. So, let's make
+    a teleporter; we make it a <code>BoundedInteractor</code>, just like we did with
+    the <code>Muncher</code> in the previous tutorial, because we need to attach
+    boundaries to this things:</p>
+
+<textarea>
+class Teleporter extends BoundedInteractor {
+  TeleportBoundary surface;
+  
+  Teleporter(float x, float y) {
+    super("Teleporter");
+    setPosition(x,y);
+
+    // set up the idle state with our teleporter image:
+    State idle = new State("idle","graphics/assorted/Teleporter.gif");
+    idle.sprite.align(CENTER,BOTTOM);
+    addState(idle);
+
+    // add a ceiling boundary so we don't jump through
+    // the teleporter if we're standing on it:
+    addBoundary(new Boundary(x+16,y-48,x-16,y-48));
+
+    // add the active teleporter surface
+    surface = new TeleportBoundary(x-16,y-16,x+16,y-16);
+    addBoundary(surface);    
+  }
+
+  // Which other teleporter should we teleport actors to?
+  void teleportTo(Teleporter other) {
+    surface.setTeleportLocation(other.x, other.y-32);
+  }
+}
+</textarea>
+
+    <p>Alright, done. Of course we need to define this special
+    "Teleporter Boundary" too:</p>
+
+<textarea>
+class TeleportBoundary extends Boundary {
+  float teleport_location_x=0, teleport_location_y=0;
+
+  TeleportBoundary(float x1, float y1, float x2, float y2) {
+    super(x1,y1,x2,y2);   
+    teleport_location_x = (x1+x2)/2;
+    teleport_location_y = (y1+y2)/2;
+    // set up the "plop" sound for playing when we teleport
+    SoundManager.load(this,"audio/Squish.mp3");
+  }
+  
+  // where should this teleport surface teleport actors to?
+  void setTeleportLocation(float x, float y) {
+    teleport_location_x = x;
+    teleport_location_y = y;
+  }
+  
+  // Teleport an actor to the predefined coordinates!
+  void teleport(Actor a) {
+    a.setPosition(teleport_location_x,teleport_location_y);
+  }
+
+  // when we teleport an actor, it should get a zero-impulse
+  float[] STATIONARY = {0,0};
+   
+  // keeps Processing.js happy
+  float[] redirectForce(float fx, float fy) {
+    return super.redirectForce(fx,fy);
+  }
+
+  // teleport based on what the actor is doing
+  float[] redirectForce(Actor a, float fx, float fy) {
+    if(a.active.name=="crouching") {
+      a.detachFrom(this);
+      a.setCurrentState("idle");
+      teleport(a);
+      SoundManager.play(this);
+      return STATIONARY;
+    }
+    else { return super.redirectForce(a,fx,fy); }
+  }
+}
+</textarea>
+
+    <p>The important bits happen on lines 22 through 38, and specifically
+    on lines 30 through 38: we "intercept" the function that is normally
+    used to determine how to update an actor position. When an actor is
+    moving around freely, this is isolated code and we can't see what's
+    happening, but when an actor is standing on a boundary, the boundary
+    is asked whether the intended motion of the actor is "legal" or not,
+    and if it's illegal, how it should be changed to make it legal.</p>
+    
+    <p>For instance, an actor standing on an incline, while subjected to
+    gravity, would LIKE to fall straight through the incline, because
+    gravity points straight down, but this would be illegal movement.
+    Instead, the incline will change the illegal movement into legal
+    movement along the surface of the incline, so we slide left or
+    right, rather than going straight through. This happens in the
+    <code>redirectForce</code> function, so we can hijack that in order
+    to make teleportation happen.</p>
+    
+    <p>This function is called every frame as long as an actor is
+    standing on a boundary, so what we do is check: "is the actor
+    crouching? If so, it's teleport time! ... if not, just let
+    the normal code for force redirecting do its thing", which
+    you see on line 37. You may also see that lines 25, 26, and 27
+    don't seem to do anything - they just immediately call
+    the superclass's function. This is mostly to appease Processing.js,
+    which (thanks to JavaScript and Processing being slightly different
+    in how they deal with super/sub classing) makes everything work.
+    Without them, the call on line 37 will actually call the function
+    on line 30, which would be very inconvenient.</p>
+    
+    <p>Anyway, back to what our code does: when an actor crouches,
+    we detach it from the boundary, set its state to idle instead
+    of crouching, and then teleport them to their new location.
+    <code>return STATIONARY</code> on line 35 is required because
+    the <code>redirectForce</code> must always return a list of
+    numbers that represent the new x and y directions of an actor's
+    intended movement. Even if we don't want them to move, we have
+    to explicitly say this, so we return the list "no movement in the
+    x direction, and no movement in the y direction", which we've
+    stored in a variable called <code>STATIONARY</code> on line 22.</p>
+    
+    <p>Finally, we want to actually make use of these teleporters.
+    So let's take our original <code>LevelLayer</code> and strip
+    out everything except the ground, and add some teleporters
+    (for testing purposes, we're going to make the level layer
+    only one screen size wide and height):</p>
+    
+<textarea>
+class MainLevelLayer extends LevelLayer {
+  Mario mario;
+  
+  MainLevelLayer(Level owner) {
+    super(owner);
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
+
+    // set up Mario!
+    mario = new Mario();
+    mario.setPosition(32, height-64);
+    addPlayer(mario);
+
+    // we don't want mario to walk off the level, so we keep the side walls
+    addBoundary(new Boundary(-1,0, -1,height));
+    addBoundary(new Boundary(width+1,height, width+1,0));
+
+    // the ground now has an unjumpable gap:
+    addGround("ground", -32,height-48, width/2-96,height);
+    addGround("ground", width/2 + 49,height-48, width+32,height);
+
+    // then, add two teleporters on either side of the gap
+    Teleporter t1 = addTeleporter(width/4+20, height-48);
+    Teleporter t2 = addTeleporter(3*width/4-68, height-48);
+
+    // and we link them together, so they teleport to each other
+    t1.teleportTo(t2);
+    t2.teleportTo(t1);
+  }
+
+  // for convenience we change the draw function
+  // so that if Mario falls outside the screen,
+  // we put him back at his start position:
+  void draw() {
+    super.draw();
+    if(mario.y>height+64) { mario.setPosition(32,height-64); }
+  }
+
+  // Add a teleporter to the scene, and make sure to give
+  // back a reference to it so that we can use that to link
+  // up two (or more!) teleporters.
+  Teleporter addTeleporter(float x, float y) {
+    Teleporter t = new Teleporter(x, y);
+    addBoundedInteractor(t);
+    return t;
+  }
+  
+  // same function as before
+  void addGround(String tileset, float x1, float y1, float x2, float y2) {
+    [...]
+  }
+}
+</textarea>
+
+    <p>Alright, cool. We now have a level with teleporters. Let's try this out!
+    We should now be able to jump onto a teleporter, press 'S', and teleport
+    across the gaping canyon in the level. We should also able to just
+    walk off the cliff, although that won't do us much good to get the other
+    side...=D</p>
+    
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/refined/sketch01.pde"></canvas>
+       <figcaption>Canyons mean nothing to us</figcaption>
+    </figure>
+    
+    <p>Niiiice... but not very Mario. You've seen the idea behind teleporting,
+    so let's take what we know, and apply it to the only possibly correct
+    Mario teleporter: green, tubish, pipe-like "brrp-brrp-brrp" teleporters!</p>
+    
+    <figure>
+      <div class="imageblock">
+        <img src="graphics/assorted/Pipe-head.gif" alt="a pipe head">
+        <img src="graphics/assorted/Pipe-body.gif" alt="a pipe">
+      </div>
+      <figcaption>You know the ones I'm talking about</figcaption>
+    </figure>  
+    
+    <p>We're going to use the same idea, but work it out slightly different:</p>
+    
+    <ul>
+      <li>two-part pipe: head and body, drawn as foreground objects</li>
+      <li>five boundaries: four around the pipe, and a fifth one at the bottom of the head</li>
+      <li>the top boundary will listen for 'S' and disable itself</li>
+      <li>this will make us fall 'into' the pipe!</li>
+      <li>where we'll have a trigger region set up to teleport us!!</li>
+      <li>which not only teleports mario to inside another tube, but gives him an upward force, so he'll pop out!!!</li>
+    </ul>
+
+    <p>There is nothing in this plan that isn't going to work. Let's get to it:</p>
+
+<textarea>
+class MainLevelLayer extends LevelLayer {
+  Mario mario;
+  
+  MainLevelLayer(Level owner) {
+    [...]
+
+    // add two teleporters on either side of the gap
+    Pipe t1 = addPipe(width/4-16, height-48);
+    Pipe t2 = addPipe(3*width/4-64, height-48);
+
+    // and link them together
+    t1.teleportTo(t2);
+    t2.teleportTo(t1);
+  }
+
+  [...]
+
+  /**
+   * Add a teleporter pipe
+   */
+  Pipe addPipe(float x, float y) {
+    Pipe p = new Pipe(x, y);
+    addBoundedInteractor(p);
+    addForegroundSprite(p.head);
+    addForegroundSprite(p.body);
+    addTrigger(p.trigger);
+    return p;
+  }
+  
+  [...]
+}
+</textarea>
+
+    <p>Of course, we'll need to actually define this pipe class, too:</p>
+
+<textarea>
+class Pipe extends BoundedInteractor {
+  Lid lid;
+  Sprite head, body;
+  TeleportTrigger trigger;
+  
+  Pipe(float x, float y) {
+    super("Teleporter");
+    setPosition(x,y);
+
+    // set up the sprite graphics
+    head = new Sprite("graphics/assorted/Pipe-head.gif");
+    head.align(LEFT,BOTTOM);
+    head.setPosition(x,y-16);
+    body = new Sprite("graphics/assorted/Pipe-body.gif");
+    body.align(LEFT,BOTTOM);
+    body.setPosition(x,y);
+    
+    // add the five boundaries, of which the top is a special "lid" boundary
+    lid = new Lid(x,y-48, x+32,y-48);
+    addBoundary(lid);
+    addBoundary(new Boundary(x+32,y-48, x+32,y));
+    addBoundary(new Boundary(x+32,y, x,y));
+    addBoundary(new Boundary(x,y, x,y-48));
+
+    // a hidden boundery inside the pipe, so we don't fall through
+    addBoundary(new Boundary(x,y-8, x+32,y-8));
+
+    // and set up our teleport trigger
+    trigger = new TeleportTrigger(x+2,y-10,28,2);
+    trigger.setLid(lid);
+  }
+
+  void teleportTo(Pipe other) {
+    trigger.setDestination(other.x+16, other.y-24);
+  }
+}
+</textarea>
+
+    <p>We do a few things here. First off, we reserve <code>head</code>, <code>body</code>,
+    and <code>trigger</code> as properties that we can call from somewhere else, like the 
+    Level Layer that we create the pipe in. Because the two sprites and the trigger need
+    to be added to a layer, we make them accessible.</p>
+    
+    <p>Then, in the constructor, we set up the head and body as simple sprites. To make
+    positioning easier, we also align them so that if we position them on (x,y), that
+    will be their left/bottom corner, using <code>align(LEFT,BOTTOM)</code>.</p>
+    
+    <p>After that we add the boundaries. We box in the pipe, and add another boundary
+    inside the pipe so that we can't "fall through" the pipe if we're inside it. This
+    is important, because we're going to be inside it when we teleport!</p>
+    
+    <p>The teleporting we effect by adding a trigger region that lives inside the pipe,
+    so that when something falls through the lid (when that gets disabled), they fall onto
+    the trigger region, and get teleported.</p>
+    
+    <p>So far, so good! Now, the <code>Lid</code> and <code>TeleportTrigger</code> look
+    as follows:</p>
+
+<textarea>
+class Lid extends Boundary {
+  Lid(float x1, float y1, float x2, float y2) {
+    super(x1,y1,x2,y2);
+  }
+
+  // when we teleport an actor, it should get a zero-impulse
+  float[] STATIONARY = {0,0};
+   
+  // keeps Processing.js happy
+  float[] redirectForce(float fx, float fy) {
+    return super.redirectForce(fx,fy);
+  }
+
+  // teleport based on what the actor is doing
+  float[] redirectForce(Actor a, float fx, float fy) {
+    if(a.active.name=="crouching") {
+      disable();
+    }
+    return super.redirectForce(a,fx,fy);
+  }
+}
+</textarea>
+
+    <p>This is similar to the previous teleport boundary, except
+    that we don't immediately teleport any actors, we simply
+    disable the boundary, so they'll fall through, and hit the
+    teleport trigger - sneakily hidden behind the pipe's graphics:</p>
+
+<textarea>
+class TeleportTrigger extends Trigger {
+  Lid lid;
+  float teleport_x, teleport_y;
+  
+  // we build a trigger with the classic "brrp brrp brrp" sound
+  TeleportTrigger(float x, float y, float w, float h) {
+    super("Teleporter",x,y,w,h);
+    SoundManager.load(this, "audio/Pipe.mp3");
+  }
+  
+  // we'll need to enable the pipe lid when we teleport
+  void setLid(Lid l) { lid = l; }
+  
+  // we'll also need to know WHERE to teleport to =)
+  void setDestination(float x, float y) {
+    teleport_x = x;
+    teleport_y = y;
+  }
+  
+  // when the trigger is activated...
+  void run(LevelLayer level, Actor actor, float[] intersection) {
+    //... enable the lid again, so it's a real boundary again,
+    lid.enable();
+    // and teleport the actor,
+    actor.setPosition(teleport_x,teleport_y);
+    // and give it an upward jump, 
+    actor.setImpulse(0,-30);
+    // and play the brrp brrp brrp sound!
+    SoundManager.play(this);
+  }
+}
+</textarea>    
+
+    <p>So what does this look like? Well, to show this off best, let's
+    look at this in two different ways. One with boundaries and triggers
+    shown (in debug mode) without drawing the pipe graphics, and one
+    in "game view", where we just see the graphics, with boundaries and
+    triggers hidden:</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/refined/sketch02.pde"></canvas>
+       <figcaption>In debug view</figcaption>
+    </figure>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/refined/sketch02b.pde"></canvas>
+       <figcaption>In game view</figcaption>
+    </figure>
+
+    <p>How cool is that?</p>
 
     <h2>Moving between layers</h2>
 
@@ -52,11 +575,15 @@
     <h2>Using decals</h2>
 
     <p></p>
-    
+
+    <h2>Animation trajectories and paths</h2>
+
+    <p></p>
+<!--
     <figure>
-      <canvas data-processing-sources="codebase.pde preloads.pde sketches/refined/sketch01.pde"></canvas>
-       <figcaption>My very own remix of the game we've been making</figcaption>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/refined/sketch99.pde"></canvas>
+       <figcaption>The final game</figcaption>
     </figure> 
-    
+-->
   </body>
 </html> 

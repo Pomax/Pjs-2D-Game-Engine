@@ -7,7 +7,7 @@ float DAMPENING = 0.75;
 
 void initialize() {
   frameRate(30);
-  addLevel("level", new MarioLevel(width, height));  
+  addScreen("level", new MarioLevel(width, height));  
 }
 
 class MarioLevel extends Level {

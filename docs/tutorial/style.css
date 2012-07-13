@@ -20,11 +20,10 @@ figure {
   display: inline-block;
   border: 1px solid grey;
   padding: 5px;
-  text-align: center; }
+  text-align: center;
+  background-color: rgb(240,240,240); }
 
-figure.floating {
-  float: right;
-}
+figure.floating { float: right; }
 
 figure canvas {
   display: block;
@@ -90,14 +89,14 @@ code:after { content: "]"; }
   color: darkgreen;
 }
 
-ol {
+navigation ol {
   display: table;
   border: 1px solid black;
   margin: auto;
   padding: 0;
   list-style-type: none;
 }
-ol li {
+navigation ol li {
   display: table-cell;
   padding: 0 1em;
 }
@@ -105,4 +104,17 @@ ol li {
 a, a:hover, a:visited {
   color: rgb(0,0,200);
   text-decoration: none;
+}
+
+/* syntax highlighting */
+
+pre.code-linenumber {
+  display: inline-block;
+  width: 2em;
+  text-align: right;
+  margin-right: 1em;
+  color: #999;
+}
+pre.code-line {
+  display: inline-block;
 }

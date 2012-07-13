@@ -32,6 +32,7 @@ abstract class Actor extends Positionable {
   
   // is this actor persistent with respect to viewbox draws?
   boolean persistent = true;
+  boolean isPersistent() { return persistent; }
 
   // the layer this actor is in
   LevelLayer layer;
@@ -47,10 +48,8 @@ abstract class Actor extends Positionable {
   
   // simple constructor
   Actor(String _name) {
-    Computer.actors();
     name = _name;
     states = new HashMap<String, State>();
-    Computer.hashmaps("String","State");
   }
 
   // full constructor
@@ -64,11 +63,15 @@ abstract class Actor extends Positionable {
    */
   void addState(State state) {
     state.setActor(this);
+    boolean replaced = (states.get(state.name) != null);
     states.put(state.name, state);
-    active = state;
-    updatePositioningInformation();
-  } 
-
+    if(!replaced || (replaced && state.name == active.name)) {
+      if (active == null) { active = state; }
+      else { swapStates(state); }
+      updatePositioningInformation();
+    }
+  }
+  
   /**
    * Get a state by name.
    */
@@ -103,17 +106,53 @@ abstract class Actor extends Positionable {
    */
   void setCurrentState(String name) {
     State tmp = states.get(name);
-    if (tmp!=active) {
+    if (active != null && tmp != active) {
       tmp.reset();
-      boolean hflip = (active.sprite!=null ? active.sprite.hflip : false),
-               vflip = (active.sprite!=null ? active.sprite.vflip : false);
-      active = tmp;
-      if(active.sprite!=null) {
-        if(hflip) active.sprite.flipHorizontal();
-        if(vflip) active.sprite.flipVertical();
-        updatePositioningInformation();
+      swapStates(tmp);
+    } else { active = tmp; }
+  }
+  
+  /**
+   * Swap the current state for a different one.
+   */
+  void swapStates(State tmp) {
+    // get pertinent information
+    Sprite osprite = active.sprite;
+    boolean hflip = false, vflip = false;
+    if (osprite != null) {
+      hflip = osprite.hflip;
+      vflip = osprite.vflip;
+    }
+
+    // upate state to new state
+    active = tmp;
+    Sprite nsprite = tmp.sprite;
+    if (nsprite != null) {
+      if (hflip) nsprite.flipHorizontal();
+      if (vflip) nsprite.flipVertical();
+      updatePositioningInformation();
+
+      // if both old and new states had sprites,
+      // make sure the anchors line up.
+      if (osprite != null) {
+        handleSpriteSwap(osprite, nsprite);
       }
     }
+  }
+
+  /**
+   * Move actor if this state changes
+   * makes the actor bigger than before,
+   * and we're attached to boundaries.
+   */
+  void handleSpriteSwap(Sprite osprite, Sprite nsprite) {
+    float ax1 = osprite.hanchor,
+          ay1 = osprite.vanchor,
+          ax2 = nsprite.hanchor,
+          ay2 = nsprite.vanchor;
+    float dx = (ax2-ax1)/2.0, dy = (ay2-ay1)/2.0;
+    x -= dx;
+    y -= dy;
   }
 
   /**
@@ -142,6 +181,7 @@ abstract class Actor extends Positionable {
    */
   float[] getBoundingBox() {
     if(active==null) return null;
+    
     float[] bounds = active.sprite.getBoundingBox();
     
     // transform the bounds, based on local translation/scale/rotation
@@ -165,6 +205,7 @@ abstract class Actor extends Positionable {
     bounds[2] += x+ox; bounds[3] += y+oy;  // top right
     bounds[4] += x+ox; bounds[5] += y+oy;  // bottom right
     bounds[6] += x+ox; bounds[7] += y+oy;  // bottom left
+
     // done
     return bounds;
   }
@@ -193,6 +234,11 @@ abstract class Actor extends Positionable {
   void overlapOccurredWith(Actor other, float[] direction) {
     colliding = true;
   }
+  
+  /**
+   * What happens when we get hit
+   */
+  void hit() { /* can be overwritten */ }
 
   /**
    * attach an actor to a boundary, so that
@@ -200,26 +246,32 @@ abstract class Actor extends Positionable {
    * surfaces.
    */  
   void attachTo(Boundary boundary, float[] correction) {
+    // don't add boundaries we're already attached to
+    if(boundaries.contains(boundary)) return;
+    
     // record attachment
     boundaries.add(boundary);
 
     // stop the actor
-    float ix = this.ix - (fx*ixF),
-          iy = this.iy - (fy*iyF);
+    float[] original = {this.ix - (fx*ixF), this.iy - (fy*iyF)};
     stop(correction[0], correction[1]);
 
     // then impart a new impulse, as redirected by the boundary.
-    float[] rdf = boundary.redirectForce(ix, iy);
+    float[] rdf = boundary.redirectForce(original[0], original[1]);
     addImpulse(rdf[0], rdf[1]);
 
-    // finally, call the blocked handler
-    gotBlocked(boundary, correction);
+    // call the blocked handler
+    gotBlocked(boundary, correction, original);
+ 
+    // and then make sure to update the actor's position, as
+    // otherwise it looks like we've stopped for 1 frame.
+    update();
   }
   
   /**
    * This boundary blocked our path.
    */
-  void gotBlocked(Boundary b, float[] intersection) {
+  void gotBlocked(Boundary b, float[] intersection, float[] original) {
     // subclasses can implement, but don't have to
   }
 
@@ -229,8 +281,14 @@ abstract class Actor extends Positionable {
    * moved back by dx/dy
    */
   void stop(float dx, float dy) {
-    x += dx;
-    y += dy;
+    // we need to prevent IEEE floats polluting
+    // the position information, so even though
+    // the math is perfect in principle, round
+    // the result so that we're not going to be
+    // off by 0.0001 or something.
+    float resolution = 50;
+    x = int(resolution*(x+dx))/resolution;
+    y = int(resolution*(y+dy))/resolution;
     ix = 0;
     iy = 0;
     aFrameCount = 0;
@@ -255,7 +313,9 @@ abstract class Actor extends Positionable {
 
   /**
    * Does this actor temporary not interact
-   * with any Interactors?
+   * with any Interactors? This function
+   * is called by the layer level code,
+   * and should not be called by anything else.
    */
   boolean isDisabled() {
     if(disabledCounter > 0) {
@@ -264,7 +324,7 @@ abstract class Actor extends Positionable {
     }
     return false;
   }
-  
+
   /**
    * Sometimes we need to bypass interaction for
    * a certain number of frames.
@@ -306,24 +366,18 @@ abstract class Actor extends Positionable {
    */
   void drawObject() {
     if(active!=null) {
-      active.draw();
+      active.draw(disabledCounter>0);
       /*
       if(debug) {
-        pushMatrix();
-        resetMatrix();
         noFill();
         stroke(255,0,0);
         float[] bounds = getBoundingBox();
         beginShape();
-        vertex(bounds[0],bounds[1]);
-        vertex(bounds[2],bounds[3]);
-        vertex(bounds[4],bounds[5]);
-        vertex(bounds[6],bounds[7]);
-        endShape(CLOSE); 
-        fill(255,0,0);
-        ellipse(bounds[0],bounds[1],5,5);
-        ellipse((bounds[0]+bounds[2]+bounds[4]+bounds[6])/4,(bounds[1]+bounds[3]+bounds[5]+bounds[7])/4,5,5);
-        popMatrix();
+        vertex(bounds[0]-x,bounds[1]-y);
+        vertex(bounds[2]-x,bounds[3]-y);
+        vertex(bounds[4]-x,bounds[5]-y);
+        vertex(bounds[6]-x,bounds[7]-y);
+        endShape(CLOSE);
       }
       */
     }
@@ -348,7 +402,8 @@ abstract class Actor extends Positionable {
       keyDown[target] = false; }}
 
   // lock a key so that it cannot be triggered repeatedly
-  protected void ignore(int keyCode) {
+  protected void ignore(char key) {
+    int keyCode = int(key);
     locked[keyCode] = true;
     keyDown[keyCode] = false; }
 
@@ -367,6 +422,12 @@ abstract class Actor extends Positionable {
     int keyCode = int(key);
     return keyDown[keyCode];
   }
+  
+  protected boolean noKeysDown() {
+    for(boolean b: keyDown) { if(b) return false; }
+    for(boolean b: locked) { if(b) return false; }
+    return true;
+  }
 
   // handle key presses
   void keyPressed(char key, int keyCode) {
@@ -377,6 +438,14 @@ abstract class Actor extends Positionable {
   void keyReleased(char key, int keyCode) {
     for(int i: keyCodes) {
       unsetIfTrue(keyCode, i); }}
+
+  /**
+   * Does the indicated x/y coordinate fall inside this drawable thing's region?
+   */
+  boolean over(float _x, float _y) {
+    if (active == null) return false;
+    return active.over(_x - getX(), _y - getY());
+  }
 
   void mouseMoved(int mx, int my) {}
   void mousePressed(int mx, int my, int button) {}
@@ -402,6 +471,28 @@ abstract class Actor extends Positionable {
  */
 class Boundary extends Positionable {
   private float PI2 = 2*PI;
+  
+  // things can listen for collisions on this boundary
+  ArrayList<BoundaryCollisionListener> listeners;
+  
+  /**
+   * Add a collision listener to this boundary
+   */
+  void addListener(BoundaryCollisionListener l) { listeners.add(l); }
+  
+  /**
+   * remove a collision listener from this boundary
+   */
+  void removeListener(BoundaryCollisionListener l) { listeners.remove(l); }
+  
+  /**
+   * notify all listners that a collision occurred.
+   */
+  void notifyListeners(Actor actor, float[] correction) {
+    for(BoundaryCollisionListener l: listeners) {
+      l.collisionOccured(this, actor, correction);
+    }
+  }
 
   // extended adminstrative values
   float dx, dy, length;
@@ -436,6 +527,7 @@ class Boundary extends Positionable {
     updateBounds();
     updateAngle();
     glide = 1.0;
+    listeners = new ArrayList<BoundaryCollisionListener>();
   }
   
   /**
@@ -498,8 +590,12 @@ class Boundary extends Positionable {
    * Is this positionable actually
    * supported by this boundary?
    */
+  // FIXME: this is not the correct implementation
   boolean supports(Positionable thing) {
     float[] bbox = thing.getBoundingBox(), nbox = new float[8];
+    
+    // shortcut on "this thing has already been removed"
+    if (bbox == null) return false;
 
     // First, translate all coordinates so that they're
     // relative to the boundary's (x,y) coordinate.
@@ -554,6 +650,13 @@ class Boundary extends Positionable {
   }
 
   /**
+   * redirect a force along this boundary's surface for a specific actor
+   */
+  float[] redirectForce(Positionable p, float fx, float fy) {
+    return redirectForce(fx,fy);
+  }
+
+  /**
    * Can this object be drawn in this viewbox?
    */
   boolean drawableFor(float vx, float vy, float vw, float vh) {
@@ -591,10 +694,15 @@ class Boundary extends Positionable {
   String toString() { return x+","+y+","+xw+","+yh; }
 }
 /**
+ * Things can listen to boundary collisions for a boundary
+ */
+interface BoundaryCollisionListener {
+  void collisionOccured(Boundary boundary, Actor actor, float[] intersectionInformation);
+}/**
  * A bounded interactor is a normal Interactor with
  * one or more boundaries associated with it.
  */
-abstract class BoundedInteractor extends Interactor {
+abstract class BoundedInteractor extends Interactor implements BoundaryCollisionListener {
   // the list of associated boundaries
   ArrayList<Boundary> boundaries;
 
@@ -608,13 +716,18 @@ abstract class BoundedInteractor extends Interactor {
   BoundedInteractor(String name, float dampening_x, float dampening_y) {
     super(name, dampening_x, dampening_y);
     boundaries = new ArrayList<Boundary>();
-    Computer.arraylists("Boundary");
   }
 
   // add a boundary
   void addBoundary(Boundary boundary) { 
     boundary.setImpulseCoefficients(ixF,iyF);
-    boundaries.add(boundary); 
+    boundaries.add(boundary);
+  }
+  
+  // add a boundary, and register as listener for collisions on it
+  void addBoundary(Boundary boundary, boolean listen) {
+    addBoundary(boundary);
+    boundary.addListener(this);
   }
 
   // FIXME: make this make sense, because setting 'next'
@@ -674,6 +787,11 @@ abstract class BoundedInteractor extends Interactor {
     // no passengers
     return false;
   }
+  
+  /**
+   * listen to collisions on bounded boundaries
+   */
+  abstract void collisionOccured(Boundary boundary, Actor actor, float[] intersectionInformation);
 
   // when we update our coordinates, also
   // update our associated boundaries.
@@ -713,8 +831,13 @@ static class CollisionDetection {
    */
   static void interact(Boundary b, Actor a)
   {
+    // no interaction if actor was removed from the game.
+    if (a.remove) return;
+    // no interaction if actor has not moved.
+    if (a.x == a.previous.x && a.y == a.previous.y) return;
     float[] correction = blocks(b,a);
     if(correction != null) {
+      b.notifyListeners(a, correction);
       a.attachTo(b, correction);
     }
   }
@@ -725,7 +848,6 @@ static class CollisionDetection {
    */
   static float[] blocks(Boundary b, Actor a)
   {
-    if (a.remove) return null;
     float[] current = a.getBoundingBox(),
             previous = a.previous.getBoundingBox(),
             line = {b.x, b.y, b.xw, b.yh};
@@ -768,28 +890,36 @@ static class CollisionDetection {
     //       complicated intersection detections checks.
 
     // determine range w.r.t. the starting point of the boundary.
-    float[] dotProducts1 = getDotProducts(x1,y1,x2,y2, previous);
+    float[] dotProducts_S_P = getDotProducts(x1,y1,x2,y2, previous);
+    float[] dotProducts_S_C = getDotProducts(x1,y1,x2,y2, current);
 
     // determine range w.r.t. the end point of the boundary.
-    float[] dotProducts2 = getDotProducts(x2,y2,x1,y1, previous);
+    float[] dotProducts_E_P = getDotProducts(x2,y2,x1,y1, previous);
+    float[] dotProducts_E_C = getDotProducts(x2,y2,x1,y1, current);
 
     // determine 'sidedness', relative to the boundary.
-    float[] dotProducts3 = getDotProducts(x1,y1,x1+rdx,y1+rdy, previous);
-    float[] dotProducts4 = getDotProducts(x1,y1,x1+rdx,y1+rdy, current);
+    float[] dotProducts_P = getDotProducts(x1,y1,x1+rdx,y1+rdy, previous);
+    float[] dotProducts_C = getDotProducts(x1,y1,x1+rdx,y1+rdy, current);
 
     // compute the relevant feature values based on the dot products:
-    int inRangeS = 4, inRangeE = 4, above = 0, aboveAfter = 0;
+    int inRangeSp = 4, inRangeSc = 4,
+        inRangeEp = 4, inRangeEc = 4,
+        abovePrevious = 0, aboveCurrent = 0;
     for(int i=0; i<8; i+=2) {
-      if (dotProducts1[i] < 0) { inRangeS--; }
-      if (dotProducts2[i] < 0) { inRangeE--; }
-      if (dotProducts3[i] <= 0) { above++; }
-      if (dotProducts4[i] <= 0) { aboveAfter++; }}
+      if (dotProducts_S_P[i] < 0) { inRangeSp--; }
+      if (dotProducts_S_C[i] < 0) { inRangeSc--; }
+      if (dotProducts_E_P[i] < 0) { inRangeEp--; }
+      if (dotProducts_E_C[i] < 0) { inRangeEc--; }
+      if (dotProducts_P[i] <= 0) { abovePrevious++; }
+      if (dotProducts_C[i] <= 0) { aboveCurrent++; }}
 
-    if(debug) sketch.println(sketch.frameCount +">    dotproduct result: "+inRangeS+"/"+inRangeE+"/"+above+"/"+aboveAfter);
+    if(debug) sketch.println(sketch.frameCount +">    dotproduct result: start="+inRangeSp+"/"+inRangeSc+", end="+inRangeEp+"/"+inRangeEc+", sided="+abovePrevious+"/"+aboveCurrent);
 
     // make sure to short-circuit if the actor cannot
     // interact with the boundary because it is out of range.
-    if (inRangeS == 0 || inRangeE == 0) {
+    boolean inRangeForStart = (inRangeSp == 0 && inRangeSc == 0);
+    boolean inRangeForEnd = (inRangeEp == 0 && inRangeEc == 0);
+    if (inRangeForStart || inRangeForEnd) {
       if(debug) sketch.println(sketch.frameCount +">   this boundary is not involved in collisions for this frame (out of range).");
       return null;
     }
@@ -797,10 +927,10 @@ static class CollisionDetection {
     // if the force goes against the border's permissible direction, but
     // both previous and current frame actor boxes are above the boundary,
     // then we don't have to bother with intersection detection.
-    if (above==4 && aboveAfter==4) {
+    if (abovePrevious==4 && aboveCurrent==4) {
       if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (inherently safe 'above' locations).");
       return null;
-    } else if(0 < above && above < 4) {
+    } else if(0 < abovePrevious && abovePrevious < 4) {
       if(debug) sketch.println(sketch.frameCount +">   this box is not involved in collisions for this frame (never fully went through boundary).");
       return null;
     }
@@ -812,7 +942,7 @@ static class CollisionDetection {
     // actor frame is on the blocking side of a boundary,  and
     // 'aboveAfter' is 0, meaning its current frame is on the other
     // side of the boundary, then a collision MUST have occurred.
-    if (above==4 && aboveAfter==0) {
+    if (abovePrevious==4 && aboveCurrent==0) {
       // note that in this situation, the overlap may look
       // like full containment, where the actor's bounding
       // box is fully contained by the boundary's box.
@@ -1124,78 +1254,91 @@ static class CollisionDetection {
   }
 }
 /**
- * A static computation class.
- *
- * At the moment this houses the actor/boundary interaction
- * code. This is in its own class, because Processing does
- * not allow you to mix static and non-static code in classes
- * (for the simple reason that all classes are internally
- * compiled into private classes, which cannot be static,
- * so any static class is lifted out of the Sketch code,
- * and it can't do that if you mix regular and static).
- */
-static class Computer {
-
-  static boolean debug = false;
-  static int _actors = 0, _states = 0, _positionables = 0, _sprites = 0, _arraylists = 0, _hashmaps = 0;
-  static void actors() { if(debug) { ts("Actor"); _actors++; }}
-  static void states() { if(debug) { ts("State"); _states++; }}
-  static void positionables() { if(debug) { ts("Positionable"); _positionables++; }}
-  static void sprites() { if(debug) { ts("Sprite"); _sprites++; }}
-  static void arraylists(String t) { if(debug) { ts("ArrayList<"+t+">"); _arraylists++; }}
-  static void hashmaps(String t, String e) { if(debug) { ts("HashMap<"+t+","+e+">"); _hashmaps++; }}
-
-  // time stamping log function
-  static void ts(String s) { 
-//    return "["+Date.now()+"] " + s; 
-  }
-  
-/*  
-  static void create(String name, String type, int line) {
-    if(typeof PJScreates[type] === "undefined") {
-      PJScreates[type] = [];
-    }
-    PJScreates[type].push(ts(name + "[" + line + "]"));
-  }
-*/
-}
-
-/**
  * Decals cannot be interacted with in any way.
  * They are things like the number of points on
  * a hit, or the dust when you bump into something.
  * Decals run through one state, and then expire,
  * so they're basically triggered, temporary graphics.
  */
-abstract class Decal extends Sprite {
+class Decal extends Sprite {
+
+  // indicates whether to kill off this decal
   boolean remove = false;
-  protected int duration;
+  
+  // indicates whether this is an auto-expiring decal
+  boolean expiring = false;
+
+  // indicates how long this decal should live
+  protected int duration = -1;
+  
+  // decals can be owned by something
+  Positionable owner = null;
 
   /**
-   * Decals have spritesheets and position
+   * non-expiring constructor
+   */
+  Decal(String spritesheet, float x, float y) {
+    this(spritesheet, x, y, false, -1);
+  }
+  Decal(String spritesheet, int rows, int columns, float x, float y) {
+    this(spritesheet, rows, columns, x, y, false, -1);
+  }
+  /**
+   * expiring constructor
    */
   Decal(String spritesheet, float x, float y, int duration) {
-    super(spritesheet);
+    this(spritesheet, x, y, true, duration);
+  }
+  Decal(String spritesheet, int rows, int columns, float x, float y, int duration) {
+    this(spritesheet, rows, columns, x, y, true, duration);
+  }
+  
+  /**
+   * full constructor (1 x 1 spritesheet)
+   */
+  private Decal(String spritesheet, float x, float y, boolean expiring, int duration) {
+    this(spritesheet, 1, 1, x, y, expiring, duration);
+  }
+
+  /**
+   * full constructor (n x m spritesheet)
+   */
+  private Decal(String spritesheet, int rows, int columns, float x, float y, boolean expiring, int duration) {
+    super(spritesheet, rows, columns);
     setPosition(x,y);
+    this.expiring = expiring;
     this.duration = duration;
-    setPath();
+    if(expiring) { setPath(); }
   }
 
   /**
    * subclasses must implement the path on which
    * decals travel before they expire
    */
-  abstract void setPath();
+  void setPath() {}
+  
+  /**
+   * decals can be owned, in which case they inherit their
+   * position from their owner.
+   */
+  void setOwner(Positionable owner) {
+    this.owner = owner;
+  }
+
+  // PREVENT PJS FROM GOING INTO AN ACCIDENTAL HIERARCHY LOOP
+  void draw() { super.draw(); }
+  void draw(float x, float y) { super.draw(x,y); }
 
   /**
    * Once expired, decals are cleaned up in Level
    */
   void draw(float vx, float vy, float vw, float vh) {
-    if(duration-->0) { 
-      //super.draw(vx,vy,vw,vh);  // breaks in Pjs
+    if(!expiring || duration-->0) {
       super.draw(); 
     }
-    else { remove = true; }
+    else { 
+      remove = true; 
+    }
   }
 }
 /**
@@ -1204,28 +1347,31 @@ abstract class Decal extends Sprite {
  * regions are inside the indicated viewbox.
  */
 interface Drawable {
+  /**
+   * draw this thing, as long as it falls within the drawbox defined by x/y -- x+w/y+h
+   */
   void draw(float x, float y, float w, float h);
 }
 /**
  * This encodes all the boilerplate code
- * necessary for level drawing and input
+ * necessary for screen drawing and input
  * handling.
  */
 
-// global levels container
-HashMap<String, Level> levelSet;
+// global screens container
+HashMap<String, Screen> screenSet;
 
-// global 'currently active' level
-Level activeLevel = null;
+// global 'currently active' screen
+Screen activeScreen = null;
 
-// setup sets up the screen size, and level container,
+// setup sets up the screen size, and screen container,
 // then calls the "initialize" method, which you must
 // implement yourself.
 void setup() {
   size(screenWidth, screenHeight);
   noLoop();
 
-  levelSet = new HashMap<String, Level>();
+  screenSet = new HashMap<String, Screen>();
   SpriteMapHandler.init(this);
   SoundManager.init(this);
   CollisionDetection.init(this);
@@ -1233,16 +1379,19 @@ void setup() {
 }
 
 // draw loop
-void draw() { activeLevel.draw(); }
+void draw() { 
+  activeScreen.draw(); 
+  SoundManager.draw();
+}
 
 // event handling
-void keyPressed()    { activeLevel.keyPressed(key, keyCode); }
-void keyReleased()   { activeLevel.keyReleased(key, keyCode); }
-void mouseMoved()    { activeLevel.mouseMoved(mouseX, mouseY); }
-void mousePressed()  { activeLevel.mousePressed(mouseX, mouseY, mouseButton); }
-void mouseDragged()  { activeLevel.mouseDragged(mouseX, mouseY, mouseButton); }
-void mouseReleased() { activeLevel.mouseReleased(mouseX, mouseY, mouseButton); }
-void mouseClicked()  { activeLevel.mouseClicked(mouseX, mouseY, mouseButton); }
+void keyPressed()    { activeScreen.keyPressed(key, keyCode); }
+void keyReleased()   { activeScreen.keyReleased(key, keyCode); }
+void mouseMoved()    { activeScreen.mouseMoved(mouseX, mouseY); }
+void mousePressed()  { SoundManager.clicked(mouseX,mouseY); activeScreen.mousePressed(mouseX, mouseY, mouseButton); }
+void mouseDragged()  { activeScreen.mouseDragged(mouseX, mouseY, mouseButton); }
+void mouseReleased() { activeScreen.mouseReleased(mouseX, mouseY, mouseButton); }
+void mouseClicked()  { activeScreen.mouseClicked(mouseX, mouseY, mouseButton); }
 
 /**
  * Mute the game
@@ -1255,52 +1404,57 @@ void mute() { SoundManager.mute(true); }
 void unmute() { SoundManager.mute(false); }
 
 /**
- * Levels are added to the game through this function.
+ * Screens are added to the game through this function.
  */
-void addLevel(String name, Level level) {
-  levelSet.put(name, level);
-  if (activeLevel == null) {
-    activeLevel = level;
-    //loop();
-  }
+void addScreen(String name, Screen screen) {
+  screenSet.put(name, screen);
+  if (activeScreen == null) {
+    activeScreen = screen;
+    loop();
+  } else { SoundManager.stop(activeScreen); }
 }
 
 /**
- * We switch between levels with this function.
+ * We switch between screens with this function.
  *
  * Because we might want to move things from the
- * old level to the new level, this function gives
- * you a reference to the old level after switching.
+ * old screen to the new screen, this function gives
+ * you a reference to the old screen after switching.
  */
-Level setActiveLevel(String name) {
-  Level oldLevel = activeLevel;
-  activeLevel = levelSet.get(name);
-  return oldLevel;
+Screen setActiveScreen(String name) {
+  Screen oldScreen = activeScreen;
+  activeScreen = screenSet.get(name);
+  if (oldScreen != null) {
+    oldScreen.cleanUp();
+    SoundManager.stop(oldScreen);
+  }
+  SoundManager.loop(activeScreen);
+  return oldScreen;
 }
 
 /**
- * Levels can be removed to save memory, etc.
- * as long as they are not the active level.
+ * Screens can be removed to save memory, etc.
+ * as long as they are not the active screen.
  */
-void removeLevel(String name) {
-  if (levelSet.get(name) != activeLevel) {
-    levelSet.remove(name);
+void removeScreen(String name) {
+  if (screenSet.get(name) != activeScreen) {
+    screenSet.remove(name);
   }
 }
 
 /**
- * Get a specific level (for debug purposes)
+ * Get a specific screen (for debug purposes)
  */
-Level getLevel(String name) {
-  return levelSet.get(name);
+Screen getScreen(String name) {
+  return screenSet.get(name);
 }
 
 /**
- * clear all levels
+ * clear all screens
  */
-void clearLevels() {
-  levelSet = new HashMap<String, Level>();
-  activeLevel = null;
+void clearScreens() {
+  screenSet = new HashMap<String, Screen>();
+  activeScreen = null;
 }
 /**
  * Interactors are non-player actors
@@ -1342,12 +1496,10 @@ interface JSConsole { void log(String msg); }
  */
 abstract class JavaScript {
   JSConsole console;
-  abstract void setCoordinate(float x, float y);
-  abstract void setPaths(ArrayList<ShapePrimitive> segments);
-  abstract void recordFramerate(float frameRate);
-  abstract void addActor();
-  abstract void removeActor();
-  abstract void resetActorCount();
+  abstract void loadInEditor(Positionable thing);
+  abstract boolean shouldMonitor();
+  abstract void updatedPositionable(Positionable thing);
+  abstract void reset();
 }
 
 /**
@@ -1361,11 +1513,8 @@ JavaScript javascript;
  */
 void bindJavaScript(JavaScript js) {
   javascript = js;
-  // how do we prevent IE9 from not-running-without-debugger-open?
-  if(js.console != null) {
-    // js.console.log("JavaScript bound to sketch");
-  }
 }
+
 /**
  * This class defines a generic sprite engine level.
  * A layer may consist of one or more layers, with
@@ -1373,15 +1522,11 @@ void bindJavaScript(JavaScript js) {
  * For top-down games, these slices yield pseudo-height,
  * whereas for side-view games they yield pseudo-depth.
  */
-abstract class Level {
+abstract class Level extends Screen {
   boolean finished  = false;
-  boolean swappable = false;
 
   ArrayList<LevelLayer> layers;
   HashMap<String, Integer> layerids;
-
-  // level dimensions
-  float width, height;
 
   // current viewbox
   ViewBox viewbox;
@@ -1390,12 +1535,9 @@ abstract class Level {
    * Levels have dimensions!
    */
   Level(float _width, float _height) {
-    width = _width;
-    height = _height; 
+    super(_width,_height);
     layers = new ArrayList<LevelLayer>();
-    Computer.arraylists("LevelLayer");
     layerids = new HashMap<String, Integer>();
-    Computer.hashmaps("String","Integer");
     viewbox = new ViewBox(_width, _height);
   }
 
@@ -1420,6 +1562,12 @@ abstract class Level {
     return layers.get(layerids.get(name));
   }
   
+  void cleanUp() {
+    for(LevelLayer l: layers) {
+      l.cleanUp();
+    }
+  }
+  
   // FIXME: THIS IS A TEST FUNCTION. KEEP? REJECT?
   void updatePlayer(Player oldPlayer, Player newPlayer) {
     for(LevelLayer l: layers) {
@@ -1430,17 +1578,12 @@ abstract class Level {
   /**
    * Change the behaviour when the level finishes
    */
-  void finish() { finished = true; }
+  void finish() { setSwappable(); finished = true; }
 
   /**
-   * premature finish
+   * What to do on a premature level finish (for instance, a reset-warranting death)
    */
-  void end() { finished = true; swappable = true; }
-  
-  /**
-   * Allow this level to be swapped out
-   */
-  void setSwappable() { swappable = true; } 
+  void end() { finish(); }
 
   /**
    * draw the level, as seen from the viewbox
@@ -1574,83 +1717,95 @@ abstract class LevelLayer {
   // the list of "collision" regions
   void addBoundary(Boundary boundary)    { boundaries.add(boundary);    }
   void removeBoundary(Boundary boundary) { boundaries.remove(boundary); }
+  void clearBoundaries() { boundaries.clear(); }
 
   // The list of static, non-interacting sprites, building up the background
-  void addStaticSpriteBG(Drawable fixed)    { fixed_background.add(fixed);    }
-  void removeStaticSpriteBG(Drawable fixed) { fixed_background.remove(fixed); }
+  void addBackgroundSprite(Drawable fixed)    { fixed_background.add(fixed);    }
+  void removeBackgroundSprite(Drawable fixed) { fixed_background.remove(fixed); }
+  void clearBackground() { fixed_background.clear(); }
 
   // The list of static, non-interacting sprites, building up the foreground
-  void addStaticSpriteFG(Drawable fixed)    { fixed_foreground.add(fixed);    }
-  void removeStaticSpriteFG(Drawable fixed) { fixed_foreground.remove(fixed); }
+  void addForegroundSprite(Drawable fixed)    { fixed_foreground.add(fixed);    }
+  void removeForegroundSprite(Drawable fixed) { fixed_foreground.remove(fixed); }
+  void clearForeground() { fixed_foreground.clear(); }
 
   // The list of decals (pure graphic visuals)
-  void addDecal(Decal decal)    { decals.add(decal);   }
+  void addDecal(Decal decal)    { decals.add(decal);    }
   void removeDecal(Decal decal) { decals.remove(decal); }
+  void clearDecals() { decals.clear(); }
 
   // event triggers
   void addTrigger(Trigger trigger)    { triggers.add(trigger);    }
   void removeTrigger(Trigger trigger) { triggers.remove(trigger); }
-
+  void clearTriggers() { triggers.clear(); }
 
   // The list of sprites that may only interact with the player(s) (and boundaries)
-  void addForPlayerOnly(Pickup pickup) {
-    pickups.add(pickup);
-    bind(pickup);
-    if(javascript!=null) { javascript.addActor(); }}
-
-  void removeForPlayerOnly(Pickup pickup) {
-    pickups.remove(pickup);
-    if(javascript!=null) { javascript.removeActor(); }}
+  void addForPlayerOnly(Pickup pickup) { pickups.add(pickup); bind(pickup); }
+  void removeForPlayerOnly(Pickup pickup) { pickups.remove(pickup); }
+  void clearPickups() { pickups.clear(); npcpickups.clear(); }
 
   // The list of sprites that may only interact with non-players(s) (and boundaries)
-  void addForInteractorsOnly(Pickup pickup) {
-    npcpickups.add(pickup);
-    bind(pickup);
-    if(javascript!=null) { javascript.addActor(); }}
-
-  void removeForInteractorsOnly(Pickup pickup) {
-    npcpickups.remove(pickup);
-    if(javascript!=null) { javascript.removeActor(); }}
+  void addForInteractorsOnly(Pickup pickup) { npcpickups.add(pickup); bind(pickup); }
+  void removeForInteractorsOnly(Pickup pickup) { npcpickups.remove(pickup); }
 
   // The list of fully interacting non-player sprites
-  void addInteractor(Interactor interactor) {
-    interactors.add(interactor);
-    bind(interactor);
-    if(javascript!=null) { javascript.addActor(); }}
-
-  void removeInteractor(Interactor interactor) {
-    interactors.remove(interactor);
-    if(javascript!=null) { javascript.removeActor(); }}
+  void addInteractor(Interactor interactor) { interactors.add(interactor); bind(interactor); }
+  void removeInteractor(Interactor interactor) { interactors.remove(interactor); }
+  void clearInteractors() { interactors.clear(); bounded_interactors.clear(); }
 
   // The list of fully interacting non-player sprites that have associated boundaries
-  void addBoundedInteractor(BoundedInteractor bounded_interactor) {
-    bounded_interactors.add(bounded_interactor);
-    bind(bounded_interactor);
-    if(javascript!=null) { javascript.addActor(); }}
-
-  void removeBoundedInteractor(BoundedInteractor bounded_interactor) {
-    bounded_interactors.remove(bounded_interactor);
-    if(javascript!=null) { javascript.removeActor(); }}
+  void addBoundedInteractor(BoundedInteractor bounded_interactor) { bounded_interactors.add(bounded_interactor); bind(bounded_interactor); }
+  void removeBoundedInteractor(BoundedInteractor bounded_interactor) { bounded_interactors.remove(bounded_interactor); }
 
   // The list of player sprites
-  void addPlayer(Player player) {
-    players.add(player);
-    bind(player);
-    if(javascript!=null) { javascript.addActor(); }}
-
-  void removePlayer(Player player) {
-    players.remove(player);
-    if(javascript!=null) { javascript.removeActor(); }}
+  void addPlayer(Player player) { players.add(player); bind(player); }
+  void removePlayer(Player player) { players.remove(player); }
+  void clearPlayers() { players.clear(); }
 
   void updatePlayer(Player oldPlayer, Player newPlayer) {
     int pos = players.indexOf(oldPlayer);
-    if (pos > -1) { 
+    if (pos > -1) {
       players.set(pos, newPlayer);
+      newPlayer.boundaries.clear();
       bind(newPlayer); }}
 
 
   // private actor binding
   void bind(Actor actor) { actor.setLevelLayer(this); }
+  
+  // clean up all transient things
+  void cleanUp() {
+    cleanUpActors(interactors);
+    cleanUpActors(bounded_interactors);
+    cleanUpActors(pickups);
+    cleanUpActors(npcpickups);
+  }
+  
+  // cleanup an array list
+  void cleanUpActors(ArrayList<? extends Actor> list) {
+    for(int a = list.size()-1; a>=0; a--) {
+      if(!list.get(a).isPersistent()) {
+        list.remove(a);
+      }
+    }
+  }
+  
+  // clear everything except the player
+  void clearExceptPlayer() {
+    clearBoundaries();
+    clearBackground();
+    clearForeground();
+    clearDecals();
+    clearTriggers();
+    clearPickups();
+    clearInteractors();    
+  }
+
+  // clear everything
+  void clear() {
+    clearExceptPlayer();
+    clearPlayers();
+  }
 
   // =============================== //
   //   MAIN CLASS CODE STARTS HERE   //
@@ -1682,25 +1837,15 @@ abstract class LevelLayer {
     this.height = h;
     
     boundaries = new ArrayList<Boundary>();
-    Computer.arraylists("Boundary");
     fixed_background = new ArrayList<Drawable>();
-    Computer.arraylists("Drawable");
     fixed_foreground = new ArrayList<Drawable>();
-    Computer.arraylists("Drawable");
     pickups = new ArrayList<Pickup>();
-    Computer.arraylists("Pickup");
     npcpickups = new ArrayList<Pickup>();
-    Computer.arraylists("Pickup");
     decals = new ArrayList<Decal>();
-    Computer.arraylists("Decal");
     interactors = new ArrayList<Interactor>();
-    Computer.arraylists("Interactor");
     bounded_interactors = new ArrayList<BoundedInteractor>();
-    Computer.arraylists("BoundedInteractor");
     players  = new ArrayList<Player>();
-    Computer.arraylists("Player");
     triggers = new ArrayList<Trigger>();
-    Computer.arraylists("Trigger");
   }
 
   /**
@@ -1712,6 +1857,8 @@ abstract class LevelLayer {
     yTranslate = oy;
     xScale = sx;
     yScale = sy;
+    if(sx!=1) { width /= sx; width -= screenWidth; }
+    if(sy!=1) { height /= sy; }
     nonstandard = (xScale!=1 || yScale!=1 || xTranslate!=0 || yTranslate!=0);
   }
   
@@ -1738,7 +1885,7 @@ abstract class LevelLayer {
   }
   
   /**
-   * map a layer coordinate to "normal"
+   * map a screen coordinate to its layer coordinate equivalent.
    */
   float[] mapCoordinateFromScreen(float x, float y) {
     float mx = map(x/xScale,  0,viewbox.w,  viewbox.x,viewbox.x + viewbox.w);
@@ -1747,7 +1894,7 @@ abstract class LevelLayer {
   }
 
   /**
-   * map a layer coordinate to "normal"
+   * map a layer coordinate to its screen coordinate equivalent.
    */
   float[] mapCoordinateToScreen(float x, float y) {
     float mx = (x/xScale - xTranslate);
@@ -1772,7 +1919,7 @@ abstract class LevelLayer {
   }
 
   /**
-   *
+   * draw this level layer.
    */
   void draw() {
     // get the level viewbox and tranform its
@@ -1784,155 +1931,164 @@ abstract class LevelLayer {
     w = viewbox.w / xScale;
     h = viewbox.h / yScale;
     
+    // save applied transforms so far
     pushMatrix();
-
-    // remember to transform the layer coordinates accordingly
+    // transform the layer coordinates
     translate(viewbox.x-x, viewbox.y-y);
     scale(xScale, yScale);
+    // draw all layer components
+    if (showBackground) { handleBackground(x,y,w,h); } else { debugfunctions_drawBackground((int)width, (int)height); }
+    if (showBoundaries)   handleBoundaries(x,y,w,h);
+    if (showPickups)      handlePickups(x,y,w,h);
+    if (showInteractors)  handleNPCs(x,y,w,h);
+    if (showActors)       handlePlayers(x,y,w,h);
+    if (showDecals)       handleDecals(x,y,w,h);
+    if (showForeground)   handleForeground(x,y,w,h);
+    if (showTriggers)     handleTriggers(x,y,w,h);
+    // restore saved transforms
+    popMatrix();
+  }
 
-// ----  draw fallback color
+  /**
+   * Background color/sprites
+   */
+  void handleBackground(float x, float y, float w, float h) { 
     if (backgroundColor != -1) {
       background(backgroundColor);
     }
 
-// ---- fixed background sprites
-    if(showBackground) {
-      for(Drawable s: fixed_background) {
-        s.draw(x,y,w,h);
-      }
-    } else {
-      debugfunctions_drawBackground((int)width, (int)height);
+    for(Drawable s: fixed_background) {
+      s.draw(x,y,w,h);
     }
+  }
 
-// ---- boundaries
-    if(showBoundaries) {
-      // regular boundaries
-      for(Boundary b: boundaries) {
-        b.draw(x,y,w,h);
-      }
-      // bounded interactor boundaries
-      for(BoundedInteractor b: bounded_interactors) {
-        if(b.bounding) {
-          b.drawBoundaries(x,y,w,h);
-        }
+  /**
+   * Boundaries should normally not be drawn, but
+   * a debug flag can make them get drawn anyway.
+   */
+  void handleBoundaries(float x, float y, float w, float h) { 
+    // regular boundaries
+    for(Boundary b: boundaries) {
+      b.draw(x,y,w,h);
+    }
+    // bounded interactor boundaries
+    for(BoundedInteractor b: bounded_interactors) {
+      if(b.bounding) {
+        b.drawBoundaries(x,y,w,h);
       }
     }
+  }
 
-// ---- pickups
-    if(showPickups) {
-      for(int i = pickups.size()-1; i>=0; i--) {
-        Pickup p = pickups.get(i);
-        if(p.remove) {
-          pickups.remove(i);
-          if(javascript!=null) { javascript.removeActor(); }
-          continue; }
+  /**
+   * Handle both player and NPC Pickups.
+   */
+  void handlePickups(float x, float y, float w, float h) { 
+    // player pickups
+    for(int i = pickups.size()-1; i>=0; i--) {
+      Pickup p = pickups.get(i);
+      if(p.remove) {
+        pickups.remove(i);
+        continue; }
+
+      // boundary interference?
+      if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
+        for(Boundary b: boundaries) {
+          CollisionDetection.interact(b,p); }
+        for(BoundedInteractor o: bounded_interactors) {
+          if(o.bounding) {
+            for(Boundary b: o.boundaries) {
+                CollisionDetection.interact(b,p); }}}}
+
+      // player interaction?
+      for(Player a: players) {
+        if(!a.interacting) continue;
+        float[] overlap = a.overlap(p);
+        if(overlap!=null) {
+          p.overlapOccurredWith(a);
+          break; }}
+
+      // draw pickup
+      p.draw(x,y,w,h);
+    }
+
+    // ---- npc pickups
+    for(int i = npcpickups.size()-1; i>=0; i--) {
+      Pickup p = npcpickups.get(i);
+      if(p.remove) {
+        npcpickups.remove(i);
+        continue; }
+
+      // boundary interference?
+      if(p.interacting && p.inMotion && !p.onlyplayerinteraction) {
+        for(Boundary b: boundaries) {
+          CollisionDetection.interact(b,p); }
+        for(BoundedInteractor o: bounded_interactors) {
+          if(o.bounding) {
+            for(Boundary b: o.boundaries) {
+                CollisionDetection.interact(b,p); }}}}
+
+      // npc interaction?
+      for(Interactor a: interactors) {
+        if(!a.interacting) continue;
+        float[] overlap = a.overlap(p);
+        if(overlap!=null) {
+          p.overlapOccurredWith(a);
+          break; }}
+
+      // draw pickup
+      p.draw(x,y,w,h);
+    }
+  }
+
+  /**
+   * Handle both regular and bounded NPCs
+   */
+  void handleNPCs(float x, float y, float w, float h) {
+    handleNPCs(x, y, w, h, interactors);
+    handleNPCs(x, y, w, h, bounded_interactors);
+  }
+  
+  /**
+   * helper function to prevent code duplication
+   */
+  void handleNPCs(float x, float y, float w, float h, ArrayList<? extends Interactor> interactors) {
+    for(int i = 0; i<interactors.size(); i++) {
+      Interactor a = interactors.get(i);
+      if(a.remove) {
+        interactors.remove(i);
+        continue; }
+
+      // boundary interference?
+      if(a.interacting && a.inMotion && !a.onlyplayerinteraction) {
+        for(Boundary b: boundaries) {
+            CollisionDetection.interact(b,a); }
+        // boundary interference from bounded interactors?
+        for(BoundedInteractor o: bounded_interactors) {
+          if(o == a) continue;
+          if(o.bounding) {
+            for(Boundary b: o.boundaries) {
+                CollisionDetection.interact(b,a); }}}}
+
+      // draw interactor
+      a.draw(x,y,w,h);
+    }
+  }
+
+  /**
+   * Handle player characters
+   */
+  void handlePlayers(float x, float y, float w, float h) {
+    for(int i=players.size()-1; i>=0; i--) {
+      Player a = players.get(i);
+
+      if(a.remove) {
+        players.remove(i);
+        continue; }
+
+      if(a.interacting) {
 
         // boundary interference?
-        if(p.interacting && !p.onlyplayerinteraction) {
-          for(Boundary b: boundaries) {
-            CollisionDetection.interact(b,p); }
-          for(BoundedInteractor o: bounded_interactors) {
-            if(o.bounding) {
-              for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,p); }}}}
-
-        // player interaction?
-        for(Player a: players) {
-          if(!a.interacting) continue;
-          float[] overlap = a.overlap(p);
-          if(overlap!=null) {
-            p.overlapOccurredWith(a);
-            break; }}
-
-        // draw pickup
-        p.draw(x,y,w,h);
-      }
-    }
-
-
-// ---- npc pickups
-    if(showPickups) {
-      for(int i = npcpickups.size()-1; i>=0; i--) {
-        Pickup p = npcpickups.get(i);
-        if(p.remove) {
-          npcpickups.remove(i);
-          if(javascript!=null) { javascript.removeActor(); }
-          continue; }
-
-        // boundary interference?
-        if(p.interacting && !p.onlyplayerinteraction) {
-          for(Boundary b: boundaries) {
-            CollisionDetection.interact(b,p); }
-          for(BoundedInteractor o: bounded_interactors) {
-            if(o.bounding) {
-              for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,p); }}}}
-
-        // npc interaction?
-        for(Interactor a: interactors) {
-          if(!a.interacting) continue;
-          float[] overlap = a.overlap(p);
-          if(overlap!=null) {
-            p.overlapOccurredWith(a);
-            break; }}
-
-        // draw pickup
-        p.draw(x,y,w,h);
-      }
-    }
-
-// ----  non-player actors
-    if(showInteractors) {
-      for(int i = interactors.size()-1; i>=0; i--) {
-        Interactor a = interactors.get(i);
-        if(a.remove) {
-          interactors.remove(i);
-          if(javascript!=null) { javascript.removeActor(); }
-          continue; }
-
-        // boundary interference?
-        if(a.interacting && !a.onlyplayerinteraction) {
-          for(Boundary b: boundaries) {
-              CollisionDetection.interact(b,a); }
-          // boundary interference from bounded interactors?
-          for(BoundedInteractor o: bounded_interactors) {
-            if(o.bounding) {
-              for(Boundary b: o.boundaries) {
-                  CollisionDetection.interact(b,a); }}}}
-
-        // draw interactor
-        a.draw(x,y,w,h);
-      }
-
-      // FIXME: code duplication, since it's the same as for regular interactors.
-      for(int i = bounded_interactors.size()-1; i>=0; i--) {
-        Interactor a = bounded_interactors.get(i);
-        if(a.remove) {
-          bounded_interactors.remove(i);
-          if(javascript!=null) { javascript.removeActor(); }
-          continue; }
-        // boundary interference?
-        if(a.interacting && !a.onlyplayerinteraction) {
-          for(Boundary b: boundaries) {
-              CollisionDetection.interact(b,a); }}
-        // draw interactor
-        a.draw(x,y,w,h);
-      }
-    }
-    
-// ---- player actors
-    if(showActors) {
-      for(int i=players.size()-1; i>=0; i--) {
-        Player a = players.get(i);
-
-        if(a.remove) {
-          players.remove(i);
-          if(javascript!=null) { javascript.removeActor(); }
-          continue; }
-
-        if(a.interacting) {
-
-          // boundary interference?
+        if(a.inMotion) {
           for(Boundary b: boundaries) {
             CollisionDetection.interact(b,a); }
 
@@ -1940,88 +2096,85 @@ abstract class LevelLayer {
           for(BoundedInteractor o: bounded_interactors) {
             if(o.bounding) {
               for(Boundary b: o.boundaries) {
-                CollisionDetection.interact(b,a); }}}
+                CollisionDetection.interact(b,a); }}}}
 
-          // collisions with other sprites?
-          if(!a.isDisabled()) {
-            for(Actor o: interactors) {
-              if(!o.interacting) continue;
-              float[] overlap = a.overlap(o);
-              if(overlap!=null) {
-                a.overlapOccurredWith(o, overlap);
-                int len = overlap.length;
-                float[] inverse = new float[len];
-                arrayCopy(overlap,0,inverse,0,len);
-                for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
-                o.overlapOccurredWith(a, inverse); 
-              }
-              else if(o instanceof Tracker) {
-                ((Tracker)o).track(a, x,y,w,h);
-              }
-            }
-
-            // FIXME: code duplication, since it's the same as for regular interactors.
-            for(Actor o: bounded_interactors) {
-              if(!o.interacting) continue;
-              float[] overlap = a.overlap(o);
-              if(overlap!=null) {
-                a.overlapOccurredWith(o, overlap);
-                int len = overlap.length;
-                float[] inverse = new float[len];
-                arrayCopy(overlap,0,inverse,0,len);
-                for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
-                o.overlapOccurredWith(a, inverse); 
-              }
-              else if(o instanceof Tracker) {
-                ((Tracker)o).track(a, x,y,w,h);
-              }
-            }
-          }
-
-          // has the player tripped any triggers?
-          for(int j = triggers.size()-1; j>=0; j--) {
-            Trigger t = triggers.get(j);
-            if(t.remove) { triggers.remove(t); continue; }
-            float[] overlap = t.overlap(a);
-            if(overlap==null && t.disabled) {
-              t.enable(); 
-            }
-            else if(overlap!=null && !t.disabled) {
-              t.run(this, a, overlap); 
-            }
-          }
+        // collisions with other sprites?
+        if(!a.isDisabled()) {
+          handleActorCollision(x,y,w,h,a,interactors);
+          handleActorCollision(x,y,w,h,a,bounded_interactors);
         }
 
-        // draw actor
-        a.draw(x,y,w,h);
+        // has the player tripped any triggers?
+        for(int j = triggers.size()-1; j>=0; j--) {
+          Trigger t = triggers.get(j);
+          if(t.remove) { triggers.remove(t); continue; }
+          float[] overlap = t.overlap(a);
+          if(overlap==null && t.disabled) {
+            t.enable(); 
+          }
+          else if(overlap!=null && !t.disabled) {
+            t.run(this, a, overlap); 
+          }
+        }
       }
-    }
 
-// ---- decals
-    if(showDecals) {
-      for(int i=decals.size()-1; i>=0; i--) {
-        Decal d = decals.get(i);
-        if(d.remove) { decals.remove(i); continue; }
-        d.draw(x,y,w,h);
-      }
+      // draw actor
+      a.draw(x,y,w,h);
     }
-
-// ---- fixed foreground sprites
-    if(showForeground) {
-      for(Drawable s: fixed_foreground) {
-        s.draw(x,y,w,h);
-      }
-    }
-
-// ---- triggerable regions
-    if(showTriggers) {
-      for(Drawable t: triggers) {
-        t.draw(x,y,w,h);
-      }
-    }
-
-    popMatrix();
   }
+  
+  /**
+   * helper function to prevent code duplication
+   */
+  void handleActorCollision(float x, float y, float w, float h, Actor a, ArrayList<? extends Interactor> interactors) {
+    for(int i = 0; i<interactors.size(); i++) {
+      Actor o = interactors.get(i);
+      if(!o.interacting) continue;
+      float[] overlap = a.overlap(o);
+      if(overlap!=null) {
+        a.overlapOccurredWith(o, overlap);
+        int len = overlap.length;
+        float[] inverse = new float[len];
+        arrayCopy(overlap,0,inverse,0,len);
+        for(int pos=0; pos<len; pos++) { inverse[pos] = -inverse[pos]; }
+        o.overlapOccurredWith(a, inverse); 
+      }
+      else if(o instanceof Tracker) {
+        ((Tracker)o).track(a, x,y,w,h);
+      }
+    }
+  }
+
+  /**
+   * Draw all decals.
+   */
+  void handleDecals(float x, float y, float w, float h) {
+    for(int i=decals.size()-1; i>=0; i--) {
+      Decal d = decals.get(i);
+      if(d.remove) { decals.remove(i); continue; }
+      d.draw(x,y,w,h);
+    }
+  }
+
+  /**
+   * Draw all foreground sprites
+   */
+  void handleForeground(float x, float y, float w, float h) {
+    for(Drawable s: fixed_foreground) {
+      s.draw(x,y,w,h);
+    }
+  }
+
+  /**
+   * Triggers should normally not be drawn, but
+   * a debug flag can make them get drawn anyway.
+   */
+  void handleTriggers(float x, float y, float w, float h) {
+    for(Drawable t: triggers) {
+      t.draw(x,y,w,h);
+    }
+  }
+
 
   /**
    * passthrough events
@@ -2070,14 +2223,15 @@ class Pickup extends Actor {
    * Pickups are essentially Actors that mostly do nothing,
    * until a player character runs into them. Then *poof*.
    */
-  Pickup(String pun, String pus, int r, int c, float x, float y, boolean _persistent) {
-    super(pun);
-    pickup_sprite = pus;
+  Pickup(String name, String spr, int r, int c, float x, float y, boolean _persistent) {
+    super(name);
+    pickup_sprite = spr;
     rows = r;
     columns = c;
     setupStates();
     setPosition(x,y);
     persistent = _persistent;
+    alignSprite(CENTER,CENTER);
   }
 
   /**
@@ -2090,7 +2244,7 @@ class Pickup extends Actor {
   }
   
   // wrapper
-  void align(int halign, int valign) {
+  void alignSprite(int halign, int valign) {
     active.sprite.align(halign, valign);
   }
 
@@ -2100,7 +2254,7 @@ class Pickup extends Actor {
   void overlapOccurredWith(Actor other) {
     removeActor();
     other.pickedUp(this);
-    pickedUp();
+    pickedUp(other);
   }
 
   /**
@@ -2122,7 +2276,7 @@ class Pickup extends Actor {
   final void pickedUp(Pickup pickup) {}
   
   // unused, but we can overwrite it
-  void pickedUp() {}
+  void pickedUp(Actor by) {}
 }
 
 /**
@@ -2144,7 +2298,13 @@ abstract class Player extends Actor {
  * that requires multi-frame information
  */
 class Position {
-
+  /**
+   * A monitoring object for informing JavaScript
+   * about the current state of this Positionable.
+   */
+  boolean monitoredByJavaScript = false;
+  void setMonitoredByJavaScript(boolean monitored) { monitoredByJavaScript = monitored; }
+  
 // ==============
 //   variables
 // ==============
@@ -2297,6 +2457,11 @@ class Position {
  * Manipulable object: translate, rotate, scale, flip h/v
  */
 abstract class Positionable extends Position implements Drawable {
+  // HELPER FUNCTION FOR JAVASCRIPT
+  void jsupdate() {
+    if(monitoredByJavaScript && javascript != null) {
+      javascript.updatedPositionable(this); }}
+
 
   /**
    * We track two frames for computational purposes,
@@ -2308,14 +2473,25 @@ abstract class Positionable extends Position implements Drawable {
    * Boundaries this positionable is attached to.
    */
   ArrayList<Boundary> boundaries;
+  
+  /**
+   * Decals that are drawn along with this positionable,
+   * but do not contribute to any overlap or collision
+   * detection, nor explicitly interact with things.
+   */
+  ArrayList<Decal> decals;
+
+  // shortcut variable that tells us whether
+  // or not this positionable needs to perform
+  // boundary collision checks
+  boolean inMotion = false;
 
   /**
    * Cheap constructor
    */
   Positionable() {
-    Computer.positionables();
     boundaries = new ArrayList<Boundary>();
-    Computer.arraylists("Boundary");
+    decals = new ArrayList<Decal>();
   }
 
   /**
@@ -2341,28 +2517,62 @@ abstract class Positionable extends Position implements Drawable {
     previous.y = y;
     aFrameCount = 0;
     direction = -1;
+    jsupdate();
   }
 
+  /**
+   * Attach this positionable to a boundary.
+   */
   void attachTo(Boundary b) {
     boundaries.add(b);
   }
   
+  /**
+   * Check whether this positionable is
+   * attached to a specific boundary.
+   */
   boolean isAttachedTo(Boundary b) {
-//    println("attached to b? " + boundaries.size() + " attachments found.");
     return boundaries.contains(b);
   }
 
+  /**
+   * Detach this positionable from a
+   * specific boundary.
+   */
   void detachFrom(Boundary b) {
     boundaries.remove(b);
   }
 
+  /**
+   * Detach this positionable from all
+   * boundaries that it is attached to.
+   */
   void detachFromAll() {
     boundaries.clear();
   }
-  
-  void rewind() {
-    copyFrom(previous);
+
+  /**
+   * attach a Decal to this positionable.
+   */
+  void addDecal(Decal d) {
+    decals.add(d);
+    d.setOwner(this);
   }
+
+  /**
+   * detach a Decal from this positionable.
+   */
+  void removeDecal(Decal d) {
+    decals.remove(d);
+  }
+
+  /**
+   * detach all Decal from this positionable.
+   */
+  void removeAllDecals() {
+    decals.clear();
+  }
+
 
   /**
    * change the position, relative
@@ -2373,6 +2583,15 @@ abstract class Positionable extends Position implements Drawable {
     previous.x = x;
     previous.y = y;
     aFrameCount = 0;
+    jsupdate();
+  }
+  
+  /**
+   * check whether this Positionable is moving. If it's not,
+   * it will not be boundary-collision-evalutated.
+   */
+  void verifyInMotion() {
+    inMotion = (ix!=0 || iy!=0 || fx!=0 || fy!=0 || ixA!=0 || iyA !=0);
   }
 
   /**
@@ -2381,6 +2600,8 @@ abstract class Positionable extends Position implements Drawable {
   void setImpulse(float x, float y) {
     ix = x;
     iy = y;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -2389,6 +2610,8 @@ abstract class Positionable extends Position implements Drawable {
   void setImpulseCoefficients(float fx, float fy) {
     ixF = fx;
     iyF = fy;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -2397,6 +2620,8 @@ abstract class Positionable extends Position implements Drawable {
   void addImpulse(float _ix, float _iy) {
     ix += _ix;
     iy += _iy;
+    jsupdate();
+    verifyInMotion();
   }
   
   /**
@@ -2416,6 +2641,7 @@ abstract class Positionable extends Position implements Drawable {
   void stop() {
     ix = 0;
     iy = 0;
+    jsupdate();
   }
 
   /**
@@ -2424,6 +2650,8 @@ abstract class Positionable extends Position implements Drawable {
   void setForces(float _fx, float _fy) {
     fx = _fx;
     fy = _fy;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -2432,6 +2660,8 @@ abstract class Positionable extends Position implements Drawable {
   void addForces(float _fx, float _fy) {
     fx += _fx;
     fy += _fy;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -2441,6 +2671,8 @@ abstract class Positionable extends Position implements Drawable {
     ixA = ax;
     iyA = ay;
     aFrameCount = 0;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -2449,6 +2681,8 @@ abstract class Positionable extends Position implements Drawable {
   void addAccelleration(float ax, float ay) {
     ixA += ax;
     iyA += ay;
+    jsupdate();
+    verifyInMotion();
   }
 
   /**
@@ -2457,6 +2691,7 @@ abstract class Positionable extends Position implements Drawable {
   void setTranslation(float x, float y) {
     ox = x;
     oy = y;
+    jsupdate();
   }
 
   /**
@@ -2465,6 +2700,7 @@ abstract class Positionable extends Position implements Drawable {
   void setScale(float s) {
     sx = s;
     sy = s;
+    jsupdate();
   }
 
   /**
@@ -2473,6 +2709,7 @@ abstract class Positionable extends Position implements Drawable {
   void setScale(float x, float y) {
     sx = x;
     sy = y;
+    jsupdate();
   }
 
   /**
@@ -2480,6 +2717,7 @@ abstract class Positionable extends Position implements Drawable {
    */
   void setRotation(float _r) {
     r = _r % (2*PI);
+    jsupdate();
   }
 
   /**
@@ -2487,7 +2725,9 @@ abstract class Positionable extends Position implements Drawable {
    */
   void setHorizontalFlip(boolean _hflip) {
     if(hflip!=_hflip) { ox = -ox; }
+    for(Decal d: decals) { d.setHorizontalFlip(_hflip); }
     hflip = _hflip;
+    jsupdate();
   }
 
   /**
@@ -2495,7 +2735,9 @@ abstract class Positionable extends Position implements Drawable {
    */
   void setVerticalFlip(boolean _vflip) {
     if(vflip!=_vflip) { oy = -oy; }
+    for(Decal d: decals) { d.setVerticalFlip(_vflip); }
     vflip = _vflip;
+    jsupdate();
   }
 
   /**
@@ -2503,6 +2745,7 @@ abstract class Positionable extends Position implements Drawable {
    */
   void setVisibility(boolean _visible) {
     visible = _visible;
+    jsupdate();
   }
 
   /**
@@ -2510,6 +2753,7 @@ abstract class Positionable extends Position implements Drawable {
    */
   void setAnimated(boolean _animated) {
     animated = _animated;
+    jsupdate();
   }
 
   /**
@@ -2543,6 +2787,7 @@ abstract class Positionable extends Position implements Drawable {
       pushMatrix();
       applyTransforms();
       drawObject();
+      for(Decal d: decals) { d.draw(); }
       popMatrix();
     }
 
@@ -2557,9 +2802,12 @@ abstract class Positionable extends Position implements Drawable {
    * visible in this viewbox.
    */
   abstract boolean drawableFor(float vx, float vy, float vw, float vh);
-
+  
   /**
-   * Update all the position parameters
+   * Update all the position parameters.
+   * If fixed is not null, it is the boundary
+   * we just attached to, and we cannot detach
+   * from it on the same frame.
    */
   void update() {
     // cache frame information
@@ -2568,39 +2816,50 @@ abstract class Positionable extends Position implements Drawable {
     // work external forces into our current impulse
     addImpulse(fx,fy);
 
-    float _dx = ix + (aFrameCount * ixA),
-          _dy = iy + (aFrameCount * iyA);
+    // work in impulse coefficients (typically, drag)
+    ix *= ixF;
+    iy *= iyF;
 
-    // not on a boundary: unrestricted motion.
-    if(boundaries.size()==0) {
-      aFrameCount++;
-      x += _dx;
-      y += _dy;
-    }
+    // not on a boundary: unrestricted motion,
+    // so make sure the acceleration factor exists.
+    if(boundaries.size()==0) {  aFrameCount++; }
 
     // we're attached to one or more boundaries, so we
     // are subject to (compound) impulse redirection.
-    if(boundaries.size()>0) {
-      float[] redirected = new float[]{_dx, _dy};
+    else {
+      aFrameCount = 0;
+      float[] redirected = new float[]{ix, iy};
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
-        if(!boundary.supports(this)) {
+        if(!boundary.disabled) {
+          redirected = boundary.redirectForce(this, redirected[0], redirected[1]);
+        }
+        if(boundary.disabled || !boundary.supports(this)) {
           detachFrom(boundary);
           continue;
         }
-        redirected = boundary.redirectForce(redirected[0], redirected[1]);
       }
-      x += redirected[0];
-      y += redirected[1];
+      ix = redirected[0];
+      iy = redirected[1];
     }
 
-    ix *= ixF;
-    iy *= iyF;
-    
     // Not unimportant: cutoff resolution.
     if(abs(ix) < 0.01) { ix = 0; }
     if(abs(iy) < 0.01) { iy = 0; }
+
+    // update the physical position
+    x += ix + (aFrameCount * ixA);
+    y += iy + (aFrameCount * iyA);
   }
+
+  /**
+   * Reset this positional to its previous state
+   */
+  void rewind() {
+    copyFrom(previous);
+    jsupdate();
+  }
+
 
   // implemented by subclasses
   abstract void drawObject();
@@ -2611,6 +2870,54 @@ abstract class Positionable extends Position implements Drawable {
             "current: " + super.toString() + "\n" +
             "previous: " + previous.toString() + "\n";
   }
+}
+/**
+ * Every thing in 2D sprite games happens in "Screen"s.
+ * Some screens are menus, some screens are levels, but
+ * the most generic class is the Screen class
+ */
+abstract class Screen {
+  // is this screen locked, or can it be swapped out?
+  boolean swappable = false;
+
+  // level dimensions
+  float width, height;
+
+  /**
+   * simple Constructor
+   */
+  Screen(float _width, float _height) {
+    width = _width;
+    height = _height;
+  }
+  
+  /**
+   * allow swapping for this screen
+   */
+  void setSwappable() {
+    swappable = true; 
+  }
+ 
+  /**
+   * draw the screen
+   */ 
+  abstract void draw();
+  
+  /**
+   * perform any cleanup when this screen is swapped out
+   */
+  abstract void cleanUp();
+
+  /**
+   * passthrough events
+   */
+  abstract void keyPressed(char key, int keyCode);
+  abstract void keyReleased(char key, int keyCode);
+  abstract void mouseMoved(int mx, int my);
+  abstract void mousePressed(int mx, int my, int button);
+  abstract void mouseDragged(int mx, int my, int button);
+  abstract void mouseReleased(int mx, int my, int button);
+  abstract void mouseClicked(int mx, int my, int button);
 }
 /**
  * A generic, abstract shape class.
@@ -2753,22 +3060,35 @@ class Curve extends ShapePrimitive {
  * JavaScript written by Daniel Hodgin that emulates an
  * AudioPlayer object so that the code looks the same.
  */
+
 import ddf.minim.*;
 import ddf.minim.signals.*;
 import ddf.minim.analysis.*;
 import ddf.minim.effects.*;
+
 static class SoundManager {
-  private static boolean muted = true;
+  private static PApplet sketch;
   private static Minim minim;
+
   private static HashMap<Object,AudioPlayer> owners;
   private static HashMap<String,AudioPlayer> audioplayers;
-  public static PImage mute_overlay;
-  public static PImage unmute_overlay;
-  public static PImage volume_overlay;
 
-  static void init(PApplet sketch) { 
+  private static boolean muted = true, draw_controls = false;
+  private static float draw_x, draw_y;
+  private static PImage mute_overlay, unmute_overlay, volume_overlay;
+  
+  public static void setDrawPosition(float x, float y) {
+    draw_controls = true;
+    draw_x = x - volume_overlay.width/2;
+    draw_y = y - volume_overlay.height/2;
+  }
+
+  /**
+   * Set up the sound manager
+   */
+  static void init(PApplet _sketch) { 
+    sketch = _sketch;
     owners = new HashMap<Object,AudioPlayer>();
-    audioplayers = new HashMap<String,AudioPlayer>();
     mute_overlay = sketch.loadImage("mute.gif");
     unmute_overlay = sketch.loadImage("unmute.gif");
     volume_overlay = (muted ? unmute_overlay : mute_overlay);
@@ -2776,10 +3096,40 @@ static class SoundManager {
     reset();
   }
 
+  /**
+   * reset list of owners and audio players
+   */
   static void reset() {
     owners = new HashMap<Object,AudioPlayer>();
+    audioplayers = new HashMap<String,AudioPlayer>();
+  }
+  
+  /**
+   * if a draw position was specified,
+   * draw the sound manager's control(s)
+   */
+  static void draw() {
+    if(!draw_controls) return;
+    sketch.pushMatrix();
+    sketch.resetMatrix();
+    sketch.image(volume_overlay, draw_x, draw_y);
+    sketch.popMatrix();
+  }
+  
+  /**
+   * if a draw position was specified,
+   * clicking on the draw region effects mute/unmute.
+   */
+  static void clicked(int mx, int my) {
+    if(!draw_controls) return;
+    if(draw_x<=mx && mx <=draw_x+volume_overlay.width && draw_y<=my && my <=draw_y+volume_overlay.height) {
+      mute(!muted);
+    }
   }
 
+  /**
+   * load an audio file, bound to a specific object.
+   */
   static void load(Object identifier, String filename) {
     // We recycle audio players to keep the
     // cpu and memory footprint low.
@@ -2791,6 +3141,11 @@ static class SoundManager {
     owners.put(identifier, player);
   }
 
+  /**
+   * play an object-boud audio file. Note that
+   * play() does NOT loop the audio. It will play
+   * once, then stop.
+   */
   static void play(Object identifier) {
     rewind(identifier);
     AudioPlayer ap = owners.get(identifier);
@@ -2801,6 +3156,12 @@ static class SoundManager {
     ap.play();
   }
 
+  /**
+   * play an object-boud audio file. Note that
+   * loop() plays an audio file indefinitely,
+   * rewinding and starting from the start of
+   * the file until stopped.
+   */
   static void loop(Object identifier) {
     rewind(identifier);
     AudioPlayer ap = owners.get(identifier);
@@ -2811,6 +3172,9 @@ static class SoundManager {
     ap.loop();
   }
 
+  /**
+   * Pause an audio file that is currently being played.
+   */
   static void pause(Object identifier) {
     AudioPlayer ap = owners.get(identifier);
     if(ap==null) {
@@ -2820,6 +3184,9 @@ static class SoundManager {
     ap.pause();
   }
 
+  /**
+   * Explicitly set playback position to 0 for an audio file.
+   */
   static void rewind(Object identifier) {
     AudioPlayer ap = owners.get(identifier);
     if(ap==null) {
@@ -2829,6 +3196,9 @@ static class SoundManager {
     ap.rewind();
   }
 
+  /**
+   * stop a currently playing or looping audio file.
+   */
   static void stop(Object identifier) {
     AudioPlayer ap = owners.get(identifier);
     if(ap==null) {
@@ -2839,6 +3209,11 @@ static class SoundManager {
     ap.rewind();
   }
   
+  /**
+   * mute or unmute all audio. Note that this does
+   * NOT pause any of the audio files, it simply
+   * sets the volume to zero.
+   */
   static void mute(boolean _muted) {
     muted = _muted;
     for(AudioPlayer ap: audioplayers.values()) {
@@ -2862,11 +3237,17 @@ class Sprite extends Positionable {
   SpritePath path;
   float halign=0, valign=0;
   float halfwidth, halfheight;
+  
+  // Sprites have a specific coordinate that acts as "anchor" when multiple
+  // sprites are used for a single actor. When swapping sprite A for sprite
+  // B, the two coordinates A(h/vanchor) and B(h/vanchor) line up to the
+  // same screen pixel.
+  float hanchor=0, vanchor=0;
 
   // frame data
-  PImage[] frames;         // sprite frames
-  int numFrames=0;         // frames.length cache
-  float frameFactor=1;     // determines that frame serving compression/dilation
+  PImage[] frames;          // sprite frames
+  int numFrames=0;          // frames.length cache
+  float frameFactor=1;      // determines that frame serving compression/dilation
 
   boolean hflip = false;   // draw horizontall flipped?
   boolean vflip = false;   // draw vertically flipped?
@@ -2904,7 +3285,6 @@ class Sprite extends Positionable {
    */
   private Sprite(PImage[] _frames, float _xpos, float _ypos, boolean _visible) {
     path = new SpritePath();
-    Computer.sprites();
     setFrames(_frames);
     visible = _visible;
   }
@@ -2959,15 +3339,46 @@ class Sprite extends Positionable {
    * center point.
    */
   void align(int _halign, int _valign) {
-    if(_halign==LEFT)        { halign=width/2; }
-    else if(_halign==CENTER) { halign=0; }
-    else if(_halign==RIGHT)  { halign=-width/2; }
+    if(_halign == LEFT)        { halign = halfwidth; }
+    else if(_halign == CENTER) { halign = 0; }
+    else if(_halign == RIGHT)  { halign = -halfwidth; }
     ox = halign;
 
-    if(_valign==TOP)         { valign=height/2; }
-    else if(_valign==CENTER) { valign=0; }
-    else if(_valign==BOTTOM) { valign=-height/2; }
+    if(_valign == TOP)         { valign = halfheight; }
+    else if(_valign == CENTER) { valign = 0; }
+    else if(_valign == BOTTOM) { valign = -halfheight; }
     oy = valign;
+  }
+
+  /**
+   * explicitly set the alignment
+   */
+  void setAlignment(float x, float y) {
+    halign = x;
+    valign = y;
+    ox = x;
+    oy = y;
+  }  
+  
+  /**
+   * Indicate the sprite's anchor point
+   */
+  void anchor(int _hanchor, int _vanchor) {
+    if(_hanchor == LEFT)       { hanchor = 0; }
+    else if(_hanchor == CENTER) { hanchor = halfwidth; }
+    else if(_hanchor == RIGHT)  { hanchor = width; }
+
+    if(_vanchor == TOP)        { vanchor = 0; }
+    else if(_vanchor == CENTER) { vanchor = halfheight; }
+    else if(_vanchor == BOTTOM) { vanchor = height; }
+  }
+  
+  /**
+   * explicitly set the anchor point
+   */
+  void setAnchor(float x, float y) {
+    hanchor = x;
+    vanchor = y;
   }
 
   /**
@@ -2983,7 +3394,16 @@ class Sprite extends Positionable {
    */
   void flipHorizontal() {
     hflip = !hflip;
-    ox = -ox;
+    for(PImage img: frames) {
+      img.loadPixels();
+      int[] pxl = new int[img.pixels.length];
+      int w = int(width), h = int(height);
+      for(int x=0; x<w; x++) {
+        for(int y=0; y<h; y++) {
+          pxl[x + y*w] = img.pixels[((w-1)-x) + y*w]; }}
+      img.pixels = pxl;
+      img.updatePixels();
+    }
   }
 
   /**
@@ -2991,7 +3411,16 @@ class Sprite extends Positionable {
    */
   void flipVertical() {
     vflip = !vflip;
-    oy = -oy;
+    for(PImage img: frames) {
+      img.loadPixels();
+      int[] pxl = new int[img.pixels.length];
+      int w = int(width), h = int(height);
+      for(int x=0; x<w; x++) {
+        for(int y=0; y<h; y++) {
+          pxl[x + y*w] = img.pixels[x + ((h-1)-y)*w]; }}
+      img.pixels = pxl;
+      img.updatePixels();
+    }
   }
 
 // -- draw methods
@@ -3068,7 +3497,10 @@ class Sprite extends Positionable {
    * and draw the sprite's "current" frame
    * at the correct location.
    */
-  void draw() { draw(0,0); }
+  void draw() {
+    draw(0,0); 
+  }
+
   void draw(float px, float py) {
     if (visible) {
       PImage img = getFrame();
@@ -3079,9 +3511,24 @@ class Sprite extends Positionable {
   }
  
   // pass-through/unused
-  boolean drawableFor(float _a, float _b, float _c, float _d) { return true; }
-  void draw(float _a, float _b, float _c, float _d) { this.draw(); }
-  void drawObject() { println("ERROR: something called Sprite.drawObject instead of Sprite.draw."); }
+  void draw(float _a, float _b, float _c, float _d) {
+    this.draw();
+  }
+
+  boolean drawableFor(float _a, float _b, float _c, float _d) { 
+    return true; 
+  }
+
+  void drawObject() {
+    println("ERROR: something called Sprite.drawObject instead of Sprite.draw."); 
+  }
+
+  // check if coordinate overlaps the sprite.
+  boolean over(float _x, float _y) {
+    _x -= ox - halfwidth;
+    _y -= oy - halfheight;
+    return x <= _x && _x <= x+width && y <= _y && _y <= y+height;
+  }
   
 // -- pathing informmation
 
@@ -3262,7 +3709,6 @@ class SpritePath {
    */
   SpritePath() {
     data = new ArrayList<FrameInformation>();
-    Computer.arraylists("FrameInformation");
   }
 
   /**
@@ -3636,17 +4082,26 @@ class State {
     name = _name;
     sprite = new Sprite(spritesheet, rows, cols);
     sprite.setState(this);
-    Computer.states();
   }
 
   /**
    * add path points to a state
    */
-  void addPathPoint(float x, float y, float sx, float sy, float r, int duration) {
-    sprite.addPathPoint(x, y, sx, sy, r, duration); }
+  void addPathPoint(float x, float y, int duration) { sprite.addPathPoint(x, y, 1,1,0, duration); }
+
+  /**
+   * add path points to a state (explicit scale and rotations)
+   */
+  void addPathPoint(float x, float y, float sx, float sy, float r, int duration) { sprite.addPathPoint(x, y, sx, sy, r, duration); }
 
   /**
    * add a linear path to the state
+   */
+  void addPathLine(float x1, float y1, float x2, float y2, float duration) {
+    sprite.addPathLine(x1,y1,1,1,0,  x2,y2,1,1,0,  duration); }
+
+  /**
+   * add a linear path to the state (explicit scale and rotations)
    */
   void addPathLine(float x1, float y1, float sx1, float sy1, float r1,
                    float x2, float y2, float sx2, float sy2, float r2,
@@ -3655,6 +4110,12 @@ class State {
 
   /**
    * add a curved path to the state
+   */
+  void addPathCurve(float x1, float y1,  float cx1, float cy1,  float cx2, float cy2,  float x2, float y2, float duration, float slowdown_ratio) {
+    sprite.addPathCurve(x1,y1,1,1,0,  cx1,cy1,cx2,cy2,  x2,y2,1,1,0,  duration, slowdown_ratio); }
+
+  /**
+   * add a curved path to the state (explicit scale and rotations)
    */
   void addPathCurve(float x1, float y1, float sx1, float sy1, float r1,
                    float cx1, float cy1,
@@ -3675,7 +4136,7 @@ class State {
    * Make this state last X frames.
    */
   void setDuration(float _duration) {
-    looping = false;
+    setLooping(false);
     duration = (int) _duration;
   }
 
@@ -3723,12 +4184,20 @@ class State {
   }
 
   // drawing the state means draw the sprite
-  void draw() { 
-    sprite.draw();
+  void draw(boolean disabled) {
+    // if disabled, only draw every other frame
+    if(disabled && frameCount%2==0) {}
+    //otherwise, draw all frames
+    else { sprite.draw(0,0); }
     served++; 
     if(served == duration) {
       finished();
     }
+  }
+  
+  // check if coordinate is in sprite
+  boolean over(float _x, float _y) {
+    return sprite.over(_x,_y);
   }
   
   // set sprite's animation
@@ -3837,9 +4306,19 @@ abstract class Trigger extends Positionable {
   
   String triggername="";
   
+  Trigger(String name) {
+    triggername = name;  
+  }
+
   Trigger(String name, float x, float y, float w, float h) {
     super(x,y,w,h);
     triggername = name;
+  }
+  
+  void setArea(float x, float y, float w, float h) {
+    setPosition(x,y);
+    width = w;
+    height = h;
   }
 
   boolean drawableFor(float x, float y, float w, float h) {
@@ -4016,7 +4495,7 @@ void drawBackground(float width, float height) {
 final int screenWidth = 512;
 final int screenHeight = 432;
 void initialize() { 
-  addLevel("test", new TestLevel(width,height)); 
+  addScreen("test", new TestLevel(width,height)); 
 }
 
 class TestLevel extends Level {
@@ -4033,7 +4512,8 @@ class TestLevel extends Level {
 }
 
 class TestLayer extends LevelLayer {
-  TestObject t1, t2, t3, t4;
+  TestObject t1;
+  
   TestLayer(Level p) {
     super(p,p.width,p.height); 
     showBoundaries = true;
@@ -4063,10 +4543,29 @@ class TestLayer extends LevelLayer {
 }
 
 class TestObject extends Player {
+  boolean small = true;
+  
   TestObject(float x, float y) {
     super("test");
     addState(new State("test","docs/tutorial/graphics/mario/small/Standing-mario.gif"));
     setPosition(x,y);
+    Decal attachment = new Decal("static.gif",width,0);
+    addDecal(attachment);
+  }
+  
+  void addState(State s) {
+    s.sprite.anchor(CENTER, BOTTOM);
+    super.addState(s);
+  }
+  
+  void keyPressed(char key, int keyCode) {
+    if(small) {
+      addState(new State("test","docs/tutorial/graphics/mario/big/Standing-mario.gif"));
+    }
+    else {
+      addState(new State("test","docs/tutorial/graphics/mario/small/Standing-mario.gif"));
+    }
+    small = !small; 
   }
 }
 

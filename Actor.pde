@@ -402,7 +402,8 @@ abstract class Actor extends Positionable {
       keyDown[target] = false; }}
 
   // lock a key so that it cannot be triggered repeatedly
-  protected void ignore(int keyCode) {
+  protected void ignore(char key) {
+    int keyCode = int(key);
     locked[keyCode] = true;
     keyDown[keyCode] = false; }
 
@@ -423,9 +424,9 @@ abstract class Actor extends Positionable {
   }
   
   protected boolean noKeysDown() {
-    boolean nkd = true;
-    for(boolean b: keyDown) { nkd = nkd & !b; }
-    return nkd;
+    for(boolean b: keyDown) { if(b) return false; }
+    for(boolean b: locked) { if(b) return false; }
+    return true;
   }
 
   // handle key presses

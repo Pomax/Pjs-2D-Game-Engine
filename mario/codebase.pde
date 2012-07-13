@@ -176,9 +176,6 @@ abstract class Actor extends Positionable {
     if (x > lw - w2) { x = lw - w2; }
   }
 
-  private int __cached_bbox_frame = -1;
-  private float[] __cached_bbox = null;
-
   /**
    * Get the bounding box for this actor
    */
@@ -405,7 +402,8 @@ abstract class Actor extends Positionable {
       keyDown[target] = false; }}
 
   // lock a key so that it cannot be triggered repeatedly
-  protected void ignore(int keyCode) {
+  protected void ignore(char key) {
+    int keyCode = int(key);
     locked[keyCode] = true;
     keyDown[keyCode] = false; }
 
@@ -426,9 +424,9 @@ abstract class Actor extends Positionable {
   }
   
   protected boolean noKeysDown() {
-    boolean nkd = true;
-    for(boolean b: keyDown) { nkd = nkd & !b; }
-    return nkd;
+    for(boolean b: keyDown) { if(b) return false; }
+    for(boolean b: locked) { if(b) return false; }
+    return true;
   }
 
   // handle key presses
@@ -649,6 +647,13 @@ class Boundary extends Positionable {
     redirected[0] = glide * tr[2] * cosa;
     redirected[1] = glide * tr[2] * sina;
     return redirected;
+  }
+
+  /**
+   * redirect a force along this boundary's surface for a specific actor
+   */
+  float[] redirectForce(Positionable p, float fx, float fy) {
+    return redirectForce(fx,fy);
   }
 
   /**
@@ -2827,7 +2832,7 @@ abstract class Positionable extends Position implements Drawable {
       for(int b=boundaries.size()-1; b>=0; b--) {
         Boundary boundary = boundaries.get(b);
         if(!boundary.disabled) {
-          redirected = boundary.redirectForce(redirected[0], redirected[1]);
+          redirected = boundary.redirectForce(this, redirected[0], redirected[1]);
         }
         if(boundary.disabled || !boundary.supports(this)) {
           detachFrom(boundary);
