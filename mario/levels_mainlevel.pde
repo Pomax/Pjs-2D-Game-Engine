@@ -11,7 +11,7 @@ class MainLevel extends MarioLevel {
 
     // main level layer
     LevelLayer layer = new MainLevelLayer(this);
-    addLevelLayer("main layer", layer);
+    addLevelLayer("Main Layer", layer);
     mario.setPosition(16, height-64);
     layer.addPlayer(mario);
 

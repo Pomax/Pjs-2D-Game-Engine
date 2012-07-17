@@ -25,7 +25,7 @@ void initialize() {
 
 void reset() {
   clearScreens();
-  addScreen("Main Level", new MainLevel(width, height));  
+  addScreen("MainLevel", new MainLevel(width, height));  
 }
 
 /**
@@ -35,86 +35,87 @@ void reset() {
 class MainLevel extends Level {
   MainLevel(float levelWidth, float levelHeight) {
     super(levelWidth, levelHeight);
-    addLevelLayer("Background Layer", new MainBackgroundLayer(this));
-    addLevelLayer("Main Layer", new MainLevelLayer(this));
+    addLevelLayer("background layer", new BackgroundLayer(this));
+    LayerSuperClass mainLayer = new MainLevelLayer(this);
+    addLevelLayer("main layer", mainLayer);
     setViewBox(0,0,screenWidth,screenHeight);
-  }
-}
-
-/**
- * Our main level layer has a background
- * color, and nothing else.
- */
-class MainBackgroundLayer extends LevelLayer {
-  Mario mario;
-  MainBackgroundLayer(Level owner) {
-    super(owner, owner.width, owner.height, 0,0, 0.75,0.75);
-    setBackgroundColor(color(0, 100, 190));
-    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky_2.gif"),0,0,width,height));
-  }
-}
-
-
-/**
- * Our main level layer has a background
- * color, and nothing else.
- */
-class MainLevelLayer extends LevelLayer {
-  Mario mario;
-  
-  MainLevelLayer(Level owner) {
-    super(owner);
-    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
-
-    // set up Mario!
+    
+    // set up Mario in the main layer
     mario = new Mario();
     mario.setPosition(32, height-64);
-    addPlayer(mario);
-
-    // we don't want mario to walk off the level,
-    // so let's add some side walls
-    addBoundary(new Boundary(-1,0, -1,height));
-    addBoundary(new Boundary(width+1,height, width+1,0));
-
-    // add general ground, with an unjumpable gap!
-    addGround("ground", -32,height-48, width/2-96,height);
-    addGround("ground", width/2 + 49,height-48, width+32,height);
-
-    // then, add two teleporters on either side of the gap
-    Teleporter t1 = addTeleporter(width/4+2, height-48);
-    Teleporter t2 = addTeleporter(3*width/4-50, height-48);
-
-    // and link them together
-    t1.teleportTo(t2);
-    t2.teleportTo(t1);
+    mainLayer.mario = mario;
+    mainLayer.addPlayer(mario);
   }
+}
 
-  void draw() {
-    super.draw();
-    if(mario.y>height+64) { 
-      reset();
-//      mario.setPosition(32,height-64); 
-    }
-  }
-
-  /**
-   * Add a teleporter to the scene
-   */
-  Teleporter addTeleporter(float x, float y) {
-    Teleporter t = new Teleporter(x, y);
-    addBoundedInteractor(t);
-    return t;
-  }
+class LayerSuperClass extends LevelLayer {
+  Mario mario;
   
-  /**
-   * Add some ground.
-   */
+  // fallthrough constructors
+  LayerSuperClass(Level owner) {
+    super(owner); }
+
+  LayerSuperClass(Level owner, float w, float h, float tx, float ty, float sx, float sy) {
+    super(owner,  w,h,  tx,ty,  sx,sy); }
+
   void addGround(String tileset, float x1, float y1, float x2, float y2) {
     TilingSprite groundline = new TilingSprite(new Sprite("graphics/backgrounds/"+tileset+"-top.gif"), x1,y1,x2,y1+16);
     addBackgroundSprite(groundline);
     TilingSprite groundfiller = new TilingSprite(new Sprite("graphics/backgrounds/"+tileset+"-filler.gif"), x1,y1+16,x2,y2);
     addBackgroundSprite(groundfiller);
     addBoundary(new Boundary(x1,y1,x2,y1));
+  }
+
+  // layer "teleport" method:
+  void moveToLayer(Player p, String layerName) {
+    // first remove the player from "this" layer
+    removePlayer(p);
+    mario = null;
+    // introduce to other layer
+    LayerSuperClass other = (LayerSuperClass) parent.getLevelLayer(layerName);
+    other.mario = p;
+    p.setPosition(64, -64);
+    other.addPlayer(p);
+  }
+}
+
+
+class BackgroundLayer extends LayerSuperClass {
+  BackgroundLayer(Level owner) {
+    super(owner, owner.width, owner.height, 0,0, 0.75,0.75);
+    width += screenWidth;
+    setBackgroundColor(color(0, 100, 190));
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky_2.gif"),0,0,width,height));
+    addBoundary(new Boundary(-1,0, -1,height));
+    addBoundary(new Boundary(width+1,height, width+1,0));
+    addGround("ground", 0, height/2, width-100, height/2+16);
+  }
+  
+  // if mario falls off, teleport to foreground
+  void draw() {
+    super.draw();
+    if(mario != null && mario.y>height+64) {
+      moveToLayer(mario, "main layer");
+    }
+  }
+}
+
+
+class MainLevelLayer extends LayerSuperClass {
+  MainLevelLayer(Level owner) {
+    super(owner);
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
+    addBoundary(new Boundary(-1,0, -1,height));
+    addBoundary(new Boundary(width+1,height, width+1,0));
+    addGround("ground", -32,height-48, width/2-96,height);
+  }
+
+  // if mario falls off, teleport to background
+  void draw() {
+    super.draw();
+    if(mario != null && mario.y>height+64) {
+      moveToLayer(mario, "background layer");
+    }
   }
 }
 
@@ -216,79 +217,5 @@ class Mario extends Player {
       }
       else if (noKeysDown()) { setCurrentState("idle"); }
     }
-  }
-}
-
-class Teleporter extends BoundedInteractor {
-  TeleportBoundary surface;
-  
-  Teleporter(float x, float y) {
-    super("Teleporter");
-    setPosition(x,y);
-    // set up idle state
-    State idle = new State("idle","graphics/assorted/Teleporter.gif");
-    idle.sprite.align(CENTER,BOTTOM);
-    addState(idle);
-    // add ceiling boundary
-    addBoundary(new Boundary(x+16,y-48,x-16,y-48));
-    // add the active teleporter surface
-    surface = new TeleportBoundary(x-16,y-16,x+16,y-16);
-    addBoundary(surface);    
-  }
-
-  /**
-   * Which other teleporter should we teleport actors to?
-   */
-  void teleportTo(Teleporter other) {
-    surface.setTeleportLocation(other.x, other.y-32);
-  }
-}
-
-
-class TeleportBoundary extends Boundary {
-  float teleport_location_x=0, teleport_location_y=0;
-
-  TeleportBoundary(float x1, float y1, float x2, float y2) {
-    super(x1,y1,x2,y2);   
-    teleport_location_x = (x1+x2)/2;
-    teleport_location_y = (y1+y2)/2;
-    SoundManager.load(this,"audio/Squish.mp3");
-  }
-  
-  /**
-   * where should this teleport surface
-   * teleport actors to?
-   */
-  void setTeleportLocation(float x, float y) {
-    teleport_location_x = x;
-    teleport_location_y = y;
-  }
-  
-  /**
-   * Teleport an actor to the predefined coordinates!
-   */
-  void teleport(Actor a) {
-    a.setPosition(teleport_location_x,teleport_location_y);
-  }
-
-  // when we teleport an actor, it should get a zero-impulse
-  float[] STATIONARY = {0,0};
-   
-  // keeps Processing.js happy
-  float[] redirectForce(float fx, float fy) {
-    return super.redirectForce(fx,fy);
-  }
-
-  // telepor based on what the actor is doing
-  float[] redirectForce(Actor a, float fx, float fy) {
-    if(a.active.name=="crouching") {
-      a.detachFrom(this);
-      a.ignore('S');
-      a.setCurrentState("idle");
-      teleport(a);
-      SoundManager.play(this);
-      return STATIONARY;
-    }
-    else { return super.redirectForce(a,fx,fy); }
   }
 }

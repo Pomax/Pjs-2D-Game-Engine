@@ -10,7 +10,7 @@
  * can make use of it.
  */
 abstract class Actor extends Positionable {
-  boolean debug = true;
+  boolean debug = false;
   
   // debug bounding box alignment
   float halign=0, valign=0;

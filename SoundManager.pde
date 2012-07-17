@@ -14,6 +14,7 @@ import ddf.minim.analysis.*;
 import ddf.minim.effects.*;
 
 static class SoundManager {
+  static boolean reportErrors = false;
   private static PApplet sketch;
   private static Minim minim;
 
@@ -97,7 +98,7 @@ static class SoundManager {
     rewind(identifier);
     AudioPlayer ap = owners.get(identifier);
     if(ap==null) {
-      println("ERROR: Error in SoundManager, no AudioPlayer exists for "+identifier.toString());
+      if(reportErrors) println("ERROR: Error in SoundManager, no AudioPlayer exists for "+identifier.toString());
       return;
     }
     ap.play();
@@ -113,7 +114,7 @@ static class SoundManager {
     rewind(identifier);
     AudioPlayer ap = owners.get(identifier);
     if(ap==null) {
-      println("ERROR: Error in SoundManager, no AudioPlayer exists for "+identifier.toString());
+      if(reportErrors) println("ERROR: Error in SoundManager, no AudioPlayer exists for "+identifier.toString());
       return;
     }
     ap.loop();
@@ -125,7 +126,7 @@ static class SoundManager {
   static void pause(Object identifier) {
     AudioPlayer ap = owners.get(identifier);
     if(ap==null) {
-      println("ERROR: Error in SoundManager, no AudioPlayer exists for "+identifier.toString());
+      if(reportErrors) println("ERROR: Error in SoundManager, no AudioPlayer exists for "+identifier.toString());
       return;
     }
     ap.pause();
@@ -137,7 +138,7 @@ static class SoundManager {
   static void rewind(Object identifier) {
     AudioPlayer ap = owners.get(identifier);
     if(ap==null) {
-      println("ERROR: Error in SoundManager, no AudioPlayer exists for "+identifier.toString());
+      if(reportErrors) println("ERROR: Error in SoundManager, no AudioPlayer exists for "+identifier.toString());
       return;
     }
     ap.rewind();
@@ -149,7 +150,7 @@ static class SoundManager {
   static void stop(Object identifier) {
     AudioPlayer ap = owners.get(identifier);
     if(ap==null) {
-      println("ERROR: Error in SoundManager, no AudioPlayer exists for "+identifier.toString());
+      if(reportErrors) println("ERROR: Error in SoundManager, no AudioPlayer exists for "+identifier.toString());
       return;
     }
     ap.pause();

@@ -9,6 +9,7 @@
     <script type="text/javascript" src="../../minim.js"></script>
     <script type="text/javascript" src="syntaxHighlight.js"></script>
     <script type="text/javascript" src="canvasFocus.js"></script>
+    <script type="text/javascript" src="editor.js"></script>    
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
@@ -562,11 +563,250 @@ class TeleportTrigger extends Trigger {
 
     <h2>Moving between layers</h2>
 
-    <p></p>
+    <p>Now that we have teleporters covered, I think you can see where any
+    discussion about moving between layers is going:</p>
+    
+    <p>more teleporting.</p>
+    
+    <p>Moving between layers is essentially a three step "teleport":</p>
+    
+    <ol>
+      <li>Take an actor out of the current layer</li>
+      <li>Insert the actor into the desired layer</li>
+      <li>Set the actor's position/impulse/etc values in this new layer</li>
+    </ol>
+    
+    <p>So let's implement this. First, let's make a simple level again,
+    this time with two layers, and a "shared" Mario:</p>
+
+<textarea>
+class MainLevel extends Level {
+  MainLevel(float levelWidth, float levelHeight) {
+    super(levelWidth, levelHeight);
+    addLevelLayer("background layer", new BackgroundLayer(this));
+    LayerSuperClass mainLayer = new MainLevelLayer(this);
+    addLevelLayer("main layer", mainLayer);
+    setViewBox(0,0,screenWidth,screenHeight);
+    
+    // set up Mario in the main layer
+    mario = new Mario();
+    mario.setPosition(32, height-64);
+    mainLayer.mario = mario;
+    mainLayer.addPlayer(mario);
+  }
+}
+</textarea>
+
+    <p>Notice that we've added a new class, <code>LayerSuperClass</code>. We're
+    going to use that as a super class for layers, housing some of the code
+    that we want to be able to call from any layer. Like layer teleporting:</p>
+    
+<textarea>
+class LayerSuperClass extends LevelLayer {
+  // our intrepid hero. Or rather, a variable that can hold him.
+  Mario mario;
+  
+  // fallthrough constructors
+  LayerSuperClass(Level owner) {
+    super(owner); }
+
+  LayerSuperClass(Level owner, float w, float h, float tx, float ty, float sx, float sy) {
+    super(owner,  w,h,  tx,ty,  sx,sy); }
+
+  // moved here from MainLevelLayer, so we can all it in the background layer too
+  void addGround(String tileset, float x1, float y1, float x2, float y2) {
+    [...]
+  }
+
+  // New: a layer "teleport" method
+  void moveToLayer(Player p, String layerName) {
+    // first, remove the player from "this" layer
+    removePlayer(p);
+    mario = null;
+    // then, inject the player into the other layer
+    LayerSuperClass other = (LayerSuperClass) parent.getLevelLayer(layerName);
+    other.mario = p;
+    p.setPosition(64, -64);
+    other.addPlayer(p);
+  }
+}
+</textarea>
+
+    <p>Now it's just a matter of calling this new <code>moveToLayer(...)</code>
+    method whenever we want to fling Mario from one layer to another:</p>
+
+<textarea>
+class BackgroundLayer extends LayerSuperClass {
+  BackgroundLayer(Level owner) {
+    [...]
+    addBoundary(new Boundary(-1,0, -1,height));
+    addBoundary(new Boundary(width+1,height, width+1,0));
+    addGround("ground", 0, height/2, width, height/2+16);
+  }
+  
+  // if mario falls off, teleport to foreground
+  void draw() {
+    super.draw();
+    if(mario != null && mario.y>height+64) {
+      moveToLayer(mario, "main layer");
+    }
+  }
+}
+
+class MainLevelLayer extends LayerSuperClass {  
+  MainLevelLayer(Level owner) {
+    super(owner);
+    addBoundary(new Boundary(-1,0, -1,height));
+    addBoundary(new Boundary(width+1,height, width+1,0));
+    addGround("ground", -32,height-48, width/2-96,height);
+  }
+
+  // if mario falls off, teleport to background  
+  void draw() {
+    super.draw();
+    if(mario != null && mario.y>height+64) {
+      moveToLayer(mario, "background layer");
+    }
+  }
+}
+</textarea>
+
+    <p>Here, we've changed our original background layer to have some ground, in addition
+    to a background sprite, and we changed our original main layer so that it only has the
+    left half of the ground, and nothing else.</p>
+    
+    <p>We then modify the <code>draw()</code> methods for both layers, and you'll see that
+    when mario "falls out of the level layer" (which is when his height is beyond the layer's
+    height), we move mario to the background layer rather than resetting the sketch, in a
+    position just above the screen so that it'll look like he's fallen into the background.
+    Try it yourself: run the following sketch and watch what happens when Mario jumps off the edge:</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/refined/sketch03.pde"></canvas>
+       <figcaption>Falling into the background</figcaption>
+    </figure>
+    
+    <p>So now we know how to move between level layers. In 2D sidescrollers this might seem
+    like a neat trick, but more a gimmick than something important to the game experience,
+    but for top-down 2D games moving between layers is very important. For instance,
+    a level might have a room with floors at different heights - you don't want actors on
+    bits of the floor at height A to interact with actors on bits of the floor at height B.
+    This is taken care of by making each "height" its own layer, and moving actors between
+    layers as they move up and down across the floor.</p>
 
     <h2>Level swapping</h2>
 
-    <p></p>
+    <p>This brings us quite naturally to level swapping. Level swapping is distinctly different
+    from moving an actor around between layers, because it changes the game library's underlying
+    "active screen" from one screen to another. While a single screen can have multiple layers,
+    all of which are updated and drawn each frame, a single game can have multiple screens,
+    but <strong>only one</strong> screen is active at a time. While it is updates and drawn
+    to your screen, none of the other screens get updated. For all intents and purposes,
+    they have been turned off and shelved for possible use later. Or maybe not.</p>
+    
+    <p>Demonstrating how to swap levels requires we even have two levels, so let's first
+    set that up:</p>
+    
+<textarea>
+class MarioLevel extends Level {
+  Mario mario;
+  MarioLevel(float levelWidth, float levelHeight) {
+    super(levelWidth, levelHeight);
+  }
+  void swapForLevel(String otherLevel) {
+    setActiveScreen(otherLevel);
+  }
+}
+
+class MarioLayer extends LevelLayer {
+  MarioLayer(Level owner) {
+    super(owner); 
+  }
+
+  void addGround(String tileset, float x1, float y1, float x2, float y2) {
+    [... you kow what this code does by now ...]
+  }
+}
+</textarea>
+
+    <p>These two classes will be our level and level layer superclasses. They will house
+    all the code that levels, and level layers, have in common. So let's implement level one:</p>
+
+<textarea>
+class LevelOne extends MarioLevel {
+  LevelOne(float w, float h) {
+    super(w, h);
+    addLevelLayer("main layer", new LevelOneLayer(this));
+    setViewBox(0,0,w,h);
+    // set up a mario
+    mario = new Mario();
+    mario.setPosition(32, height-64);
+    getLevelLayer("main layer").addPlayer(mario);
+  }
+
+  void mousePressed(int mx, int my, int mb) {
+    swapForLevel("Level Two");
+  }
+}
+
+class LevelOneLayer extends MarioLayer {
+  LevelOneLayer(Level owner) {
+    super(owner);
+    setBackgroundColor(color(0, 100, 190));
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/sky.gif"),0,0,width,height));
+    addBoundary(new Boundary(-1,0, -1,height));
+    addBoundary(new Boundary(width+1,height, width+1,0));
+    addGround("ground", 0,height-48, width,height);
+  }
+}
+</textarea>
+
+    <p>And then let's implement level two:</p>
+
+<textarea>
+class LevelTwo extends MarioLevel {
+  LevelTwo(float w, float h) {
+    super(w, h);
+    addLevelLayer("main layer", new LevelTwoLayer(this));
+    setViewBox(0,0,w,h);
+    // set up another mario
+    mario = new Mario();
+    mario.setPosition(32, height-64);
+    getLevelLayer("main layer").addPlayer(mario);
+  }
+
+  void mousePressed(int mx, int my, int mb) {
+    swapForLevel("Level One");
+  }
+}
+
+class LevelTwoLayer extends MarioLayer {
+  LevelTwoLayer(Level owner) {
+    super(owner);
+    setBackgroundColor(color(0, 0, 100));
+    addBackgroundSprite(new TilingSprite(new Sprite("graphics/backgrounds/bonus.gif"),0,0,width,height));
+    addBoundary(new Boundary(-1,0, -1,height));
+    addBoundary(new Boundary(width+1,height, width+1,0));
+    addGround("cave", 0,height-48, width,height);
+  }
+}
+</textarea>
+
+    <p>Excellent! Let's run this and see what happens:</p>
+
+    <figure>
+      <canvas data-processing-sources="codebase.pde preloads.pde sketches/refined/sketch04.pde"></canvas>
+       <figcaption>Level swapping in a game</figcaption>
+    </figure>
+    
+    <p>As you can see, we're swapping levels quite successfully. Except each level has its
+    own Mario instance, and while this is "correct", it's not very useful. We'd like to be
+    able to move mario from one level to the next. So let's change our code a little to
+    effect that:</p>
+
+<textarea>
+...
+</textarea>
 
     <h2>Player powers</h2>
 

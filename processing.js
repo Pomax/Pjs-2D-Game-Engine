@@ -1,3 +1,4 @@
+// THIS IS A TEST VERSION OF PROCESSING.JS BETWEEN 1.3.6 AND 1.4 - DO NOT USE THIS COPY, IT'S FOR DEBUG PURPOSES ONLY
 
 (function(window, document, Math, undef) {
 
@@ -1258,6 +1259,9 @@
   };
 
   function extendClass(subClass, baseClass) {
+    // TEST: HACK FOR HOOKING INTO PROPERTIES
+    subClass.baseClass = baseClass;
+    // TEST: HACK FOR HOOKING INTO PROPERTIES
     function extendGetterSetter(propertyName) {
       defaultScope.defineProperty(subClass, propertyName, {
         get: function() {
@@ -19762,8 +19766,9 @@
                 code = preProcessProcessingCode(code.join("\n"));
               }
               // DEBUGGING HACK PATCH TEST TEST TEST
-
-              return new Processing(canvas, code.join("\n"));
+              
+              var compiled_code = Processing.compile(code.join("\n"));
+              return new Processing(canvas, compiled_code);
 
 //            } catch(e) {
 //              throw "Processing.js: Unable to execute pjs sketch: " + e;

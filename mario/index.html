@@ -7,9 +7,7 @@
     <script type="text/javascript" src="../processing.js"></script>
     <script type="text/javascript" src="../minim.js"></script>
     <script type="text/javascript" src="canvasFocus.js"></script>
-    <!--
     <script type="text/javascript" src="editor.js"></script>
-    -->
     <script type="text/javascript">
       var sketch;
 
@@ -18,7 +16,29 @@
         if(!sketch || !sketch.bindJavaScript) {
           setTimeout(bindSketch, 250);
         } else {
-//          sketch.bindJavaScript(this); 
+          sketch.bindJavaScript(this); 
+
+          // slap a monitor on Mario
+          if(false && ProcessingInspector) {
+            var sketch = Processing.getInstanceById("testcanvas")
+            var screen = sketch.getScreen("Main Level")
+            var layer = screen.getLevelLayer("Main Layer")
+            var mario = layer.players.get(0)
+       
+            var logPropChange = function(sketch, o, attr) {
+              var input = document.getElementById(attr+'_control');
+              input.onchange = function() { 
+                o[attr] = input.value; 
+                sketch.redraw();
+              }
+              return function(obj, attr, val) {
+                input.value = val;
+              };
+            };
+
+            ProcessingInspector.monitor(mario, "x", logPropChange(sketch, mario, "x"));
+            ProcessingInspector.monitor(mario, "y", logPropChange(sketch, mario, "y"));
+          }
         }
       }
 
@@ -48,35 +68,41 @@
     <h2>Let's Make This game</h2>
     
     <canvas id="testcanvas"
-            data-processing-sources=" codebase.pde
-                                      enemy.pde
-                                      enemy_banzaibill.pde
-                                      enemy_bonustarget.pde
-                                      enemy_koopa.pde
-                                      enemy_muncher.pde
-                                      hero.pde
+            data-processing-sources=" preloads.pde
+                                      codebase.pde
+                                      mario.pde
+                                      
+                                      mariolevel.pde
+                                      levels_bonuslevel.pde
+                                      levels_darklevel.pde
+                                      levels_mainlevel.pde
+                                      
+                                      mariolayer.pde
                                       layers_background.pde
                                       layers_bonuslayer.pde
                                       layers_bonuslayer_bg.pde
                                       layers_colorlayer.pde
                                       layers_darklevellayer.pde
                                       layers_mainlayer.pde
-                                      levels_bonuslevel.pde
-                                      levels_darklevel.pde
-                                      levels_mainlevel.pde
-                                      mario.pde
-                                      mariolayer.pde
-                                      mariolevel.pde
-                                      pickups.pde
-                                      preloads.pde
+                                      
+                                      hero.pde
+                                      enemy.pde
+                                      enemy_banzaibill.pde
+                                      enemy_bonustarget.pde
+                                      enemy_koopa.pde
+                                      enemy_muncher.pde
+                                      
                                       specials_block.pde
                                       specials_keys.pde
                                       specials_tubes.pde
+                                      pickups.pde
                                       triggers.pde"
             style="border: 1px solid black;"
             tabindex="1"></canvas>
             
     <div id="editor">
+      x: <input id="x_control" type="number" min="-100" max="100" step="1"><br>
+      y: <input id="y_control" type="number" min="-100" max="100" step="1"><br>
     </div>
 
   </body>
