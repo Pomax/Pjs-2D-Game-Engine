@@ -89,6 +89,10 @@ code:after { content: "]"; }
   color: darkgreen;
 }
 
+.constant {
+  color: lightSeaGreen;
+}
+
 navigation ol {
   display: table;
   border: 1px solid black;

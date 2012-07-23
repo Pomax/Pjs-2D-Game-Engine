@@ -745,7 +745,7 @@ class LevelOne extends MarioLevel {
   }
 
   void mousePressed(int mx, int my, int mb) {
-    swapForLevel("Level Two");
+    if(mb == RIGHT) swapForLevel("Level Two");
   }
 }
 
@@ -776,7 +776,7 @@ class LevelTwo extends MarioLevel {
   }
 
   void mousePressed(int mx, int my, int mb) {
-    swapForLevel("Level One");
+    if(mb == RIGHT) swapForLevel("Level One");
   }
 }
 

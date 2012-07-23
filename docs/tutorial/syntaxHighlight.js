@@ -1,6 +1,19 @@
 (function(){
 
-  document.addEventListener("DOMContentLoaded",function(){
+  // our list of highlightable syntax - Processing/Java
+  var keywords = ["abstract","continue","for","new","switch",
+                  "assert","default","goto","package","synchronized",
+                  "boolean","do","if","private","this",
+                  "break","double","implements","protected","throw",
+                  "byte","else","import","public","throws",
+                  "case","enum","instanceof","return","transient",
+                  "catch","extends","int","short","try",
+                  "char","final","interface","static","void",
+                  "class","finally","long","strictfp","volatile",
+                  "const*","float","native","super","while"];
+
+  // make magic happen on DOMContentLoaded
+  document.addEventListener("DOMContentLoaded", function() {
     // replace textareas with <pre> elements
     $("textarea").each(function(){
       // 1: don't convert if told not to
@@ -39,18 +52,6 @@
     });
   },false);
 
-  // our list of highlightable syntax - Processing/Java
-  keywords = ["abstract","continue","for","new","switch",
-              "assert","default","goto","package","synchronized",
-              "boolean","do","if","private","this",
-              "break","double","implements","protected","throw",
-              "byte","else","import","public","throws",
-              "case","enum","instanceof","return","transient",
-              "catch","extends","int","short","try",
-              "char","final","interface","static","void",
-              "class","finally","long","strictfp","volatile",
-              "const*","float","native","super","while"];
-
   function syntax_highlight(line) {
     // 1: process line comments
     var parts = line.split("//");
@@ -72,8 +73,11 @@
 
     // 4: process numerals
     line = line.replace(/([\d,.]+)/g,"<span class=\"number\">$1</span>");
+    
+    // 5: colour constants
+    line = line.replace(/(\b[A-Z]+\b)/g,"<span class=\"constant\">$1</span>");
 
-    // 5: enable all classes
+    // 6: enable all classes
     line = line.replace(/clss=/g,"class=");
     return line + comment;
   }
