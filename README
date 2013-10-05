@@ -6,11 +6,6 @@ Documentation pending
 
 tests are in the ./tests/ directory
 
-This is a work in progress pending initial release.
-Due to the lack of license, any license that ends up
-being put on this will apply retroactively. That
-means you can play with it, as long as you realise
-that deployment before this becomes a public release
-is probably not the best of ideas.
+This is a work in progress, but the code is public domain.
 
 - Mike "Pomax" Kamermans
