@@ -14,7 +14,7 @@ Screen activeScreen = null;
 // then calls the "initialize" method, which you must
 // implement yourself.
 void setup() {
-  size(screenWidth, screenHeight);
+  size(screenWidth, screenHeight, P2D);
   noLoop();
 
   screenSet = new HashMap<String, Screen>();
