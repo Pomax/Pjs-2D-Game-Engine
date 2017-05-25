@@ -1364,11 +1364,21 @@ HashMap<String, Screen> screenSet;
 // global 'currently active' screen
 Screen activeScreen = null;
 
+// Necessary for Processing 3
+void settings() {
+  size(screenWidth, screenHeight, P2D); 
+}
+
 // setup sets up the screen size, and screen container,
 // then calls the "initialize" method, which you must
 // implement yourself.
 void setup() {
-  size(screenWidth, screenHeight);
+  try {
+    // processing 2?
+    size(screenWidth, screenHeight, P2D);
+  } catch (Exception e) {
+    // processing 3 will have already called settings()
+  }
   noLoop();
 
   screenSet = new HashMap<String, Screen>();
@@ -1427,6 +1437,9 @@ Screen setActiveScreen(String name) {
   if (oldScreen != null) {
     oldScreen.cleanUp();
     SoundManager.stop(oldScreen);
+  }
+  if (activeScreen == null) {
+    println("could not assign active screen: ", name);
   }
   SoundManager.loop(activeScreen);
   return oldScreen;
